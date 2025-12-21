@@ -1,0 +1,229 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { initializeApp, getApps } from 'firebase/app';
+import { 
+  getAuth, 
+  onAuthStateChanged, 
+  GoogleAuthProvider, 
+  signInWithPopup, 
+  createUserWithEmailAndPassword, 
+  signInWithEmailAndPassword,
+  signOut 
+} from 'firebase/auth';
+import { getFirestore, doc, setDoc, onSnapshot, collection, addDoc } from 'firebase/firestore';
+import { 
+  Heart, Star, Sparkles, Moon, Volume2, VolumeX, 
+  Send, Battery, Wifi, Cpu, Zap, MessageSquare, Settings, X, Key, Mail, LogOut
+} from 'lucide-react';
+
+// --- FIREBASE SETUP ---
+const rawConfig = import.meta.env.VITE_FIREBASE_CONFIG;
+const firebaseConfig = rawConfig ? JSON.parse(rawConfig) : {};
+const appId = "eilo-wholesome-auth-v1";
+
+const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
+const auth = getAuth(app);
+const db = getFirestore(app);
+const googleProvider = new GoogleAuthProvider();
+
+export default function App() {
+  const [user, setUser] = useState(null);
+  const [authView, setAuthView] = useState('choice'); // 'choice', 'email-login', 'email-signup'
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [mood, setMood] = useState('neutral');
+  const [isMuted, setIsMuted] = useState(false);
+  const [isAwake, setIsAwake] = useState(true);
+  const [isThinking, setIsThinking] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
+  const chatEndRef = useRef(null);
+
+  // --- AUTH LISTENER ---
+  useEffect(() => {
+    return onAuthStateChanged(auth, (u) => {
+      setUser(u);
+    });
+  }, []);
+
+  // --- CLOUD DATA SYNC ---
+  useEffect(() => {
+    if (!user || !db) return;
+
+    // RULE 1: Strict Paths /artifacts/{appId}/users/{userId}/{collectionName}
+    const msgQuery = collection(db, 'artifacts', appId, 'users', user.uid, 'messages');
+    const unsubscribeMsgs = onSnapshot(msgQuery, (snap) => {
+      const msgs = snap.docs.map(d => d.data()).sort((a, b) => a.timestamp - b.timestamp);
+      if (msgs.length > 0) setMessages(msgs);
+    }, (err) => console.error("Firestore sync error:", err));
+
+    const settingsDoc = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'core');
+    const unsubscribeSettings = onSnapshot(settingsDoc, (snap) => {
+      if (snap.exists()) {
+        const data = snap.data();
+        setMood(data.mood || 'neutral');
+        setIsAwake(data.isAwake ?? true);
+        setIsMuted(data.isMuted ?? false);
+      }
+    });
+
+    return () => { unsubscribeMsgs(); unsubscribeSettings(); };
+  }, [user]);
+
+  // --- AUTH ACTIONS ---
+  const handleGoogleLogin = async () => {
+    try { await signInWithPopup(auth, googleProvider); } 
+    catch (e) { setAuthError("Google Login Failed 😭"); }
+  };
+
+  const handleEmailAuth = async (type) => {
+    setAuthError('');
+    try {
+      if (type === 'signup') await createUserWithEmailAndPassword(auth, email, password);
+      else await signInWithEmailAndPassword(auth, email, password);
+    } catch (e) { setAuthError(e.message); }
+  };
+
+  const handleSaveState = async (updates) => {
+    if (!user) return;
+    await setDoc(doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'core'), updates, { merge: true });
+  };
+
+  // --- ROBOT BRAIN ---
+  const handleSend = async () => {
+    if (!input.trim() || isThinking || !user) return;
+    const userMsg = input.trim();
+    const activeKey = tempApiKey || import.meta.env.VITE_GEMINI_API_KEY;
+
+    await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), {
+      role: 'user', text: userMsg, timestamp: Date.now()
+    });
+
+    setInput('');
+    setIsThinking(true);
+    setMood('thinking');
+
+    try {
+        let reply = "I'm vibing with you! ✨";
+        if (activeKey) {
+            const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${activeKey}`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    contents: [{ parts: [{ text: userMsg }] }],
+                    systemInstruction: { parts: [{ text: "You are Eilo, a sweet, energetic robot. You love your owner. Use cute emojis like ✨, 🎀, 🧸. NO skulls or crying emojis." }] }
+                })
+            });
+            const data = await response.json();
+            reply = data.candidates?.[0]?.content?.parts?.[0]?.text || reply;
+        }
+
+        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), {
+            role: 'eilo', text: reply, timestamp: Date.now()
+        });
+        setMood('happy');
+    } catch (err) { setMood('neutral'); } 
+    finally {
+        setIsThinking(false);
+        setTimeout(() => setMood('neutral'), 3000);
+    }
+  };
+
+  const renderEyes = () => {
+    const base = "bg-pink-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_35px_rgba(244,114,182,0.6)]";
+    if (mood === 'thinking') return <div className="flex gap-16 md:gap-32"><div className="w-20 h-20 bg-cyan-300 rounded-full animate-pulse blur-[1px]" /><div className="w-20 h-20 bg-cyan-300 rounded-full animate-pulse blur-[1px]" /></div>;
+    if (mood === 'happy') return <div className="flex gap-16 md:gap-32"><div className="w-24 h-16 bg-pink-400 rounded-full animate-bounce" /><div className="w-24 h-16 bg-pink-400 rounded-full animate-bounce" /></div>;
+    if (!isAwake) return <div className="text-pink-900/10"><Moon size={48}/></div>;
+    return <div className="flex gap-16 md:gap-32"><div className={`w-24 h-24 ${base}`} /><div className={`w-24 h-24 ${base}`} /></div>;
+  };
+
+  useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages]);
+
+  // --- LOGIN SCREEN ---
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-[#0c0c14] text-white flex flex-col items-center justify-center p-6 font-sans">
+        <div className="w-full max-w-sm bg-[#161622] rounded-[50px] p-10 border border-white/5 shadow-2xl text-center">
+            <div className="mb-6 flex justify-center"><Heart className="text-pink-500" size={48} fill="currentColor"/></div>
+            <h1 className="text-3xl font-bold mb-2 tracking-tight">Eilo OS</h1>
+            <p className="text-slate-400 text-sm mb-10 italic font-mono">"Wholesome heart active ✨"</p>
+
+            {authView === 'choice' ? (
+              <div className="space-y-4">
+                <button onClick={handleGoogleLogin} className="w-full bg-white text-black py-4 rounded-2xl font-bold hover:bg-slate-200 transition-all">Google Sign In</button>
+                <button onClick={() => setAuthView('email-login')} className="w-full bg-white/5 border border-white/10 py-4 rounded-2xl font-bold hover:bg-white/10 transition-all">Email & Password</button>
+              </div>
+            ) : (
+              <div className="space-y-4 text-left">
+                <input type="email" placeholder="Email" value={email} onChange={e => setEmail(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 focus:border-pink-500/50 outline-none" />
+                <input type="password" placeholder="Password" value={password} onChange={e => setPassword(e.target.value)} className="w-full bg-black/40 border border-white/10 rounded-xl py-3 px-4 focus:border-pink-500/50 outline-none" />
+                <button onClick={() => handleEmailAuth(authView === 'email-signup' ? 'signup' : 'login')} className="w-full bg-pink-600 py-4 rounded-xl font-bold">
+                  {authView === 'email-signup' ? 'Sign Up' : 'Login'}
+                </button>
+                <button onClick={() => setAuthView(authView === 'email-login' ? 'email-signup' : 'email-login')} className="w-full text-center text-xs text-slate-500">
+                  {authView === 'email-login' ? "New here? Create account" : "Have an account? Login"}
+                </button>
+                <button onClick={() => setAuthView('choice')} className="w-full text-center text-xs text-slate-600 mt-2">Back</button>
+                {authError && <p className="text-red-400 text-[10px] text-center mt-2">{authError}</p>}
+              </div>
+            )}
+        </div>
+      </div>
+    );
+  }
+
+  // --- ROBOT UI ---
+  return (
+    <div className="fixed inset-0 bg-[#0c0c14] text-white flex flex-col items-center justify-center overflow-hidden">
+      <div className="relative portrait:w-[92%] portrait:h-64 portrait:bg-[#161622] portrait:border-2 portrait:border-pink-500/10 portrait:rounded-[60px] portrait:mb-8 landscape:w-full landscape:h-full flex items-center justify-center">
+        <div className="absolute top-8 px-12 w-full flex justify-between items-center opacity-30 text-[10px] portrait:flex landscape:hidden font-mono tracking-widest uppercase">
+          <div className="flex items-center gap-2 text-pink-400"><Heart size={10} fill="currentColor"/> {user.email.split('@')[0]}'s Eilo</div>
+          <div className="flex items-center gap-4"><Wifi size={10}/> SYNCED <Battery size={10}/> 100%</div>
+        </div>
+        {renderEyes()}
+        <div className="absolute bottom-6 right-10 flex gap-4 opacity-20 hover:opacity-100 portrait:flex landscape:hidden">
+          <button onClick={() => setShowSettings(true)}><Settings size={20}/></button>
+          <button onClick={() => signOut(auth)}><LogOut size={20}/></button>
+        </div>
+      </div>
+
+      <div className="w-full max-w-xl px-4 flex flex-col gap-4 h-[440px] portrait:flex landscape:hidden">
+        <div className="flex-1 bg-[#161622] rounded-[40px] border border-white/5 p-6 flex flex-col overflow-hidden shadow-2xl">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-2 custom-scrollbar">
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`px-5 py-3 rounded-3xl text-xs leading-relaxed max-w-[85%] ${m.role === 'user' ? 'bg-pink-600/10 text-pink-100' : 'bg-white/5 text-slate-300'}`}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+          <div className="mt-5 relative">
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Message Eilo..." className="w-full bg-white/5 border border-white/10 rounded-2xl py-4 pl-5 pr-14 text-sm focus:outline-none focus:border-pink-500/30" />
+            <button onClick={handleSend} className="absolute right-2 top-2 p-3 bg-pink-600 rounded-xl"><Send size={18}/></button>
+          </div>
+        </div>
+      </div>
+
+      {showSettings && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm z-[100] flex items-center justify-center p-6">
+          <div className="bg-[#1c1c28] w-full max-w-sm rounded-[40px] p-8 border border-white/10 relative">
+            <button onClick={() => setShowSettings(false)} className="absolute top-6 right-6 text-slate-500"><X size={24}/></button>
+            <h2 className="text-xl font-bold mb-4 flex items-center gap-2">Brain Core ✨</h2>
+            <div className="space-y-4">
+               <input type="password" value={tempApiKey} onChange={e => setTempApiKey(e.target.value)} placeholder="Gemini API Key..." className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 px-4 text-sm outline-none" />
+               <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey); setShowSettings(false); }} className="w-full bg-pink-600 py-4 rounded-2xl font-bold text-sm">Save Soul ✨</button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .custom-scrollbar::-webkit-scrollbar { width: 3px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.05); border-radius: 10px; }`}} />
+    </div>
+  );
+}
+

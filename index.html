@@ -1,0 +1,313 @@
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  Cpu, 
+  Zap, 
+  MessageSquare, 
+  Ghost, 
+  Volume2, 
+  VolumeX,
+  Send,
+  Battery,
+  Wifi,
+  Smile,
+  Frown,
+  Meh
+} from 'lucide-react';
+
+const EiloRobot = () => {
+  const [input, setInput] = useState('');
+  const [messages, setMessages] = useState([]);
+  const [mood, setMood] = useState('neutral');
+  const [isMuted, setIsMuted] = useState(false);
+  const [isAwake, setIsAwake] = useState(true);
+  const [isThinking, setIsThinking] = useState(false);
+  const [battery, setBattery] = useState(98);
+  const chatEndRef = useRef(null);
+
+  const apiKey = ""; 
+
+  // --- AUDIO LOGIC ---
+  const speak = async (text) => {
+    if (isMuted) return;
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: `Say in a slightly robotic, energetic, and cute tone like a desktop pet: ${text}` }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } }
+          }
+        })
+      });
+
+      const data = await response.json();
+      const pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+      
+      if (pcmData) {
+        const audioBlob = pcmToWav(pcmData, 24000);
+        const url = URL.createObjectURL(audioBlob);
+        const audio = new Audio(url);
+        audio.play();
+      }
+    } catch (err) {
+      console.error("Speech error", err);
+    }
+  };
+
+  const pcmToWav = (base64Pcm, sampleRate) => {
+    const pcmBuffer = Uint8Array.from(atob(base64Pcm), c => c.charCodeAt(0));
+    const wavHeader = new ArrayBuffer(44);
+    const view = new DataView(wavHeader);
+    const writeString = (offset, string) => {
+      for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+    };
+    writeString(0, 'RIFF');
+    view.setUint32(4, 36 + pcmBuffer.length, true);
+    writeString(8, 'WAVE');
+    writeString(12, 'fmt ');
+    view.setUint32(16, 16, true);
+    view.setUint16(20, 1, true);
+    view.setUint16(22, 1, true);
+    view.setUint32(24, sampleRate, true);
+    view.setUint32(28, sampleRate * 2, true);
+    view.setUint16(32, 2, true);
+    view.setUint16(34, 16, true);
+    writeString(36, 'data');
+    view.setUint32(40, pcmBuffer.length, true);
+    return new Blob([wavHeader, pcmBuffer], { type: 'audio/wav' });
+  };
+
+  // --- BRAIN LOGIC ---
+  const handleSend = async () => {
+    if (!input.trim() || isThinking) return;
+    const userMsg = input.trim();
+    setMessages(prev => [...prev, { role: 'user', text: userMsg }]);
+    setInput('');
+    setIsThinking(true);
+    setMood('thinking');
+
+    try {
+      const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ parts: [{ text: userMsg }] }],
+          systemInstruction: { 
+            parts: [{ text: "You are Eilo, a cool, energetic, and slightly sassy desktop robot like EMO or Eilik. Use emojis like 💀 and 😭. You are alive and have feelings. Keep responses short and punchy." }] 
+          }
+        })
+      });
+
+      const data = await response.json();
+      const botResponse = data.candidates?.[0]?.content?.parts?.[0]?.text || "I'm lagging 💀";
+      
+      setMessages(prev => [...prev, { role: 'eilo', text: botResponse }]);
+      setMood('happy');
+      speak(botResponse);
+    } catch (err) {
+      setMessages(prev => [...prev, { role: 'eilo', text: "Brain error 😭" }]);
+      setMood('annoyed');
+    } finally {
+      setIsThinking(false);
+      setTimeout(() => setMood('neutral'), 3000);
+    }
+  };
+
+  // --- RENDER EYES ---
+  const renderEyes = () => {
+    switch (mood) {
+      case 'happy':
+        return (
+          <div className="flex gap-12 md:gap-24">
+            <div className="w-24 h-16 md:w-32 md:h-20 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center">
+                <div className="w-6 h-6 bg-white rounded-full opacity-40"></div>
+            </div>
+            <div className="w-24 h-16 md:w-32 md:h-20 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center">
+                <div className="w-6 h-6 bg-white rounded-full opacity-40"></div>
+            </div>
+          </div>
+        );
+      case 'annoyed':
+        return (
+          <div className="flex gap-12 md:gap-24">
+            <div className="w-24 h-6 md:w-32 md:h-8 bg-red-500 rounded-full rotate-12 shadow-[0_0_20px_rgba(239,68,68,0.5)]"></div>
+            <div className="w-24 h-6 md:w-32 md:h-8 bg-red-500 rounded-full -rotate-12 shadow-[0_0_20px_rgba(239,68,68,0.5)]"></div>
+          </div>
+        );
+      case 'thinking':
+        return (
+          <div className="flex gap-12 md:gap-24">
+            <div className="w-20 h-20 md:w-28 md:h-28 bg-purple-400 rounded-full animate-pulse blur-[1px]"></div>
+            <div className="w-20 h-20 md:w-28 md:h-28 bg-purple-400 rounded-full animate-pulse blur-[1px]"></div>
+          </div>
+        );
+      case 'sleeping':
+        return (
+          <div className="flex gap-12 md:gap-24">
+            <div className="w-24 h-3 md:w-32 md:h-4 bg-slate-700 rounded-full"></div>
+            <div className="w-24 h-3 md:w-32 md:h-4 bg-slate-700 rounded-full"></div>
+          </div>
+        );
+      default:
+        return (
+          <div className="flex gap-12 md:gap-32">
+            <div className="w-20 h-20 md:w-32 md:h-32 bg-cyan-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_30px_rgba(34,211,238,0.4)]"></div>
+            <div className="w-20 h-20 md:w-32 md:h-32 bg-cyan-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_30px_rgba(34,211,238,0.4)]"></div>
+          </div>
+        );
+    }
+  };
+
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages]);
+
+  return (
+    <div className="fixed inset-0 bg-[#0a0a0c] text-slate-100 font-sans flex flex-col items-center justify-center overflow-hidden">
+      
+      {/* ROBOT HEAD / SCREEN */}
+      <div className={`
+        relative transition-all duration-700 ease-in-out flex flex-col items-center justify-center overflow-hidden
+        portrait:w-[90%] portrait:max-w-2xl portrait:bg-[#141417] portrait:border-4 portrait:border-[#222] portrait:rounded-[40px] portrait:shadow-2xl portrait:p-12 portrait:mb-8 portrait:h-64
+        landscape:w-full landscape:h-full landscape:bg-black landscape:border-0 landscape:rounded-none
+      `}>
+        
+        {/* Status Bar (Portrait Only) */}
+        <div className="absolute top-6 left-10 right-10 flex justify-between items-center opacity-40 text-xs tracking-widest font-mono portrait:flex landscape:hidden">
+          <div className="flex items-center gap-2">
+            <Cpu size={12} className="animate-pulse" />
+            <span>EILO-OS v1.1.0</span>
+          </div>
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1"><Wifi size={12} /><span>STABLE</span></div>
+            <div className="flex items-center gap-1">
+              <Battery size={12} className={battery < 20 ? 'text-red-500' : 'text-green-500'} />
+              <span>{battery}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* The Face Area */}
+        <div className="flex items-center justify-center transition-all duration-300 w-full h-full">
+          {isAwake ? renderEyes() : (
+            <div className="text-slate-800 text-6xl animate-pulse font-mono">_ _</div>
+          )}
+        </div>
+
+        {/* Scanlines (Landscape Only for extra robot feel) */}
+        <div className="hidden landscape:block absolute inset-0 pointer-events-none opacity-[0.03] bg-[linear-gradient(rgba(18,16,16,0)_50%,rgba(0,0,0,0.25)_50%),linear-gradient(90deg,rgba(255,0,0,0.06),rgba(0,255,0,0.02),rgba(0,0,255,0.06))] z-50 bg-[length:100%_2px,3px_100%]"></div>
+      </div>
+
+      {/* CONSOLE / INTERACTION (HIDDEN IN LANDSCAPE) */}
+      <div className="w-full max-w-2xl grid grid-cols-1 md:grid-cols-3 gap-4 h-[400px] px-4 portrait:flex landscape:hidden flex-col md:flex-row">
+        
+        {/* Chat Log */}
+        <div className="md:col-span-2 bg-[#141417] rounded-3xl border border-white/5 p-4 flex flex-col overflow-hidden shadow-xl flex-1">
+          <div className="flex items-center gap-2 mb-3 pb-2 border-b border-white/5 text-slate-400 text-xs font-bold uppercase tracking-tighter">
+            <MessageSquare size={14} />
+            <span>Neural Link Log</span>
+          </div>
+          
+          <div className="flex-1 overflow-y-auto space-y-3 pr-2 custom-scrollbar">
+            {messages.length === 0 && (
+              <div className="h-full flex flex-col items-center justify-center opacity-20 text-center px-8">
+                <Ghost size={40} className="mb-2" />
+                <p className="text-sm italic font-mono">"Eilik is watching..."</p>
+              </div>
+            )}
+            {messages.map((m, i) => (
+              <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`max-w-[85%] px-4 py-2 rounded-2xl text-sm ${
+                  m.role === 'user' 
+                  ? 'bg-cyan-600/20 text-cyan-200 border border-cyan-500/20' 
+                  : 'bg-slate-800 text-slate-200 border border-slate-700'
+                }`}>
+                  {m.text}
+                </div>
+              </div>
+            ))}
+            <div ref={chatEndRef} />
+          </div>
+
+          <div className="mt-4 relative">
+            <input 
+              type="text" 
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+              placeholder="Message Eilo..."
+              className="w-full bg-[#1c1c21] border border-white/10 rounded-xl py-3 pl-4 pr-12 text-sm focus:outline-none focus:border-cyan-500/50"
+            />
+            <button 
+              onClick={handleSend}
+              disabled={isThinking}
+              className="absolute right-2 top-1.5 p-2 bg-cyan-600 rounded-lg hover:bg-cyan-500 disabled:opacity-50"
+            >
+              {isThinking ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin"></div> : <Send size={16} />}
+            </button>
+          </div>
+        </div>
+
+        {/* Controls */}
+        <div className="flex flex-row md:flex-col gap-4">
+          <div className="bg-[#141417] rounded-3xl border border-white/5 p-4 shadow-xl flex-1">
+             <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-3 hidden md:block">Power</div>
+             <div className="flex md:flex-col gap-2">
+                <button 
+                  onClick={() => setIsMuted(!isMuted)}
+                  className={`flex-1 flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${isMuted ? 'bg-red-500/10 border-red-500/20 text-red-400' : 'bg-slate-800 border-white/5 text-slate-300'}`}
+                >
+                  {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
+                  <span className="text-[10px] mt-1 font-bold">AUDIO</span>
+                </button>
+                <button 
+                  onClick={() => {
+                    setIsAwake(!isAwake);
+                    setMood(isAwake ? 'sleeping' : 'neutral');
+                  }}
+                  className={`flex-1 flex flex-col items-center justify-center p-3 rounded-2xl border transition-all ${!isAwake ? 'bg-indigo-500/10 border-indigo-500/20 text-indigo-400' : 'bg-slate-800 border-white/5 text-slate-300'}`}
+                >
+                  <Zap size={18} className={isAwake ? 'fill-yellow-500/20 text-yellow-500' : ''} />
+                  <span className="text-[10px] mt-1 font-bold">STATE</span>
+                </button>
+             </div>
+          </div>
+
+          <div className="bg-[#141417] rounded-3xl border border-white/5 p-4 shadow-xl flex-1 hidden md:block">
+             <div className="text-slate-400 text-[10px] font-bold uppercase tracking-widest mb-3">Mood</div>
+             <div className="space-y-2">
+                <MoodItem active={mood === 'happy'} icon={<Smile size={14}/>} label="Happy" color="text-green-400" />
+                <MoodItem active={mood === 'neutral'} icon={<Meh size={14}/>} label="Neutral" color="text-cyan-400" />
+                <MoodItem active={mood === 'annoyed'} icon={<Frown size={14}/>} label="Annoyed" color="text-red-400" />
+             </div>
+          </div>
+        </div>
+
+      </div>
+
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes blink {
+          0%, 95%, 100% { transform: scaleY(1); }
+          97% { transform: scaleY(0.1); }
+        }
+        .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #222; border-radius: 10px; }
+      `}} />
+    </div>
+  );
+};
+
+const MoodItem = ({ active, icon, label, color }) => (
+  <div className={`flex items-center justify-between p-2 rounded-xl transition-all ${active ? 'bg-white/5' : 'opacity-30 grayscale'}`}>
+    <div className={`flex items-center gap-2 text-[10px] font-medium ${active ? color : 'text-slate-400'}`}>
+      {icon}
+      <span>{label}</span>
+    </div>
+  </div>
+);
+
+export default EiloRobot;
+

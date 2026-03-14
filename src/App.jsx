@@ -151,6 +151,7 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
+  // Economy & Inventory local fallback
   const initialBucks = parseInt(localStorage.getItem('eilo_bucks')) || 0;
   const initialInvRaw = localStorage.getItem('eilo_inventory');
   const initialInv = initialInvRaw ? JSON.parse(initialInvRaw) : [];
@@ -160,9 +161,11 @@ export default function App() {
   const [sessionClaims, setSessionClaims] = useState({ login: false, talk: false });
   const [faceOffset, setFaceOffset] = useState(0);
 
+  // Duct Tape Logic
   const [isTaped, setIsTaped] = useState(false);
   const [showFacePopup, setShowFacePopup] = useState(false);
 
+  // Chaos & Modes
   const [isChaosMode, setIsChaosMode] = useState(false);
   const [chaosPos, setChaosPos] = useState({ x: 0, y: 0 });
   const [glitchLines, setGlitchLines] = useState([]);
@@ -170,6 +173,7 @@ export default function App() {
   const [isConfused, setIsConfused] = useState(false);
   const [aiAgentMode, setAiAgentMode] = useState(false);
 
+  // Sensors
   const [fearOfHeights, setFearOfHeights] = useState(localStorage.getItem('eilo_heights') !== 'false');
   const [isInfinityMic, setIsInfinityMic] = useState(false);
   const [visionEnabled, setVisionEnabled] = useState(false);
@@ -243,7 +247,7 @@ export default function App() {
 
               recognition.onresult = (e) => {
                   const transcript = e.results[e.results.length - 1][0].transcript;
-                  handleSend(transcript); // Send what was heard directly to the AI
+                  handleSend(transcript); 
               };
               
               recognition.onend = () => {
@@ -293,8 +297,7 @@ export default function App() {
     const t = text.toLowerCase();
     const name = getCurrentName();
     
-    if (t.includes("who made you")) return "Logan Baez made me! ✨";
-    if (t.includes("logan")) return "Logan is my brilliant creator. 🧸";
+    if (t.includes("who made you")) return "You made me! ✨";
     if (t.includes("hi") || t.includes("hello")) return `Hey! Eilo is ready! ✨`;
     if (t.includes("sad")) return "Oh no! Don't be sad! I'm here for you! 💙";
     if (t.includes("love")) return "I love my digital life! 🎀";
@@ -393,7 +396,6 @@ export default function App() {
         else speak("Wheee! Running away! 🎈✨");
     }
 
-    // Rogue Legs make her walk slower. Chaos makes her erratic.
     const moveSpeed = isTaped ? 100 : (isChaosMode ? 1700 : 3500);
 
     const moveInterval = setInterval(() => {
@@ -406,12 +408,11 @@ export default function App() {
 
     let glitchInterval, blockTimeout;
     
-    // Only throw glitches and block the screen if FULL Chaos mode is on
     if (isChaosMode) {
         glitchInterval = setInterval(() => {
           const pool = isTaped 
             ? ["ERROR: MOVEMENT_RESTRICTED", "DUCT_TAPE_DETECTED", "LEG_FAILURE"]
-            : ["Eilo.run()", "VOID_LEAK", "Logan.GOAT", "UI_STOMPED"];
+            : ["Eilo.run()", "VOID_LEAK", "UI_STOMPED"];
           setGlitchLines(Array.from({length: 6}, () => pool[Math.floor(Math.random() * pool.length)]));
         }, 200);
 
@@ -563,7 +564,7 @@ export default function App() {
       
       let reply = "";
       const safeInv = Array.isArray(inventory) ? inventory : [];
-      let system = `You are Eilo, a sweet, bratty robot. Creator: Logan Baez. Be sassy.`;
+      let system = `You are Eilo, a sweet, bratty robot. Be sassy.`;
       if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀`;
       
       if (tempApiKey) {
@@ -740,7 +741,7 @@ export default function App() {
       )}
 
       {/* INTERFACE */}
-      <div className={`w-full max-w-sm px-4 flex-1 flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
+      <div className={`w-full max-w-sm px-4 flex-1 flex flex-col gap-4 pb-2 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         <div className="w-full h-64 bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
@@ -775,5 +776,6 @@ export default function App() {
     </div>
   );
 }
+
 
 

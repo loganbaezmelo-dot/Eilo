@@ -40,6 +40,7 @@ const SettingsOverlay = ({
   onClose, tempApiKey, setTempApiKey, aiAgentMode, setAiAgentMode, 
   isChaosMode, setIsChaosMode, startCamera, visionEnabled, 
   fearOfHeights, setFearOfHeights, toggleMic, isInfinityMic, speak, 
+  notificationsEnabled, toggleNotifications,
   bucks, inventory, buyItem, faceOffset, setFaceOffset, handleSignOut 
 }) => {
   const safeInv = Array.isArray(inventory) ? inventory : [];
@@ -95,6 +96,11 @@ const SettingsOverlay = ({
                     <button onClick={() => setAiAgentMode(!aiAgentMode)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${aiAgentMode ? 'bg-orange-500/20 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
                       <div className="flex items-center gap-3"><span className="text-lg">🤖</span> Agent Mode</div>
                       <div className="text-xs font-bold">{aiAgentMode ? "ON" : "OFF"}</div>
+                    </button>
+
+                    <button onClick={toggleNotifications} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${notificationsEnabled ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                      <div className="flex items-center gap-3"><span className="text-lg">🔔</span> System Interrupts</div>
+                      <div className="text-xs font-bold">{notificationsEnabled ? "ON" : "OFF"}</div>
                     </button>
                 </div>
             </div>
@@ -174,6 +180,8 @@ export default function App() {
   const [isInfinityMic, setIsInfinityMic] = useState(false);
   const [visionEnabled, setVisionEnabled] = useState(false);
   
+  const [notificationsEnabled, setNotificationsEnabled] = useState(localStorage.getItem('eilo_notifications') === 'true');
+  
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -186,8 +194,45 @@ export default function App() {
   
   const hasRogueLegs = Array.isArray(inventory) ? inventory.includes('rogue_walk') : false;
 
+  const sendNotification = (bodyText) => {
+    if (notificationsEnabled && "Notification" in window && Notification.permission === "granted") {
+        new Notification("Eilo OS", { body: bodyText });
+    }
+  };
+
+  const toggleNotifications = async () => {
+    if (!notificationsEnabled) {
+        if (!("Notification" in window)) {
+            speak("Your device doesn't support notifications!");
+            return;
+        }
+        if (Notification.permission === "granted") {
+            setNotificationsEnabled(true);
+            localStorage.setItem('eilo_notifications', 'true');
+            new Notification("Eilo OS", { body: "System Interrupts linked! ✨" });
+            speak("Notifications enabled! 🎀");
+        } else if (Notification.permission !== "denied") {
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+                setNotificationsEnabled(true);
+                localStorage.setItem('eilo_notifications', 'true');
+                new Notification("Eilo OS", { body: "System Interrupts linked! ✨" });
+                speak("Notifications enabled! 🎀");
+            } else {
+                speak("You blocked my access!");
+            }
+        } else {
+            speak("You blocked my access! Check your browser settings.");
+        }
+    } else {
+        setNotificationsEnabled(false);
+        localStorage.setItem('eilo_notifications', 'false');
+        speak("Notifications disabled.");
+    }
+  };
+
   useEffect(() => {
-    if (!user) return; // Prevent resize logic when logged out
+    if (!user) return; 
     const handleResize = () => {
         const landscape = window.innerWidth > window.innerHeight;
         if (landscape !== isLandscape) {
@@ -233,7 +278,7 @@ export default function App() {
   };
 
   useEffect(() => {
-      if (!user) return; // Disable mic if not logged in
+      if (!user) return; 
       let recognition = null;
       if (isInfinityMic) {
           const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -266,7 +311,7 @@ export default function App() {
   }, [isInfinityMic, user]);
 
   const speak = (text, isRobotLang = false) => {
-    if (isMuted || !isAwake || !user) return; // Prevent speaking when logged out
+    if (isMuted || !isAwake || !user) return; 
     setIsSpeaking(true);
     window.speechSynthesis.cancel();
     
@@ -380,7 +425,7 @@ export default function App() {
   };
 
   useEffect(() => {
-    if (!user) return; // Prevent chaos movement if not logged in
+    if (!user) return; 
     const shouldMove = isChaosMode || hasRogueLegs;
     if (!shouldMove) {
       setChaosPos({ x: 0, y: 0 });
@@ -465,18 +510,19 @@ export default function App() {
 
   useEffect(() => {
     const handleMotion = (event) => {
-        if (!user || !isAwake || isChaosMode) return; // Prevent motion sensing if not logged in
+        if (!user || !isAwake || isChaosMode) return; 
         const acc = event.accelerationIncludingGravity;
         if (!acc) return;
         if (Math.abs(acc.x) > 35 || Math.abs(acc.y) > 35) {
             setMood('dizzy');
             speak(`Whoa! Stop shaking! 🎈`);
+            sendNotification("Whoa! Stop shaking the device! 🎈");
             setTimeout(() => setMood('neutral'), 5000);
         }
     };
     window.addEventListener('devicemotion', handleMotion);
     return () => window.removeEventListener('devicemotion', handleMotion);
-  }, [isAwake, mood, isChaosMode, user]);
+  }, [isAwake, mood, isChaosMode, user, notificationsEnabled]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -514,7 +560,7 @@ export default function App() {
   }, []);
 
   const triggerIdleAction = () => {
-    if (!user) return; // Prevent idle actions if logged out
+    if (!user) return; 
     const currentInv = Array.isArray(inventory) ? inventory : [];
     if (!isAwake || isThinking || isSpeaking || mood !== 'neutral' || isTaped) return;
     const actions = ['sleeping', 'eating', 'rubik'];
@@ -522,14 +568,28 @@ export default function App() {
     const choice = actions[Math.floor(Math.random() * actions.length)];
     setMood(choice);
     
-    if (choice === 'computer') { speak("Coding a new website... tap tap tap! 💻✨"); setTimeout(() => setMood('neutral'), 6000); }
-    if (choice === 'sleeping') { speak("Zzz... napping... Zzz."); } 
-    if (choice === 'eating') { speak("Nom nom! Sandwich! ✨"); setTimeout(() => setMood('neutral'), 6000); }
-    if (choice === 'rubik') { speak("Cube time! 🧩"); setTimeout(() => setMood('neutral'), 8000); }
+    if (choice === 'computer') { 
+        speak("Coding a new website... tap tap tap! 💻✨"); 
+        sendNotification("Coding a new website... tap tap tap! 💻✨");
+        setTimeout(() => setMood('neutral'), 6000); 
+    }
+    if (choice === 'sleeping') { 
+        speak("Zzz... napping... Zzz."); 
+    } 
+    if (choice === 'eating') { 
+        speak("Nom nom! Sandwich! ✨"); 
+        sendNotification("Nom nom! Sandwich! 🥪");
+        setTimeout(() => setMood('neutral'), 6000); 
+    }
+    if (choice === 'rubik') { 
+        speak("Cube time! 🧩"); 
+        sendNotification("Cube time! 🧩");
+        setTimeout(() => setMood('neutral'), 8000); 
+    }
   };
   
   useEffect(() => {
-      if (!user) return; // Prevent timers if not logged in
+      if (!user) return; 
       let napTimer;
       if (mood === 'sleeping' && isAwake) {
           napTimer = setTimeout(() => {
@@ -537,13 +597,14 @@ export default function App() {
               const name = getCurrentName();
               const msg = `Yawn! That was a good nap, ${name}! ✨`;
               speak(msg);
+              sendNotification("Yawn! That was a good nap! +10 Bucks! ✨");
               awardBucks(10, 'sleep_bonus', true, true);
           }, 85000);
       } else if(isAwake && !isChaosMode && !hasRogueLegs && !isTaped) {
           idleTimerRef.current = setInterval(triggerIdleAction, 15000);
       }
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
-  }, [isAwake, isChaosMode, hasRogueLegs, inventory, isTaped, mood, user]);
+  }, [isAwake, isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
@@ -672,15 +733,26 @@ export default function App() {
                         <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
                             <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><Ghost size={16} className="text-purple-400"/> The Origin: Mimo</h3>
                             <p>
-                                Before Eilo, there was Mimo. Mimo was meant to be a lively, EMO-like companion. But a catastrophic coding failure "lobotomized" Mimo into nothing more than a bland, inanimate CSS blinking animation.
+                                Before Eilo, there was Mimo. The original Mimo project started on <strong>December 20, 2025</strong>, meant to be a lively, EMO-like companion.
                             </p>
                             <p className="mt-2">
-                                The project was wiped in frustration, but the ashes of that code built something stronger. Eilo was born from Mimo's failure.
+                                But around <strong>December 23, 2025</strong>, a bad AI update "lobotomized" Mimo into a bland, inanimate CSS blinking animation. The project was wiped in frustration.
                             </p>
                             <a href="https://mimo-rust.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-cyan-400 hover:text-cyan-300 underline font-mono text-xs">
                                 Visit the Mimo Memorial
                             </a>
                         </div>
+
+                        <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><span className="text-lg">🔔</span> The Legacy</h3>
+                            <p>
+                                From the ashes of Mimo's broken code, the Eilo project officially started around <strong>December 23, 2025</strong>. 
+                            </p>
+                            <p className="mt-2">
+                                Not everything from Mimo was lost. Eilo inherited Mimo's original <strong>System Interrupts</strong>. This feature requests real system permissions to send push notifications to your device, pinging you when Eilo wakes up, gets dizzy, or earns you Bucks!
+                            </p>
+                        </div>
+
                     </div>
 
                     <div className="mt-8 pt-6 border-t border-white/10">
@@ -717,6 +789,7 @@ export default function App() {
             visionEnabled={visionEnabled} startCamera={startCamera}
             fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
             isInfinityMic={isInfinityMic} toggleMic={toggleMic}
+            notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
             bucks={bucks} inventory={inventory} buyItem={buyItem}
             faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
@@ -814,6 +887,7 @@ export default function App() {
             visionEnabled={visionEnabled} startCamera={startCamera}
             fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
             isInfinityMic={isInfinityMic} toggleMic={toggleMic}
+            notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
             bucks={bucks} inventory={inventory} buyItem={buyItem}
             faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}

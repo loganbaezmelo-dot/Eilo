@@ -23,9 +23,6 @@ const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 const appId = "eilo-original-v1";
 
-// The environment provides the key automatically
-const apiKey = ""; 
-
 const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
   try {
     const response = await fetch(url, options);
@@ -38,9 +35,9 @@ const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
   }
 };
 
-// --- SETTINGS COMPONENT ---
+// --- SETTINGS COMPONENT (SAFE MODE WITH API KEY RESTORED) ---
 const SettingsOverlay = ({ 
-  onClose, aiAgentMode, setAiAgentMode, 
+  onClose, tempApiKey, setTempApiKey, aiAgentMode, setAiAgentMode, 
   isChaosMode, setIsChaosMode, startCamera, visionEnabled, 
   fearOfHeights, setFearOfHeights, toggleMic, isInfinityMic, speak, 
   bucks, inventory, buyItem, faceOffset, setFaceOffset, handleSignOut 
@@ -95,6 +92,12 @@ const SettingsOverlay = ({
                     <button onClick={() => setAiAgentMode(!aiAgentMode)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${aiAgentMode ? 'bg-orange-500/20 border-orange-500/40' : 'bg-white/5 border-white/10 text-slate-400'}`}><div className="flex items-center gap-3"><Radio size={16}/> Agent Mode</div>{aiAgentMode ? <ToggleRight size={24} className="text-orange-400"/> : <ToggleLeft size={24}/>}</button>
                 </div>
             </div>
+
+            {/* AI KEY RESTORED HERE */}
+            <div className="space-y-2">
+              <p className="text-[10px] uppercase font-bold text-slate-400 px-1">AI Key (Brain)</p>
+              <input type="password" value={tempApiKey} onChange={e => setTempApiKey(e.target.value)} placeholder="Paste Gemini Key..." className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-5 text-sm outline-none text-white focus:border-cyan-500/50" />
+            </div>
             
             <div className="flex flex-col gap-2">
                <button onClick={startCamera} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${visionEnabled ? 'bg-cyan-500/20 border-cyan-500/40' : 'bg-white/5 border-white/10 text-slate-400'}`}><div className="flex items-center gap-3"><Eye size={16} className={visionEnabled ? 'text-cyan-400' : ''}/> <div className="text-left"><p className="text-xs font-bold text-white">Selfie Scanner</p><p className="text-[9px] opacity-60">Visual awareness</p></div></div>{visionEnabled ? <ToggleRight size={24} className="text-cyan-400"/> : <ToggleLeft size={24}/>}</button>
@@ -105,7 +108,7 @@ const SettingsOverlay = ({
 
         </div>
         <div className="pt-4 border-t border-white/5 space-y-3">
-            <button onClick={onClose} className="w-full bg-cyan-600 py-4 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-sm">Save & Close</button>
+            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey); onClose(); }} className="w-full bg-cyan-600 py-4 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-sm">Save & Close</button>
             <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 text-[10px] text-red-500 font-bold uppercase opacity-60 hover:opacity-100 py-2 transition-opacity"><LogOut size={12}/> Disconnect Core</button>
         </div>
       </div>
@@ -114,7 +117,7 @@ const SettingsOverlay = ({
 };
 
 export default function App() {
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(true); 
   const [user, setUser] = useState(null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -124,6 +127,7 @@ export default function App() {
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
   // Economy & Inventory
@@ -152,6 +156,7 @@ export default function App() {
   const [isListening, setIsListening] = useState(false);
   const [visionEnabled, setVisionEnabled] = useState(false);
   const [cameraState, setCameraState] = useState('desk'); 
+  const [sensorHolding, setSensorHolding] = useState(false);
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -160,6 +165,8 @@ export default function App() {
   const lastPetTime = useRef(0);
   const hasGreeted = useRef(false);
   const recognitionRef = useRef(null);
+  const agentIntervalRef = useRef(null);
+  const rogueIntervalRef = useRef(null);
   const idleTimerRef = useRef(null);
 
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
@@ -175,7 +182,7 @@ export default function App() {
             if (isChaosMode) {
                 setIsConfused(true);
                 speak("Whoa! World flip! Where's the button?!");
-                setTimeout(() => { setIsConfused(false); speak("Found it!"); }, 4250);
+                setTimeout(() => { setIsConfused(false); speak("Found it! 🎀"); }, 4250);
             }
         }
     };
@@ -183,12 +190,38 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isLandscape, isChaosMode]);
 
-  // Auto-scroll chat history
+  // Load chat history reliably
   useEffect(() => {
-    chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+    if (!user) return;
+    const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), (snapshot) => {
+        const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.timestamp - b.timestamp);
+        setMessages(msgs);
+        setTimeout(() => {
+            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+    });
+    return () => unsubscribe();
+  }, [user]);
 
-  // --- LOCAL SOUL CORE (OFFLINE BRAIN) ---
+  const speak = (text, isRobotLang = false) => {
+    if (isMuted || !isAwake) return;
+    setIsSpeaking(true);
+    window.speechSynthesis.cancel();
+    const utterance = new SpeechSynthesisUtterance(text);
+    
+    if (isTaped) {
+        utterance.pitch = 0.5; utterance.rate = 0.8; utterance.volume = 0.5;
+        utterance.text = "Mmm. Mmm. Hmph."; 
+    } else {
+        utterance.pitch = isRobotLang ? 2.1 : 1.7; 
+        utterance.rate = isRobotLang ? 1.4 : 1.1;
+    }
+    
+    utterance.onend = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  // --- LOCAL SOUL CORE (BACKUP BRAIN) ---
   const getLocalResponse = (text) => {
     const t = text.toLowerCase();
     const name = getCurrentName();
@@ -207,32 +240,6 @@ export default function App() {
       "System status: Sparkly! 🎀"
     ];
     return randoms[Math.floor(Math.random() * randoms.length)];
-  };
-
-  // --- FIXED TTS ---
-  const speak = (text, isRobotLang = false) => {
-    if (isMuted || !isAwake) return;
-    setIsSpeaking(true);
-    window.speechSynthesis.cancel();
-    
-    let finalText = text;
-    if (isTaped) {
-        finalText = "Mmm. Mmm. Hmph."; 
-    }
-    
-    const utterance = new SpeechSynthesisUtterance(finalText);
-    
-    if (isTaped) {
-        utterance.pitch = 0.5; 
-        utterance.rate = 0.8; 
-        utterance.volume = 0.6;
-    } else {
-        utterance.pitch = isRobotLang ? 2.1 : 1.7; 
-        utterance.rate = isRobotLang ? 1.4 : 1.1;
-    }
-    
-    utterance.onend = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
   };
 
   // --- ECONOMY ---
@@ -258,8 +265,8 @@ export default function App() {
         await setDoc(userRef, { bucks: newTotal, inventory: newInv }, { merge: true });
         
         if (itemId === 'duct_tape') speak("NO! Why did you buy that?! I'm scared!");
-        else speak("Yay! New upgrade!");
-    } else { speak("Hey! You're broke!"); }
+        else speak("Yay! New upgrade! 🎀");
+    } else { speak("Hey! You're broke! 🎈"); }
   };
 
   const handleFaceClick = (e) => {
@@ -281,7 +288,7 @@ export default function App() {
           u.pitch = 0.5; u.rate = 0.8;
           window.speechSynthesis.speak(u);
       } else {
-          const u = new SpeechSynthesisUtterance("I'm free! Never do that again!");
+          const u = new SpeechSynthesisUtterance("I'm free! Never do that again! 🎀");
           u.pitch = 1.7; u.rate = 1.1;
           window.speechSynthesis.speak(u);
       }
@@ -297,7 +304,7 @@ export default function App() {
     if (isConfused) { setIsHandBlocking(false); return; }
 
     if (isTaped) { speak("Mmm. Mmm. Hmph."); } 
-    else { speak("Wheee! Running away!"); }
+    else { speak("Wheee! Running away! 🎈✨"); }
 
     const moveInterval = setInterval(() => {
       if (isTaped) {
@@ -319,9 +326,9 @@ export default function App() {
         setIsHandBlocking(true);
         blockTimeout = setTimeout(() => {
             setIsHandBlocking(false);
-            speak("Phew... tired...");
+            speak("Phew... tired... 🧸");
             blockTimeout = setTimeout(() => {
-                if (!isConfused) { speak("Blocked again!"); startBlockingCycle(); }
+                if (!isConfused) { speak("Blocked again! 🎀"); startBlockingCycle(); }
             }, 3500);
         }, 45000);
     };
@@ -330,7 +337,7 @@ export default function App() {
     return () => { clearInterval(moveInterval); clearInterval(glitchInterval); clearTimeout(blockTimeout); };
   }, [isChaosMode, isConfused, isTaped]);
 
-  const handleBlockedClick = (e) => { e.stopPropagation(); setMood('happy'); speak("Nope! Hand says no!"); };
+  const handleBlockedClick = (e) => { e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); };
 
   // --- PET ---
   const handlePet = () => {
@@ -339,19 +346,19 @@ export default function App() {
     if (now - lastPetTime.current < 2000) return;
     lastPetTime.current = now;
 
-    awardBucks(5, 'pet', true, true); 
+    awardBucks(5, 'pet', true, true); // Silent
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; } 
-    if (isChaosMode) { speak("Can't stop, running!"); return; }
+    if (isChaosMode) { speak("Can't stop, running! 🎈"); return; }
 
     if (['scared', 'dizzy', 'mad'].includes(mood)) {
       setMood('mad');
-      speak(`HEY! ${isLogan() ? 'Logan' : getCurrentName()}!! Busy!`);
+      speak(`HEY! ${isLogan() ? 'Logan' : getCurrentName()}!! Busy! 🎈`);
       setTimeout(() => setMood('neutral'), 4000);
       return;
     }
     setMood('happy');
-    const lines = isLogan() ? ["Bestie Logan! ✨", "Yay, creator!"] : [`Hehe, thanks!`, `Ooh, nice!`];
+    const lines = isLogan() ? ["Bestie Logan! ✨", "Yay, creator! 🎀"] : [`Hehe, thanks! ✨`, `Ooh, nice! 🎀`];
     speak(lines[Math.floor(Math.random() * lines.length)]);
     setTimeout(() => setMood('neutral'), 3000);
   };
@@ -364,7 +371,7 @@ export default function App() {
         if (!acc) return;
         if (Math.abs(acc.x) > 35 || Math.abs(acc.y) > 35) {
             setMood('dizzy');
-            speak(`Whoa! Stop shaking!`);
+            speak(`Whoa! Stop shaking! 🎈`);
             setTimeout(() => setMood('neutral'), 5000);
         }
     };
@@ -393,7 +400,7 @@ export default function App() {
       });
       if (u && !hasGreeted.current) {
         awardBucks(10, 'login', false, true); 
-        const msg = u.displayName?.toLowerCase().includes("logan baez") ? "Yo Logan! Welcome back! ✨" : `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo's here!`;
+        const msg = u.displayName?.toLowerCase().includes("logan baez") ? "Yo Logan! Welcome back! 🎀✨" : `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo's here! 🎈`;
         setTimeout(() => speak(msg), 1500);
         hasGreeted.current = true;
       }
@@ -409,10 +416,10 @@ export default function App() {
     const choice = actions[Math.floor(Math.random() * actions.length)];
     setMood(choice);
     
-    if (choice === 'computer') { speak("Coding a new website... tap tap tap!"); setTimeout(() => setMood('neutral'), 6000); }
+    if (choice === 'computer') { speak("Coding a new website... tap tap tap! 💻✨"); setTimeout(() => setMood('neutral'), 6000); }
     if (choice === 'sleeping') { speak("Zzz... napping... Zzz."); } 
-    if (choice === 'eating') { speak("Nom nom! Sandwich!"); setTimeout(() => setMood('neutral'), 6000); }
-    if (choice === 'rubik') { speak("Cube time!"); setTimeout(() => setMood('neutral'), 8000); }
+    if (choice === 'eating') { speak("Nom nom! Sandwich! ✨"); setTimeout(() => setMood('neutral'), 6000); }
+    if (choice === 'rubik') { speak("Cube time! 🧩"); setTimeout(() => setMood('neutral'), 8000); }
   };
   
   useEffect(() => {
@@ -421,7 +428,7 @@ export default function App() {
           napTimer = setTimeout(() => {
               setMood('happy');
               const name = getCurrentName();
-              const msg = isLogan() ? `Yawn! Thanks for letting me sleep, Logan!` : `Yawn! That was a good nap, ${name}!`;
+              const msg = isLogan() ? `Yawn! Thanks for letting me sleep, Logan! 💙` : `Yawn! That was a good nap, ${name}! ✨`;
               speak(msg);
               awardBucks(10, 'sleep_bonus', true, true);
           }, 85000);
@@ -435,37 +442,45 @@ export default function App() {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user || isChaosMode) return;
     
-    if (isTaped) { speak("Mmm. Mmm. Hmph."); return; } 
+    if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
     awardBucks(5, 'talk', false, true); 
     setIsThinking(true); setMood('thinking');
     if (!manual) setInput('');
     
     try {
+      // Save user message
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), { role: 'user', text: msgText, timestamp: Date.now() });
       
-      let reply = "Just vibing!";
+      let reply = "";
       const safeInv = Array.isArray(inventory) ? inventory : [];
-      
       let system = `You are Eilo, a sweet, bratty robot. Creator: Logan Baez. Be sassy.`;
-      if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO!`;
+      if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀`;
       
-      try {
-          const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ contents: [{ parts: [{ text: msgText }] }], systemInstruction: { parts: [{ text: system }] } })
-          });
-          reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
-      } catch (apiErr) {
-          console.error("API Error", apiErr);
-          reply = getLocalResponse(msgText); // Use local brain if API fails
+      if (tempApiKey) {
+          try {
+              const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${tempApiKey}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: msgText }] }], systemInstruction: { parts: [{ text: system }] } })
+              });
+              reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
+          } catch (apiErr) {
+              console.error("API Error", apiErr);
+              reply = getLocalResponse(msgText);
+          }
+      } else {
+          // If no key is provided, use the offline backup brain
+          reply = getLocalResponse(msgText);
       }
 
+      // Save AI message so it shows in the chat
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), { role: 'eilo', text: reply, timestamp: Date.now() });
+      
       setMood('happy'); 
       speak(reply);
     } catch (err) { 
       setMood('neutral'); 
+      console.error(err);
     } finally { 
       setIsThinking(false); 
       setTimeout(() => setMood('neutral'), 3000); 
@@ -534,7 +549,18 @@ export default function App() {
             </div>
             {renderFace()}
         </div>
-        {showSettings && <SettingsOverlay onClose={() => setShowSettings(false)} tempApiKey={tempApiKey} setTempApiKey={setTempApiKey} aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode} isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode} visionEnabled={visionEnabled} startCamera={startCamera} fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights} isInfinityMic={isInfinityMic} toggleMic={toggleMic} bucks={bucks} inventory={inventory} buyItem={buyItem} faceOffset={faceOffset} setFaceOffset={setFaceOffset} speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }} />}
+        {showSettings && <SettingsOverlay 
+            onClose={() => setShowSettings(false)} 
+            tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
+            aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode}
+            isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
+            visionEnabled={visionEnabled} startCamera={startCamera}
+            fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
+            isInfinityMic={isInfinityMic} toggleMic={toggleMic}
+            bucks={bucks} inventory={inventory} buyItem={buyItem}
+            faceOffset={faceOffset} setFaceOffset={setFaceOffset}
+            speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
+        />}
         <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
       </div>
     );
@@ -616,7 +642,18 @@ export default function App() {
         </div>
       </div>
 
-      {showSettings && <SettingsOverlay onClose={() => setShowSettings(false)} tempApiKey={tempApiKey} setTempApiKey={setTempApiKey} aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode} isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode} visionEnabled={visionEnabled} startCamera={startCamera} fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights} isInfinityMic={isInfinityMic} toggleMic={toggleMic} bucks={bucks} inventory={inventory} buyItem={buyItem} faceOffset={faceOffset} setFaceOffset={setFaceOffset} speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }} />}
+      {showSettings && <SettingsOverlay 
+            onClose={() => setShowSettings(false)} 
+            tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
+            aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode}
+            isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
+            visionEnabled={visionEnabled} startCamera={startCamera}
+            fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
+            isInfinityMic={isInfinityMic} toggleMic={toggleMic}
+            bucks={bucks} inventory={inventory} buyItem={buyItem}
+            faceOffset={faceOffset} setFaceOffset={setFaceOffset}
+            speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
+        />}
       <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
     </div>
   );

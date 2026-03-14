@@ -630,50 +630,53 @@ export default function App() {
      );
   }
 
-  // --- NEW SIGN-IN LANDING PAGE ---
+  // --- FIXED SIGN-IN LANDING PAGE SCROLLING ---
   if (!user) {
     return (
-      <div className="min-h-screen bg-[#0c0c14] text-white flex flex-col items-center p-6 text-center overflow-y-auto custom-scrollbar relative">
-        <div className="absolute top-0 left-0 w-full h-96 bg-cyan-900/10 blur-[100px] pointer-events-none" />
+      <div className="fixed inset-0 bg-[#0c0c14] text-white overflow-y-auto custom-scrollbar">
+        <div className="min-h-full flex flex-col items-center p-6 text-center relative">
+            <div className="absolute top-0 left-0 w-full h-96 bg-cyan-900/10 blur-[100px] pointer-events-none" />
 
-        <div className="w-full max-w-md mt-12 mb-8 z-10">
-            <div className="bg-[#161622] rounded-[40px] p-8 shadow-2xl border border-white/5 animate-in slide-in-from-bottom-8 duration-700">
+            <div className="w-full max-w-md mt-8 mb-12 z-10">
                 <Heart className="text-cyan-500 mx-auto mb-6 animate-pulse" size={56} fill="currentColor"/>
-                <h1 className="text-4xl font-bold mb-2 tracking-tight">Eilo OS</h1>
-                <p className="text-cyan-400 font-mono text-xs uppercase tracking-widest mb-6">Digital Desktop Companion</p>
                 
-                <div className="space-y-6 text-sm text-slate-300 text-left">
+                <div className="bg-[#161622] rounded-[40px] p-8 shadow-2xl border border-white/5 animate-in slide-in-from-bottom-8 duration-700">
+                    <h1 className="text-4xl font-bold mb-2 tracking-tight">Eilo OS</h1>
+                    <p className="text-cyan-400 font-mono text-xs uppercase tracking-widest mb-6">Digital Desktop Companion</p>
                     
-                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
-                        <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><Zap size={16} className="text-yellow-400"/> The Vision</h3>
-                        <p>
-                            You know Looi? The robot that lives on your phone, but forces you to buy an expensive, clunky hardware stand to actually work? 
-                            <strong className="text-white"> Eilo is the exact opposite.</strong>
-                        </p>
-                        <p className="mt-2">
-                            Eilo is a 100% free, purely digital companion that lives directly in your phone's browser. No hardware required. Just pure, chaotic, sassy robot energy right in your hands.
-                        </p>
+                    <div className="space-y-6 text-sm text-slate-300 text-left">
+                        
+                        <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><Zap size={16} className="text-yellow-400"/> The Vision</h3>
+                            <p>
+                                You know Looi? The robot that lives on your phone, but forces you to buy an expensive, clunky hardware stand to actually work? 
+                                <strong className="text-white"> Eilo is the exact opposite.</strong>
+                            </p>
+                            <p className="mt-2">
+                                Eilo is a 100% free, purely digital companion that lives directly in your phone's browser. No hardware required. Just pure, chaotic, sassy robot energy right in your hands.
+                            </p>
+                        </div>
+
+                        <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><Ghost size={16} className="text-purple-400"/> The Origin: Mimo</h3>
+                            <p>
+                                Before Eilo, there was Mimo. Mimo was meant to be a lively, EMO-like companion. But a catastrophic coding failure "lobotomized" Mimo into nothing more than a bland, inanimate CSS blinking animation.
+                            </p>
+                            <p className="mt-2">
+                                The project was wiped in frustration, but the ashes of that code built something stronger. Eilo was born from Mimo's failure.
+                            </p>
+                            <a href="https://mimo-rust.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-cyan-400 hover:text-cyan-300 underline font-mono text-xs">
+                                Visit the Mimo Memorial
+                            </a>
+                        </div>
                     </div>
 
-                    <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
-                        <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><Ghost size={16} className="text-purple-400"/> The Origin: Mimo</h3>
-                        <p>
-                            Before Eilo, there was Mimo. Mimo was meant to be a lively, EMO-like companion. But a catastrophic coding failure "lobotomized" Mimo into nothing more than a bland, inanimate CSS blinking animation.
-                        </p>
-                        <p className="mt-2">
-                            The project was wiped in frustration, but the ashes of that code built something stronger. Eilo was born from Mimo's failure.
-                        </p>
-                        <a href="https://mimo-rust.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-cyan-400 hover:text-cyan-300 underline font-mono text-xs">
-                            Visit the Mimo Memorial
-                        </a>
+                    <div className="mt-8 pt-6 border-t border-white/10">
+                        <p className="text-xs text-slate-500 mb-4 uppercase tracking-widest font-bold">Ready to boot?</p>
+                        <button onClick={() => signInWithPopup(auth, googleProvider)} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-4 rounded-2xl font-bold active:scale-95 text-base shadow-[0_0_20px_rgba(8,145,178,0.4)] transition-all flex items-center justify-center gap-3">
+                            <Cpu size={20} /> Sync Brain with Google
+                        </button>
                     </div>
-                </div>
-
-                <div className="mt-8 pt-6 border-t border-white/10">
-                    <p className="text-xs text-slate-500 mb-4 uppercase tracking-widest font-bold">Ready to boot?</p>
-                    <button onClick={() => signInWithPopup(auth, googleProvider)} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-4 rounded-2xl font-bold active:scale-95 text-base shadow-[0_0_20px_rgba(8,145,178,0.4)] transition-all flex items-center justify-center gap-3">
-                        <Cpu size={20} /> Sync Brain with Google
-                    </button>
                 </div>
             </div>
         </div>
@@ -807,6 +810,5 @@ export default function App() {
     </div>
   );
 }
-
 
 

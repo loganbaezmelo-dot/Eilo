@@ -187,10 +187,12 @@ export default function App() {
   const hasRogueLegs = Array.isArray(inventory) ? inventory.includes('rogue_walk') : false;
 
   useEffect(() => {
+    if (!user) return; // Prevent resize logic when logged out
     const handleResize = () => {
         const landscape = window.innerWidth > window.innerHeight;
         if (landscape !== isLandscape) {
             setIsLandscape(landscape);
+            setIsRogueWalking(false);
             if (isChaosMode) {
                 setIsConfused(true);
                 speak("Whoa! World flip! Where's the button?!");
@@ -200,7 +202,7 @@ export default function App() {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [isLandscape, isChaosMode]);
+  }, [isLandscape, isChaosMode, user]);
 
   useEffect(() => {
     if (!user) return;
@@ -231,6 +233,7 @@ export default function App() {
   };
 
   useEffect(() => {
+      if (!user) return; // Disable mic if not logged in
       let recognition = null;
       if (isInfinityMic) {
           const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -260,10 +263,10 @@ export default function App() {
               recognition.stop();
           }
       };
-  }, [isInfinityMic]);
+  }, [isInfinityMic, user]);
 
   const speak = (text, isRobotLang = false) => {
-    if (isMuted || !isAwake) return;
+    if (isMuted || !isAwake || !user) return; // Prevent speaking when logged out
     setIsSpeaking(true);
     window.speechSynthesis.cancel();
     
@@ -326,6 +329,7 @@ export default function App() {
   };
 
   const buyItem = async (cost, itemId) => {
+    if (!user) return;
     const currentInv = Array.isArray(inventory) ? inventory : [];
     if (bucks >= cost && !currentInv.includes(itemId)) {
         const newTotal = bucks - cost;
@@ -349,6 +353,7 @@ export default function App() {
   };
 
   const handleFaceClick = (e) => {
+    if (!user) return;
     e.stopPropagation();
     const currentInv = Array.isArray(inventory) ? inventory : [];
     if (!isChaosMode && currentInv.includes('duct_tape')) {
@@ -357,6 +362,7 @@ export default function App() {
   };
 
   const applyDuctTape = () => {
+      if (!user) return;
       const newState = !isTaped;
       setIsTaped(newState);
       setShowFacePopup(false);
@@ -374,6 +380,7 @@ export default function App() {
   };
 
   useEffect(() => {
+    if (!user) return; // Prevent chaos movement if not logged in
     const shouldMove = isChaosMode || hasRogueLegs;
     if (!shouldMove) {
       setChaosPos({ x: 0, y: 0 });
@@ -426,12 +433,15 @@ export default function App() {
         if (glitchInterval) clearInterval(glitchInterval); 
         if (blockTimeout) clearTimeout(blockTimeout); 
     };
-  }, [isChaosMode, hasRogueLegs, isConfused, isTaped]);
+  }, [isChaosMode, hasRogueLegs, isConfused, isTaped, user]);
 
-  const handleBlockedClick = (e) => { e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); };
+  const handleBlockedClick = (e) => { 
+      if (!user) return;
+      e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); 
+  };
 
   const handlePet = () => {
-    if (!isAwake) return;
+    if (!isAwake || !user) return;
     const now = Date.now();
     if (now - lastPetTime.current < 2000) return;
     lastPetTime.current = now;
@@ -455,7 +465,7 @@ export default function App() {
 
   useEffect(() => {
     const handleMotion = (event) => {
-        if (!isAwake || isChaosMode) return;
+        if (!user || !isAwake || isChaosMode) return; // Prevent motion sensing if not logged in
         const acc = event.accelerationIncludingGravity;
         if (!acc) return;
         if (Math.abs(acc.x) > 35 || Math.abs(acc.y) > 35) {
@@ -466,7 +476,7 @@ export default function App() {
     };
     window.addEventListener('devicemotion', handleMotion);
     return () => window.removeEventListener('devicemotion', handleMotion);
-  }, [isAwake, mood, isChaosMode]);
+  }, [isAwake, mood, isChaosMode, user]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -504,6 +514,7 @@ export default function App() {
   }, []);
 
   const triggerIdleAction = () => {
+    if (!user) return; // Prevent idle actions if logged out
     const currentInv = Array.isArray(inventory) ? inventory : [];
     if (!isAwake || isThinking || isSpeaking || mood !== 'neutral' || isTaped) return;
     const actions = ['sleeping', 'eating', 'rubik'];
@@ -518,6 +529,7 @@ export default function App() {
   };
   
   useEffect(() => {
+      if (!user) return; // Prevent timers if not logged in
       let napTimer;
       if (mood === 'sleeping' && isAwake) {
           napTimer = setTimeout(() => {
@@ -531,7 +543,7 @@ export default function App() {
           idleTimerRef.current = setInterval(triggerIdleAction, 15000);
       }
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
-  }, [isAwake, isChaosMode, hasRogueLegs, inventory, isTaped, mood]);
+  }, [isAwake, isChaosMode, hasRogueLegs, inventory, isTaped, mood, user]);
 
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();

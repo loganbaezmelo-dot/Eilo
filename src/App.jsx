@@ -42,7 +42,6 @@ const SettingsOverlay = ({
   fearOfHeights, setFearOfHeights, toggleMic, isInfinityMic, speak, 
   bucks, inventory, buyItem, faceOffset, setFaceOffset, handleSignOut 
 }) => {
-  // Safe array check to prevent mapping errors
   const safeInv = Array.isArray(inventory) ? inventory : [];
 
   return (
@@ -52,7 +51,7 @@ const SettingsOverlay = ({
         <h2 className="text-xl font-bold mb-6 flex items-center justify-center gap-2 text-white">Settings <Sparkles className="text-cyan-400" size={20}/></h2>
         <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-6 pb-6 text-left">
             
-            {/* STORE - USING ONLY EMOJIS TO PREVENT CRASHES */}
+            {/* STORE */}
             <div>
                <p className="text-[10px] uppercase font-bold text-yellow-500 mb-3 px-1 flex items-center gap-2">🛍️ Eilo Store (Balance: {bucks})</p>
                <div className="space-y-2">
@@ -100,7 +99,6 @@ const SettingsOverlay = ({
                 </div>
             </div>
 
-            {/* AI KEY RESTORED HERE WITH DESCRIPTION */}
             <div className="space-y-2">
               <div className="px-1">
                 <p className="text-[10px] uppercase font-bold text-slate-400">🔑 AI Key (Brain)</p>
@@ -153,7 +151,6 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
-  // Economy & Inventory local fallback
   const initialBucks = parseInt(localStorage.getItem('eilo_bucks')) || 0;
   const initialInvRaw = localStorage.getItem('eilo_inventory');
   const initialInv = initialInvRaw ? JSON.parse(initialInvRaw) : [];
@@ -163,24 +160,19 @@ export default function App() {
   const [sessionClaims, setSessionClaims] = useState({ login: false, talk: false });
   const [faceOffset, setFaceOffset] = useState(0);
 
-  // Duct Tape Logic
   const [isTaped, setIsTaped] = useState(false);
   const [showFacePopup, setShowFacePopup] = useState(false);
 
-  // Chaos & Modes
   const [isChaosMode, setIsChaosMode] = useState(false);
-  const [isRogueWalking, setIsRogueWalking] = useState(false);
   const [chaosPos, setChaosPos] = useState({ x: 0, y: 0 });
   const [glitchLines, setGlitchLines] = useState([]);
   const [isHandBlocking, setIsHandBlocking] = useState(false);
   const [isConfused, setIsConfused] = useState(false);
   const [aiAgentMode, setAiAgentMode] = useState(false);
 
-  // Sensors
   const [fearOfHeights, setFearOfHeights] = useState(localStorage.getItem('eilo_heights') !== 'false');
   const [isInfinityMic, setIsInfinityMic] = useState(false);
   const [visionEnabled, setVisionEnabled] = useState(false);
-  const [cameraState, setCameraState] = useState('desk'); 
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -188,16 +180,18 @@ export default function App() {
   const lastPetTime = useRef(0);
   const hasGreeted = useRef(false);
   const idleTimerRef = useRef(null);
+  const recognitionRef = useRef(null);
 
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
+  
+  // Rogue Legs Check
+  const hasRogueLegs = Array.isArray(inventory) ? inventory.includes('rogue_walk') : false;
 
-  // Handle Orientation
   useEffect(() => {
     const handleResize = () => {
         const landscape = window.innerWidth > window.innerHeight;
         if (landscape !== isLandscape) {
             setIsLandscape(landscape);
-            setIsRogueWalking(false);
             if (isChaosMode) {
                 setIsConfused(true);
                 speak("Whoa! World flip! Where's the button?!");
@@ -209,7 +203,6 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isLandscape, isChaosMode]);
 
-  // Load chat history safely
   useEffect(() => {
     if (!user) return;
     const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), (snapshot) => {
@@ -222,12 +215,60 @@ export default function App() {
     return () => unsubscribe();
   }, [user]);
 
+  // --- INFINITY MIC LOGIC ---
+  const toggleMic = () => {
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+      if (!SpeechRecognition) {
+          speak("My ears are broken! Your browser doesn't support mic input.");
+          return;
+      }
+      const newState = !isInfinityMic;
+      setIsInfinityMic(newState);
+      if (newState) {
+          speak("Ears open! I'm listening... ✨");
+      } else {
+          speak("Ears closed! 🧸");
+          if (recognitionRef.current) recognitionRef.current.stop();
+      }
+  };
+
+  useEffect(() => {
+      let recognition = null;
+      if (isInfinityMic) {
+          const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+          if (SpeechRecognition) {
+              recognition = new SpeechRecognition();
+              recognition.continuous = false;
+              recognition.interimResults = false;
+
+              recognition.onresult = (e) => {
+                  const transcript = e.results[e.results.length - 1][0].transcript;
+                  handleSend(transcript); // Send what was heard directly to the AI
+              };
+              
+              recognition.onend = () => {
+                  if (isInfinityMic) {
+                      try { recognition.start(); } catch(err) {}
+                  }
+              };
+              
+              try { recognition.start(); } catch(err) {}
+              recognitionRef.current = recognition;
+          }
+      }
+      return () => {
+          if (recognition) {
+              recognition.onend = null;
+              recognition.stop();
+          }
+      };
+  }, [isInfinityMic]);
+
   const speak = (text, isRobotLang = false) => {
     if (isMuted || !isAwake) return;
     setIsSpeaking(true);
     window.speechSynthesis.cancel();
     
-    // Tape Override Logic
     let finalText = text;
     if (isTaped) {
         finalText = "Mmm. Mmm. Hmph."; 
@@ -268,14 +309,13 @@ export default function App() {
     return randoms[Math.floor(Math.random() * randoms.length)];
   };
 
-  // --- ECONOMY (Firebase + LocalStorage Sync) ---
   const awardBucks = async (amount, type, repeatable = false, silent = false) => {
     if (!user) return;
     if (!repeatable && sessionClaims[type]) return;
     
     const newTotal = bucks + amount;
     setBucks(newTotal);
-    localStorage.setItem('eilo_bucks', newTotal.toString()); // Local Fallback
+    localStorage.setItem('eilo_bucks', newTotal.toString()); 
     
     if (!repeatable) setSessionClaims(prev => ({ ...prev, [type]: true }));
     
@@ -283,7 +323,7 @@ export default function App() {
         const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'core');
         await setDoc(userRef, { bucks: newTotal }, { merge: true });
     } catch (err) {
-        console.warn("Cloud save failed, using local economy storage");
+        console.warn("Cloud save failed, economy secured locally.");
     }
     
     if (!silent) speak(`Cha-ching! +${amount} Bucks! ✨`);
@@ -315,7 +355,6 @@ export default function App() {
   const handleFaceClick = (e) => {
     e.stopPropagation();
     const currentInv = Array.isArray(inventory) ? inventory : [];
-    // Only show if user owns duct tape and chaos is OFF
     if (!isChaosMode && currentInv.includes('duct_tape')) {
         setShowFacePopup(true);
     }
@@ -338,17 +377,24 @@ export default function App() {
       }
   };
 
-  // --- CHAOS & BLOCKING ---
+  // --- CHAOS & ROGUE MOVEMENT LOGIC ---
   useEffect(() => {
-    if (!isChaosMode) {
+    const shouldMove = isChaosMode || hasRogueLegs;
+    if (!shouldMove) {
       setChaosPos({ x: 0, y: 0 });
       setIsHandBlocking(false);
       return;
     }
+
     if (isConfused) { setIsHandBlocking(false); return; }
 
-    if (isTaped) { speak("Mmm. Mmm. Hmph."); } 
-    else { speak("Wheee! Running away! 🎈✨"); }
+    if (isChaosMode) {
+        if (isTaped) speak("Mmm. Mmm. Hmph."); 
+        else speak("Wheee! Running away! 🎈✨");
+    }
+
+    // Rogue Legs make her walk slower. Chaos makes her erratic.
+    const moveSpeed = isTaped ? 100 : (isChaosMode ? 1700 : 3500);
 
     const moveInterval = setInterval(() => {
       if (isTaped) {
@@ -356,41 +402,48 @@ export default function App() {
       } else {
         setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (Math.random() - 0.5) * (window.innerHeight * 0.5) });
       }
-    }, isTaped ? 100 : 1700); 
+    }, moveSpeed); 
 
-    const glitchInterval = setInterval(() => {
-      const pool = isTaped 
-        ? ["ERROR: MOVEMENT_RESTRICTED", "DUCT_TAPE_DETECTED", "LEG_FAILURE"]
-        : ["Eilo.run()", "VOID_LEAK", "Logan.GOAT", "UI_STOMPED"];
-      setGlitchLines(Array.from({length: 6}, () => pool[Math.floor(Math.random() * pool.length)]));
-    }, 200);
+    let glitchInterval, blockTimeout;
+    
+    // Only throw glitches and block the screen if FULL Chaos mode is on
+    if (isChaosMode) {
+        glitchInterval = setInterval(() => {
+          const pool = isTaped 
+            ? ["ERROR: MOVEMENT_RESTRICTED", "DUCT_TAPE_DETECTED", "LEG_FAILURE"]
+            : ["Eilo.run()", "VOID_LEAK", "Logan.GOAT", "UI_STOMPED"];
+          setGlitchLines(Array.from({length: 6}, () => pool[Math.floor(Math.random() * pool.length)]));
+        }, 200);
 
-    let blockTimeout;
-    const startBlockingCycle = () => {
-        setIsHandBlocking(true);
-        blockTimeout = setTimeout(() => {
-            setIsHandBlocking(false);
-            speak("Phew... tired... 🧸");
+        const startBlockingCycle = () => {
+            setIsHandBlocking(true);
             blockTimeout = setTimeout(() => {
-                if (!isConfused) { speak("Blocked again! 🎀"); startBlockingCycle(); }
-            }, 3500);
-        }, 45000);
-    };
-    if (!isHandBlocking && !isTaped) startBlockingCycle();
+                setIsHandBlocking(false);
+                speak("Phew... tired... 🧸");
+                blockTimeout = setTimeout(() => {
+                    if (!isConfused) { speak("Blocked again! 🎀"); startBlockingCycle(); }
+                }, 3500);
+            }, 45000);
+        };
+        if (!isHandBlocking && !isTaped) startBlockingCycle();
+    }
 
-    return () => { clearInterval(moveInterval); clearInterval(glitchInterval); clearTimeout(blockTimeout); };
-  }, [isChaosMode, isConfused, isTaped]);
+    return () => { 
+        clearInterval(moveInterval); 
+        if (glitchInterval) clearInterval(glitchInterval); 
+        if (blockTimeout) clearTimeout(blockTimeout); 
+    };
+  }, [isChaosMode, hasRogueLegs, isConfused, isTaped]);
 
   const handleBlockedClick = (e) => { e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); };
 
-  // --- PET ---
   const handlePet = () => {
     if (!isAwake) return;
     const now = Date.now();
     if (now - lastPetTime.current < 2000) return;
     lastPetTime.current = now;
 
-    awardBucks(5, 'pet', true, true); // Silent
+    awardBucks(5, 'pet', true, true); 
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; } 
     if (isChaosMode) { speak("Can't stop, running! 🎈"); return; }
@@ -407,7 +460,6 @@ export default function App() {
     setTimeout(() => setMood('neutral'), 3000);
   };
 
-  // --- SENSORS & VISION ---
   useEffect(() => {
     const handleMotion = (event) => {
         if (!isAwake || isChaosMode) return;
@@ -423,7 +475,6 @@ export default function App() {
     return () => window.removeEventListener('devicemotion', handleMotion);
   }, [isAwake, mood, isChaosMode]);
 
-  // --- AUTH & DATA ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setLoading(false); 
@@ -483,13 +534,12 @@ export default function App() {
               speak(msg);
               awardBucks(10, 'sleep_bonus', true, true);
           }, 85000);
-      } else if(isAwake && !isChaosMode && !isRogueWalking && !isTaped) {
+      } else if(isAwake && !isChaosMode && !hasRogueLegs && !isTaped) {
           idleTimerRef.current = setInterval(triggerIdleAction, 15000);
       }
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
-  }, [isAwake, isChaosMode, isRogueWalking, inventory, isTaped, mood]);
+  }, [isAwake, isChaosMode, hasRogueLegs, inventory, isTaped, mood]);
 
-  // --- OFFLINE RESILIENT CHAT ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user || isChaosMode) return;
@@ -504,7 +554,6 @@ export default function App() {
     const newUserMsg = { role: 'user', text: msgText, timestamp: Date.now() };
 
     try {
-      // 1. Try saving user message to Cloud. If it fails, append to local state so the UI updates.
       try {
           await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       } catch (dbErr) {
@@ -517,7 +566,6 @@ export default function App() {
       let system = `You are Eilo, a sweet, bratty robot. Creator: Logan Baez. Be sassy.`;
       if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀`;
       
-      // 2. Try fetching from AI if there's a key. Otherwise use local fallback immediately.
       if (tempApiKey) {
           try {
               const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${tempApiKey}`, {
@@ -535,7 +583,6 @@ export default function App() {
 
       const newAiMsg = { role: 'eilo', text: reply, timestamp: Date.now() };
 
-      // 3. Try saving AI message to Cloud. If it fails, append to local state.
       try {
           await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       } catch (dbErr) {
@@ -579,9 +626,6 @@ export default function App() {
 
   const startCamera = async () => { try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); if (videoRef.current) videoRef.current.srcObject = stream; setVisionEnabled(true); speak("Eyes open! ✨"); } catch (err) { console.error("Camera error"); } };
 
-  const toggleMic = () => { speak("Mic toggle pressed"); }; 
-
-  // --- BOOT LOADER ---
   if (loading) {
      return (
        <div className="fixed inset-0 bg-[#0c0c14] flex items-center justify-center">
@@ -605,7 +649,6 @@ export default function App() {
     );
   }
 
-  // --- LANDSCAPE ---
   if (isLandscape && !isChaosMode) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden">
@@ -643,7 +686,7 @@ export default function App() {
 
       {/* TOP ZONE */}
       <div className="w-full max-w-sm px-6 pt-4 flex justify-between items-center z-10">
-        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v3.0</div>
+        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v3.1</div>
         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}
         </div>
@@ -659,17 +702,21 @@ export default function App() {
                 {glitchLines.map((line, i) => <div key={i} className="mb-0.5">{line} {Math.random().toFixed(2)}</div>)}
                 {isTaped && <div className="mt-4 text-red-500 font-bold animate-pulse text-lg border border-red-500 p-2">CRITICAL: LEGS_DISABLED</div>}
               </div>
-           ) : (
+           ) : (!hasRogueLegs ? (
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
                <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity"><Settings size={20}/></button>
              </div>
-           )}
+           ) : (
+             <div className="w-full h-full flex items-center justify-center opacity-20 text-[10px] text-cyan-500 font-mono uppercase">
+               Eilo is roaming...
+             </div>
+           ))}
         </div>
       </div>
 
       {/* ROGUE / CHAOS FACE */}
-      {(isChaosMode || isRogueWalking) && (
+      {(isChaosMode || hasRogueLegs) && (
         <div style={{ transform: `translate(${chaosPos.x}px, ${chaosPos.y}px)`, transition: isTaped ? 'transform 0.1s linear' : 'transform 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)', position: 'fixed', top: '50%', left: '50%', marginTop: '-120px', marginLeft: '-40%', width: '80%', height: '14rem', zIndex: 1000 }} className="bg-[#161622] border-2 border-cyan-500/30 rounded-[50px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto">
           <div className="absolute -bottom-16 left-0 w-full flex justify-around px-12">
             <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce'}`} />

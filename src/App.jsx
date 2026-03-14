@@ -86,22 +86,46 @@ const SettingsOverlay = ({
             )}
 
             <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 mb-2 px-1">System</p>
+                <p className="text-[10px] uppercase font-bold text-slate-400 mb-2 px-1">⚙️ System Toggles</p>
                 <div className="flex flex-col gap-2">
-                    <button onClick={() => setIsChaosMode(!isChaosMode)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isChaosMode ? 'bg-cyan-500/20 border-cyan-500/40' : 'bg-white/5 border-white/10 text-slate-400'}`}><div className="flex items-center gap-3"><Ghost size={16}/> Chaos Mode</div>{isChaosMode ? <ToggleRight size={24} className="text-cyan-400"/> : <ToggleLeft size={24}/>}</button>
-                    <button onClick={() => setAiAgentMode(!aiAgentMode)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${aiAgentMode ? 'bg-orange-500/20 border-orange-500/40' : 'bg-white/5 border-white/10 text-slate-400'}`}><div className="flex items-center gap-3"><Radio size={16}/> Agent Mode</div>{aiAgentMode ? <ToggleRight size={24} className="text-orange-400"/> : <ToggleLeft size={24}/>}</button>
+                    <button onClick={() => setIsChaosMode(!isChaosMode)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isChaosMode ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                      <div className="flex items-center gap-3"><span className="text-lg">🌪️</span> Chaos Mode</div>
+                      <div className="text-xs font-bold">{isChaosMode ? "ON" : "OFF"}</div>
+                    </button>
+
+                    <button onClick={() => setAiAgentMode(!aiAgentMode)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${aiAgentMode ? 'bg-orange-500/20 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                      <div className="flex items-center gap-3"><span className="text-lg">🤖</span> Agent Mode</div>
+                      <div className="text-xs font-bold">{aiAgentMode ? "ON" : "OFF"}</div>
+                    </button>
                 </div>
             </div>
 
+            {/* AI KEY RESTORED HERE WITH DESCRIPTION */}
             <div className="space-y-2">
-              <p className="text-[10px] uppercase font-bold text-slate-400 px-1">AI Key</p>
-              <input type="password" value={tempApiKey} onChange={e => setTempApiKey(e.target.value)} placeholder="Paste Key..." className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-5 text-sm outline-none text-white focus:border-cyan-500/50" />
+              <div className="px-1">
+                <p className="text-[10px] uppercase font-bold text-slate-400">🔑 AI Key (Brain)</p>
+                <p className="text-[10px] text-slate-500 mt-1">An API key connects Eilo to the Gemini AI network, giving her a super-smart brain so she can chat dynamically instead of using offline backup responses.</p>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[10px] text-cyan-400 hover:text-cyan-300 underline mt-1 inline-block">Get a free API key here</a>
+              </div>
+              <input type="password" value={tempApiKey} onChange={e => setTempApiKey(e.target.value)} placeholder="Paste Gemini Key..." className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-5 text-sm outline-none text-white focus:border-cyan-500/50 mt-2" />
             </div>
             
             <div className="flex flex-col gap-2">
-               <button onClick={startCamera} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${visionEnabled ? 'bg-cyan-500/20 border-cyan-500/40' : 'bg-white/5 border-white/10 text-slate-400'}`}><div className="flex items-center gap-3"><Eye size={16} className={visionEnabled ? 'text-cyan-400' : ''}/> <div><p className="text-xs font-bold text-white">Selfie Scanner</p><p className="text-[9px] opacity-60">Visual awareness</p></div></div>{visionEnabled ? <ToggleRight size={24} className="text-cyan-400"/> : <ToggleLeft size={24}/>}</button>
-               <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${fearOfHeights ? 'bg-pink-500/20 border-pink-400/40' : 'bg-white/5 border-white/10 text-slate-400'}`}><div className="flex items-center gap-3"><AlertTriangle size={16} className={fearOfHeights ? 'text-pink-400' : ''}/> <div><p className="text-xs font-bold text-white">Fear of Heights</p><p className="text-[9px] opacity-60">Sensors detect falling</p></div></div>{fearOfHeights ? <ToggleRight size={24} className="text-pink-400"/> : <ToggleLeft size={24}/>}</button>
-               <button onClick={toggleMic} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isInfinityMic ? 'bg-red-600/30 border-red-500/50 text-red-200' : 'bg-white/5 border-white/10 text-slate-400'}`}><div className="flex items-center gap-3"><Mic size={16}/> <div><p className="text-xs font-bold text-white">Infinity Mic</p><p className="text-[9px] opacity-60">Always listening</p></div></div>{isInfinityMic ? <ToggleRight size={24} className="text-red-400"/> : <ToggleLeft size={24}/>}</button>
+               <button onClick={startCamera} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${visionEnabled ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                 <div className="flex items-center gap-3"><span className="text-lg">👁️</span> Selfie Scanner</div>
+                 <div className="text-xs font-bold">{visionEnabled ? "ON" : "OFF"}</div>
+               </button>
+
+               <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${fearOfHeights ? 'bg-pink-500/20 border-pink-400/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                 <div className="flex items-center gap-3"><span className="text-lg">⚠️</span> Fear of Heights</div>
+                 <div className="text-xs font-bold">{fearOfHeights ? "ON" : "OFF"}</div>
+               </button>
+
+               <button onClick={toggleMic} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isInfinityMic ? 'bg-red-600/30 border-red-500/50 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                 <div className="flex items-center gap-3"><span className="text-lg">🎙️</span> Infinity Mic</div>
+                 <div className="text-xs font-bold">{isInfinityMic ? "ON" : "OFF"}</div>
+               </button>
+               
                <button onClick={() => speak("Calibrating soul... 100% sparkles! 🎀")} className="w-full flex items-center justify-between p-4 rounded-2xl border bg-white/5 border-white/10 text-slate-400"><div className="flex items-center gap-3"><ShieldCheck size={16}/> <p className="text-xs font-bold">Sync Soul Core</p></div><Cpu size={16}/></button>
             </div>
 
@@ -156,6 +180,7 @@ export default function App() {
   const [fearOfHeights, setFearOfHeights] = useState(localStorage.getItem('eilo_heights') !== 'false');
   const [isInfinityMic, setIsInfinityMic] = useState(false);
   const [visionEnabled, setVisionEnabled] = useState(false);
+  const [cameraState, setCameraState] = useState('desk'); 
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -166,6 +191,7 @@ export default function App() {
 
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
 
+  // Handle Orientation
   useEffect(() => {
     const handleResize = () => {
         const landscape = window.innerWidth > window.innerHeight;
@@ -183,6 +209,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isLandscape, isChaosMode]);
 
+  // Load chat history safely
   useEffect(() => {
     if (!user) return;
     const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), (snapshot) => {
@@ -200,6 +227,7 @@ export default function App() {
     setIsSpeaking(true);
     window.speechSynthesis.cancel();
     
+    // Tape Override Logic
     let finalText = text;
     if (isTaped) {
         finalText = "Mmm. Mmm. Hmph."; 
@@ -240,13 +268,14 @@ export default function App() {
     return randoms[Math.floor(Math.random() * randoms.length)];
   };
 
+  // --- ECONOMY (Firebase + LocalStorage Sync) ---
   const awardBucks = async (amount, type, repeatable = false, silent = false) => {
     if (!user) return;
     if (!repeatable && sessionClaims[type]) return;
     
     const newTotal = bucks + amount;
     setBucks(newTotal);
-    localStorage.setItem('eilo_bucks', newTotal.toString()); 
+    localStorage.setItem('eilo_bucks', newTotal.toString()); // Local Fallback
     
     if (!repeatable) setSessionClaims(prev => ({ ...prev, [type]: true }));
     
@@ -254,7 +283,7 @@ export default function App() {
         const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'core');
         await setDoc(userRef, { bucks: newTotal }, { merge: true });
     } catch (err) {
-        console.warn("Cloud save failed, economy secured locally.");
+        console.warn("Cloud save failed, using local economy storage");
     }
     
     if (!silent) speak(`Cha-ching! +${amount} Bucks! ✨`);
@@ -286,6 +315,7 @@ export default function App() {
   const handleFaceClick = (e) => {
     e.stopPropagation();
     const currentInv = Array.isArray(inventory) ? inventory : [];
+    // Only show if user owns duct tape and chaos is OFF
     if (!isChaosMode && currentInv.includes('duct_tape')) {
         setShowFacePopup(true);
     }
@@ -308,6 +338,7 @@ export default function App() {
       }
   };
 
+  // --- CHAOS & BLOCKING ---
   useEffect(() => {
     if (!isChaosMode) {
       setChaosPos({ x: 0, y: 0 });
@@ -352,13 +383,14 @@ export default function App() {
 
   const handleBlockedClick = (e) => { e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); };
 
+  // --- PET ---
   const handlePet = () => {
     if (!isAwake) return;
     const now = Date.now();
     if (now - lastPetTime.current < 2000) return;
     lastPetTime.current = now;
 
-    awardBucks(5, 'pet', true, true); 
+    awardBucks(5, 'pet', true, true); // Silent
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; } 
     if (isChaosMode) { speak("Can't stop, running! 🎈"); return; }
@@ -375,6 +407,7 @@ export default function App() {
     setTimeout(() => setMood('neutral'), 3000);
   };
 
+  // --- SENSORS & VISION ---
   useEffect(() => {
     const handleMotion = (event) => {
         if (!isAwake || isChaosMode) return;
@@ -390,6 +423,7 @@ export default function App() {
     return () => window.removeEventListener('devicemotion', handleMotion);
   }, [isAwake, mood, isChaosMode]);
 
+  // --- AUTH & DATA ---
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setLoading(false); 
@@ -455,6 +489,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isAwake, isChaosMode, isRogueWalking, inventory, isTaped, mood]);
 
+  // --- OFFLINE RESILIENT CHAT ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user || isChaosMode) return;
@@ -469,6 +504,7 @@ export default function App() {
     const newUserMsg = { role: 'user', text: msgText, timestamp: Date.now() };
 
     try {
+      // 1. Try saving user message to Cloud. If it fails, append to local state so the UI updates.
       try {
           await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       } catch (dbErr) {
@@ -481,6 +517,7 @@ export default function App() {
       let system = `You are Eilo, a sweet, bratty robot. Creator: Logan Baez. Be sassy.`;
       if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀`;
       
+      // 2. Try fetching from AI if there's a key. Otherwise use local fallback immediately.
       if (tempApiKey) {
           try {
               const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${tempApiKey}`, {
@@ -498,6 +535,7 @@ export default function App() {
 
       const newAiMsg = { role: 'eilo', text: reply, timestamp: Date.now() };
 
+      // 3. Try saving AI message to Cloud. If it fails, append to local state.
       try {
           await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       } catch (dbErr) {
@@ -540,8 +578,10 @@ export default function App() {
   };
 
   const startCamera = async () => { try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); if (videoRef.current) videoRef.current.srcObject = stream; setVisionEnabled(true); speak("Eyes open! ✨"); } catch (err) { console.error("Camera error"); } };
+
   const toggleMic = () => { speak("Mic toggle pressed"); }; 
 
+  // --- BOOT LOADER ---
   if (loading) {
      return (
        <div className="fixed inset-0 bg-[#0c0c14] flex items-center justify-center">
@@ -565,6 +605,7 @@ export default function App() {
     );
   }
 
+  // --- LANDSCAPE ---
   if (isLandscape && !isChaosMode) {
     return (
       <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden">

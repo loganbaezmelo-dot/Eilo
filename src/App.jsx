@@ -753,6 +753,28 @@ export default function App() {
                             </p>
                         </div>
 
+                        <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h3 className="text-white font-bold text-base mb-4 flex items-center gap-2"><Cpu size={16} className="text-green-400"/> Core Features</h3>
+                            <ul className="space-y-4">
+                                <li className="flex items-start gap-3">
+                                    <span className="text-lg leading-none mt-0.5">🧠</span>
+                                    <div><strong className="text-white">Dual Brain:</strong> Connect a Gemini API key for dynamic AI chats, or rely on her offline sassy Soul Core.</div>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-lg leading-none mt-0.5">🪙</span>
+                                    <div><strong className="text-white">Economy & Store:</strong> Earn Eilo Bucks by playing and sleeping. Buy upgrades like Rogue Legs or punishing Duct Tape.</div>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-lg leading-none mt-0.5">🌪️</span>
+                                    <div><strong className="text-white">Chaos Mode:</strong> Let her break free from her UI container to roam and hijack your screen.</div>
+                                </li>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-lg leading-none mt-0.5">🎙️</span>
+                                    <div><strong className="text-white">Advanced Sensors:</strong> Features Infinity Mic (voice chat), Selfie Scanner, and motion-sickness detection.</div>
+                                </li>
+                            </ul>
+                        </div>
+
                     </div>
 
                     <div className="mt-8 pt-6 border-t border-white/10">

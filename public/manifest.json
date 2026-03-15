@@ -1,0 +1,22 @@
+{
+  "short_name": "Eilo OS",
+  "name": "Eilo OS - Digital Companion",
+  "description": "High-performance virtual entity infrastructure for a seamless mobile experience.",
+  "icons": [
+    {
+      "src": "icon-192.png",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "icon-512.png",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "display": "standalone",
+  "theme_color": "#0c0c14",
+  "background_color": "#0c0c14",
+  "orientation": "portrait"
+}

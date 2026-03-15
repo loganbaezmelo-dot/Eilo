@@ -167,6 +167,7 @@ export default function App() {
   const [faceOffset, setFaceOffset] = useState(0);
 
   const [isTaped, setIsTaped] = useState(false);
+  const [rogueLegsActive, setRogueLegsActive] = useState(localStorage.getItem('eilo_rogue_active') !== 'false');
   const [showFacePopup, setShowFacePopup] = useState(false);
 
   const [isChaosMode, setIsChaosMode] = useState(false);
@@ -192,7 +193,10 @@ export default function App() {
 
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
-  const hasRogueLegs = Array.isArray(inventory) ? inventory.includes('rogue_walk') : false;
+  const safeInventory = Array.isArray(inventory) ? inventory : [];
+  const ownsRogueLegs = safeInventory.includes('rogue_walk');
+  const ownsDuctTape = safeInventory.includes('duct_tape');
+  const hasRogueLegs = ownsRogueLegs && rogueLegsActive;
 
   const sendNotification = (bodyText) => {
     if (notificationsEnabled && "Notification" in window && Notification.permission === "granted") {
@@ -237,7 +241,6 @@ export default function App() {
         const landscape = window.innerWidth > window.innerHeight;
         if (landscape !== isLandscape) {
             setIsLandscape(landscape);
-            setIsRogueWalking(false);
             if (isChaosMode) {
                 setIsConfused(true);
                 speak("Whoa! World flip! Where's the button?!");
@@ -400,8 +403,7 @@ export default function App() {
   const handleFaceClick = (e) => {
     if (!user) return;
     e.stopPropagation();
-    const currentInv = Array.isArray(inventory) ? inventory : [];
-    if (!isChaosMode && currentInv.includes('duct_tape')) {
+    if (!isChaosMode && (ownsDuctTape || ownsRogueLegs)) {
         setShowFacePopup(true);
     }
   };
@@ -421,6 +423,20 @@ export default function App() {
           const u = new SpeechSynthesisUtterance("I'm free! Never do that again! 🎀");
           u.pitch = 1.7; u.rate = 1.1;
           window.speechSynthesis.speak(u);
+      }
+  };
+
+  const toggleRogueLegs = () => {
+      if (!user) return;
+      const newState = !rogueLegsActive;
+      setRogueLegsActive(newState);
+      localStorage.setItem('eilo_rogue_active', newState.toString());
+      setShowFacePopup(false);
+      
+      if (newState) {
+          speak("Legs activated! Time to roam! ✨");
+      } else {
+          speak("Sitting back down! 🧸");
       }
   };
 
@@ -703,7 +719,6 @@ export default function App() {
      );
   }
 
-  // --- FIXED SIGN-IN LANDING PAGE SCROLLING ---
   if (!user) {
     return (
       <div className="fixed inset-0 bg-[#0c0c14] text-white overflow-y-auto custom-scrollbar">
@@ -816,6 +831,25 @@ export default function App() {
             faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
         />}
+        
+        {showFacePopup && (
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
+            {ownsDuctTape && (
+                <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">🩹</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
+                </button>
+            )}
+            {ownsRogueLegs && (
+                <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">👻</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
+                </button>
+            )}
+            <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
+         </div>
+        )}
+        
         <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
       </div>
     );
@@ -828,7 +862,7 @@ export default function App() {
 
       {/* TOP ZONE */}
       <div className="w-full max-w-sm px-6 pt-4 flex justify-between items-center z-10">
-        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v3.1</div>
+        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v3.2</div>
         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}
         </div>
@@ -870,14 +904,22 @@ export default function App() {
         </div>
       )}
 
-      {/* TAPE POPUP */}
+      {/* POPUP FOR DUCT TAPE & ROGUE LEGS */}
       {showFacePopup && (
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-4 rounded-2xl border border-white/20 shadow-2xl">
-            <button onClick={applyDuctTape} className="flex flex-col items-center gap-2 p-4 bg-white/10 hover:bg-white/20 rounded-xl transition-all">
-                <span className="text-3xl">🩹</span>
-                <span className="text-xs font-bold text-white">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
-            </button>
-            <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white">Cancel</button>
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
+            {ownsDuctTape && (
+                <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">🩹</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
+                </button>
+            )}
+            {ownsRogueLegs && (
+                <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">👻</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
+                </button>
+            )}
+            <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
          </div>
       )}
 

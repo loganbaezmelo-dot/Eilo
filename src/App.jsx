@@ -805,56 +805,7 @@ export default function App() {
     );
   }
 
-  if (isLandscape && !isChaosMode) {
-    return (
-      <div className="fixed inset-0 bg-black flex items-center justify-center overflow-hidden">
-        <video ref={videoRef} autoPlay playsInline muted className="hidden" />
-        <canvas ref={canvasRef} className="hidden" />
-        <div onMouseMove={(e) => { if(e.buttons === 1) handlePet(); }} onTouchMove={handlePet} onClick={handlePet} className="absolute inset-0 z-10 cursor-pointer" />
-        <div className="w-full h-full flex items-center justify-center relative pointer-events-none">
-            <div className="absolute top-8 right-8 flex gap-4 z-[100] pointer-events-auto">
-                <button className="p-6 rounded-full border border-yellow-500/30 bg-yellow-500/10 text-yellow-400 font-bold font-mono text-xs flex items-center gap-2">🪙 {bucks}</button>
-                <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="p-6 rounded-full border border-white/10 bg-white/5 text-slate-500 hover:bg-white/10 hover:text-white transition-all"><Settings size={32} /></button>
-            </div>
-            {renderFace()}
-        </div>
-        {showSettings && <SettingsOverlay 
-            onClose={() => setShowSettings(false)} 
-            tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
-            aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode}
-            isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
-            visionEnabled={visionEnabled} startCamera={startCamera}
-            fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
-            isInfinityMic={isInfinityMic} toggleMic={toggleMic}
-            notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
-            bucks={bucks} inventory={inventory} buyItem={buyItem}
-            faceOffset={faceOffset} setFaceOffset={setFaceOffset}
-            speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
-        />}
-        
-        {showFacePopup && (
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
-            {ownsDuctTape && (
-                <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                    <span className="text-2xl">🩹</span>
-                    <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
-                </button>
-            )}
-            {ownsRogueLegs && (
-                <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                    <span className="text-2xl">👻</span>
-                    <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
-                </button>
-            )}
-            <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
-         </div>
-        )}
-        
-        <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
-      </div>
-    );
-  }
-
+  // --- MAIN APP ---
   return (
     <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="hidden" />
@@ -923,10 +874,12 @@ export default function App() {
          </div>
       )}
 
-      {/* INTERFACE */}
-      <div className={`w-full max-w-sm px-4 flex-1 flex flex-col gap-4 pb-2 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
+      {/* INTERFACE (STRETCHING CHAT CONTAINER) */}
+      <div className={`w-full max-w-sm px-4 flex-1 flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
-        <div className="w-full h-64 bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
+        
+        {/* CHANGED TO flex-1 min-h-[200px] TO FILL EMPTY SPACE */}
+        <div className="w-full flex-1 min-h-[200px] bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
             {messages.map((m, i) => (<div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>{m.text}</div></div>))}
             <div ref={chatEndRef} />
@@ -936,6 +889,7 @@ export default function App() {
             <button onClick={() => handleSend()} className="p-3 bg-cyan-600 rounded-xl active:scale-95"><Send size={16}/></button>
           </div>
         </div>
+
         <div className="grid grid-cols-3 gap-3">
           <button onClick={() => setIsAwake(!isAwake)} className="p-3.5 rounded-[25px] border border-white/5 bg-white/5 flex flex-col items-center gap-1 active:scale-95"><Zap size={16} className={isAwake ? 'text-yellow-400' : ''}/><span className="text-[7px] uppercase font-bold tracking-widest text-slate-500">Power</span></button>
           <button onClick={handlePet} className={`p-3.5 rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95`}><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
@@ -960,5 +914,6 @@ export default function App() {
     </div>
   );
 }
+
 
 

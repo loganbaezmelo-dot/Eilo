@@ -1,6 +1,7 @@
 {
   "short_name": "Eilo OS",
   "name": "Eilo OS - Digital Companion",
+  "version": "1.0.1",
   "description": "High-performance virtual entity infrastructure for a seamless mobile experience.",
   "icons": [
     {

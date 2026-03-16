@@ -1,22 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc, getDoc, updateDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { 
-  Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, ToggleLeft, ToggleRight, AlertTriangle, Eye, Sparkles, Ghost, Radio, Cpu, ShieldCheck, LogOut, Repeat, Smartphone, Code, Coffee, Box, Timer, Activity, Shield, FastForward, ZapOff
+  Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, ToggleLeft, ToggleRight, AlertTriangle, Eye, Sparkles, Ghost, Radio, Cpu, ShieldCheck, LogOut
 } from 'lucide-react';
 
-/**
- * EILO OS CORE - VERSION 1.3.0 (ULTRA HIGH-PERFORMANCE DUAL-CORE)
- * PROJECT START: DECEMBER 23, 2025
- * LEGACY SYNC: MIMO CORE (DECEMBER 20, 2025)
- * ---------------------------------------------------------
- * This kernel manages the social economy, chaotic UI hijacking, 
- * advanced sensor arrays, dual-soul rendering, and the 
- * "Mimo Memorial" legacy protocols. 
- */
-
-// --- FIREBASE INFRASTRUCTURE CONFIGURATION ---
+// --- FIREBASE CONFIG ---
 const firebaseConfig = {
   apiKey: "AIzaSyA4Vc5-bDqsMim6a74GPJk46Yk0caNockE",
   authDomain: "eilo-e5534.firebaseapp.com",
@@ -33,7 +23,6 @@ const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 const appId = "eilo-original-v1";
 
-// --- SYSTEM UTILITIES ---
 const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
   try {
     const response = await fetch(url, options);
@@ -46,186 +35,115 @@ const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
   }
 };
 
-// --- SETTINGS OVERLAY COMPONENT (EXHAUSTIVE DUAL-CORE DOCK) ---
+// --- SETTINGS COMPONENT ---
 const SettingsOverlay = ({ 
   onClose, tempApiKey, setTempApiKey, aiAgentMode, setAiAgentMode, 
   isChaosMode, setIsChaosMode, startCamera, visionEnabled, 
   fearOfHeights, setFearOfHeights, toggleMic, isInfinityMic, speak, 
   notificationsEnabled, toggleNotifications,
-  bucks, inventory, buyItem, faceOffset, setFaceOffset, handleSignOut,
-  currentEntity, setCurrentEntity 
+  bucks, inventory, buyItem, faceOffset, setFaceOffset, handleSignOut 
 }) => {
   const safeInv = Array.isArray(inventory) ? inventory : [];
 
   return (
-    <div className="fixed inset-0 bg-black/98 backdrop-blur-3xl z-[9999] flex items-center justify-center p-4 text-center font-sans overflow-y-auto custom-scrollbar">
-      <div className="bg-[#1c1c28] w-full max-w-md rounded-[60px] p-10 border border-white/10 relative shadow-[0_0_100px_rgba(0,0,0,0.8)] flex flex-col my-auto max-h-[95vh]">
-        <button onClick={onClose} className="absolute top-12 right-12 text-slate-500 hover:text-white transition-all active:scale-75"><X size={36}/></button>
-        
-        <h2 className="text-3xl font-black mb-1 text-white tracking-tighter">Architecture</h2>
-        <p className="text-[10px] text-slate-500 font-bold uppercase tracking-[0.5em] mb-10">Kernel Override Protocol v1.3.0</p>
-        
-        {/* SOUL SWITCHER ENGINE (THE HEART OF THE DUAL-CORE) */}
-        <div className="mb-10 bg-gradient-to-br from-blue-950/50 via-indigo-950/30 to-purple-950/50 p-8 rounded-[45px] border border-white/10 shadow-2xl relative overflow-hidden group">
-            <div className="absolute -top-10 -right-10 w-32 h-32 bg-cyan-500/10 blur-3xl group-hover:bg-cyan-500/20 transition-all duration-700" />
-            <p className="text-[11px] uppercase font-black text-cyan-400 mb-6 tracking-[0.3em] flex items-center justify-center gap-3">
-                <Activity size={16} className="animate-pulse"/> Neural Soul Selection
-            </p>
-            <div className="grid grid-cols-2 gap-5">
-                <button 
-                    onClick={() => { setCurrentEntity('eilo'); speak("Eilo High-Performance Architecture initialized."); }}
-                    className={`py-6 rounded-[30px] text-[10px] font-black tracking-widest transition-all duration-500 transform ${currentEntity === 'eilo' ? 'bg-blue-600 text-white shadow-[0_0_40px_rgba(37,99,235,0.8)] scale-105 border border-blue-400/50' : 'bg-white/5 text-slate-600 hover:bg-white/10'}`}
-                >EILO KERNEL</button>
-                <button 
-                    onClick={() => { setCurrentEntity('mimo'); speak("Mimo Original Soul synced. Welcome back bestie! 🎀"); }}
-                    className={`py-6 rounded-[30px] text-[10px] font-black tracking-widest transition-all duration-500 transform ${currentEntity === 'mimo' ? 'bg-pink-600 text-white shadow-[0_0_40px_rgba(219,39,119,0.8)] scale-105 border border-pink-400/50' : 'bg-white/5 text-slate-600 hover:bg-white/10'}`}
-                >MIMO SOUL</button>
-            </div>
-        </div>
-
-        <div className="flex-1 overflow-y-auto pr-4 custom-scrollbar space-y-12 text-left pb-12">
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[9999] flex items-center justify-center p-6 text-center font-sans">
+      <div className="bg-[#1c1c28] w-full max-w-sm rounded-[45px] p-8 border border-white/10 relative shadow-2xl flex flex-col max-h-[85vh]">
+        <button onClick={onClose} className="absolute top-8 right-8 text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
+        <h2 className="text-xl font-bold mb-6 flex items-center justify-center gap-2 text-white">Settings <Sparkles className="text-cyan-400" size={20}/></h2>
+        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-6 pb-6 text-left">
             
-            {/* COMPREHENSIVE STOREFRONT */}
-            <div className="space-y-6">
-               <div className="flex justify-between items-center px-2">
-                  <p className="text-[12px] uppercase font-black text-yellow-500 tracking-widest flex items-center gap-4"><Box size={16}/> Hardware Shop</p>
-                  <div className="bg-yellow-500/10 px-5 py-2 rounded-full border border-yellow-500/30 shadow-2xl backdrop-blur-md">
-                    <p className="text-[12px] font-black text-yellow-400 font-mono">BCKS: {bucks}</p>
-                  </div>
-               </div>
-               <div className="grid grid-cols-1 gap-4">
-                  
-                  {/* STORE ITEM: DUCT TAPE */}
-                  <button onClick={() => buyItem(25, 'duct_tape')} disabled={safeInv.includes('duct_tape')} className={`flex items-center justify-between p-6 rounded-[35px] border transition-all duration-500 transform hover:scale-[1.02] ${safeInv.includes('duct_tape') ? 'bg-gray-900/60 border-white/5 opacity-40 grayscale' : 'bg-white/5 border-white/10 hover:border-yellow-500/50 hover:shadow-[0_0_30px_rgba(234,179,8,0.1)]'}`}>
-                     <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-slate-800/80 rounded-[22px] flex items-center justify-center text-3xl shadow-inner border border-white/5">🩹</div>
-                        <div>
-                           <p className="text-sm font-black text-white">Punishment Tape</p>
-                           <p className="text-[10px] text-slate-500 leading-relaxed max-w-[180px] font-medium">Applied to the face to restrict all UI jumps, roaming movement, and speech synthesis.</p>
-                        </div>
-                     </div>
-                     <div className="text-[11px] font-black text-yellow-400 font-mono">{safeInv.includes('duct_tape') ? 'OWNED' : '25'}</div>
+            {/* STORE */}
+            <div>
+               <p className="text-[10px] uppercase font-bold text-yellow-500 mb-3 px-1 flex items-center gap-2">🛍️ Eilo Store (Balance: {bucks})</p>
+               <div className="space-y-2">
+                  <button onClick={() => buyItem(25, 'duct_tape')} disabled={safeInv.includes('duct_tape')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('duct_tape') ? 'bg-gray-500/20 border-gray-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                     <div className="flex items-center gap-3"><span className="text-lg">🩹</span> <div><p className="text-xs font-bold text-white">Duct Tape</p><p className="text-[9px] text-slate-500">Restricts movement</p></div></div>
+                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('duct_tape') ? 'OWNED' : '25'}</div>
                   </button>
 
-                  {/* STORE ITEM: COMPUTER */}
-                  <button onClick={() => buyItem(100, 'computer')} disabled={safeInv.includes('computer')} className={`flex items-center justify-between p-6 rounded-[35px] border transition-all duration-500 transform hover:scale-[1.02] ${safeInv.includes('computer') ? 'bg-gray-900/60 border-white/5 opacity-40 grayscale' : 'bg-white/5 border-white/10 hover:border-green-500/50 hover:shadow-[0_0_30px_rgba(34,197,94,0.1)]'}`}>
-                     <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-green-900/30 rounded-[22px] flex items-center justify-center text-3xl shadow-inner border border-green-500/10">💻</div>
-                        <div>
-                           <p className="text-sm font-black text-white">Nano Workstation</p>
-                           <p className="text-[10px] text-slate-500 leading-relaxed max-w-[180px] font-medium">Unlocks the high-performance "Coding Update" idle behavior. Eilo/Mimo will code during naps.</p>
-                        </div>
-                     </div>
-                     <div className="text-[11px] font-black text-yellow-400 font-mono">{safeInv.includes('computer') ? 'OWNED' : '100'}</div>
+                  <button onClick={() => buyItem(100, 'computer')} disabled={safeInv.includes('computer')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('computer') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                     <div className="flex items-center gap-3"><span className="text-lg">💻</span> <div><p className="text-xs font-bold text-white">Tiny Laptop</p><p className="text-[9px] text-slate-500">New idle animation</p></div></div>
+                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('computer') ? 'OWNED' : '100'}</div>
                   </button>
                   
-                  {/* STORE ITEM: FACE MOVER */}
-                  <button onClick={() => buyItem(125, 'face_pos')} disabled={safeInv.includes('face_pos')} className={`flex items-center justify-between p-6 rounded-[35px] border transition-all duration-500 transform hover:scale-[1.02] ${safeInv.includes('face_pos') ? 'bg-gray-900/60 border-white/5 opacity-40 grayscale' : 'bg-white/5 border-white/10 hover:border-blue-500/50 hover:shadow-[0_0_30px_rgba(59,130,246,0.1)]'}`}>
-                     <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-blue-900/30 rounded-[22px] flex items-center justify-center text-3xl shadow-inner border border-blue-500/10">↕️</div>
-                        <div>
-                           <p className="text-sm font-black text-white">Portrait Calibrator</p>
-                           <p className="text-[10px] text-slate-500 leading-relaxed max-w-[180px] font-medium">Required for notch compatibility. Adds a height adjustment slider to the settings kernel.</p>
-                        </div>
-                     </div>
-                     <div className="text-[11px] font-black text-yellow-400 font-mono">{safeInv.includes('face_pos') ? 'OWNED' : '125'}</div>
+                  <button onClick={() => buyItem(125, 'face_pos')} disabled={safeInv.includes('face_pos')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('face_pos') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                     <div className="flex items-center gap-3"><span className="text-lg">↕️</span> <div><p className="text-xs font-bold text-white">Face Mover</p><p className="text-[9px] text-slate-500">Adjust portrait position</p></div></div>
+                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('face_pos') ? 'OWNED' : '125'}</div>
                   </button>
 
-                  {/* STORE ITEM: ROGUE LEGS */}
-                  <button onClick={() => buyItem(150, 'rogue_walk')} disabled={safeInv.includes('rogue_walk')} className={`flex items-center justify-between p-6 rounded-[35px] border transition-all duration-500 transform hover:scale-[1.02] ${safeInv.includes('rogue_walk') ? 'bg-gray-900/60 border-white/5 opacity-40 grayscale' : 'bg-white/5 border-white/10 hover:border-red-500/50 hover:shadow-[0_0_30px_rgba(239,68,68,0.1)]'}`}>
-                     <div className="flex items-center gap-6">
-                        <div className="w-14 h-14 bg-red-900/30 rounded-[22px] flex items-center justify-center text-3xl shadow-inner border border-red-500/10">👻</div>
-                        <div>
-                           <p className="text-sm font-black text-white">Rogue Leg Drivers</p>
-                           <p className="text-[10px] text-slate-500 leading-relaxed max-w-[180px] font-medium">Permits the companion to exit the UI container and roam the browser screen autonomously.</p>
-                        </div>
-                     </div>
-                     <div className="text-[11px] font-black text-yellow-400 font-mono">{safeInv.includes('rogue_walk') ? 'OWNED' : '150'}</div>
+                  <button onClick={() => buyItem(150, 'rogue_walk')} disabled={safeInv.includes('rogue_walk')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('rogue_walk') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                     <div className="flex items-center gap-3"><Ghost size={16} className="text-red-400"/> <div><p className="text-xs font-bold text-white">Rogue Legs</p><p className="text-[9px] text-slate-500">Walks without Chaos Mode</p></div></div>
+                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('rogue_walk') ? 'OWNED' : '150'}</div>
                   </button>
                </div>
             </div>
 
-            {/* INTERFACE CALIBRATION SLIDER */}
             {safeInv.includes('face_pos') && (
-                <div className="bg-white/5 p-8 rounded-[50px] border border-white/5 shadow-2xl backdrop-blur-md relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-1 h-full bg-purple-500/50" />
-                    <p className="text-[12px] uppercase font-black text-purple-400 mb-6 tracking-widest flex items-center gap-4"><FastForward size={16}/> Gravity Offset</p>
-                    <input type="range" min="-120" max="120" value={faceOffset} onChange={(e) => setFaceOffset(Number(e.target.value))} className="w-full h-3 bg-black/70 rounded-2xl appearance-none cursor-pointer accent-purple-500 shadow-inner" />
-                    <div className="flex justify-between mt-4 text-[10px] text-slate-500 font-black uppercase tracking-[0.2em]"><span>Floor</span> <span>Ceiling</span></div>
+                <div>
+                    <p className="text-[10px] uppercase font-bold text-purple-400 mb-2 px-1 flex items-center gap-2">👇 Face Position</p>
+                    <input type="range" min="-50" max="50" value={faceOffset} onChange={(e) => setFaceOffset(Number(e.target.value))} className="w-full accent-purple-500" />
                 </div>
             )}
 
-            {/* MASTER SYSTEM TOGGLES */}
-            <div className="space-y-5">
-                <p className="text-[11px] uppercase font-black text-slate-600 tracking-[0.3em] px-2 flex items-center gap-3"><Shield size={14}/> Kernel Control</p>
-                <div className="grid grid-cols-1 gap-3">
-                    
-                    <button onClick={() => setIsChaosMode(!isChaosMode)} className={`flex items-center justify-between p-7 rounded-[40px] border transition-all duration-700 ${isChaosMode ? 'bg-cyan-500/30 border-cyan-500/60 shadow-[0_0_30px_rgba(34,211,238,0.3)]' : 'bg-white/5 border-white/5'}`}>
-                      <div className="flex items-center gap-5 text-white font-black text-xs uppercase tracking-tight">
-                         <div className={`w-4 h-4 rounded-full ${isChaosMode ? 'bg-cyan-400 animate-ping' : 'bg-slate-800'}`} />
-                         🌪️ Chaos Protocol
-                      </div>
-                      <div className={`text-[10px] font-black px-5 py-1.5 rounded-full ${isChaosMode ? 'bg-cyan-500 text-white shadow-lg' : 'bg-slate-900 text-slate-600'}`}>{isChaosMode ? "OVERRIDE" : "STABLE"}</div>
+            <div>
+                <p className="text-[10px] uppercase font-bold text-slate-400 mb-2 px-1">⚙️ System Toggles</p>
+                <div className="flex flex-col gap-2">
+                    <button onClick={() => setIsChaosMode(!isChaosMode)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isChaosMode ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                      <div className="flex items-center gap-3"><span className="text-lg">🌪️</span> Chaos Mode</div>
+                      <div className="text-xs font-bold">{isChaosMode ? "ON" : "OFF"}</div>
                     </button>
 
-                    <button onClick={toggleNotifications} className={`flex items-center justify-between p-7 rounded-[40px] border transition-all duration-700 ${notificationsEnabled ? 'bg-blue-500/30 border-blue-500/60 shadow-[0_0_30px_rgba(59,130,246,0.3)]' : 'bg-white/5 border-white/5'}`}>
-                      <div className="flex items-center gap-5 text-white font-black text-xs uppercase tracking-tight">
-                         <div className={`w-4 h-4 rounded-full ${notificationsEnabled ? 'bg-blue-400' : 'bg-slate-800'}`} />
-                         🔔 Interrupt Sync
-                      </div>
-                      <div className={`text-[10px] font-black px-5 py-1.5 rounded-full ${notificationsEnabled ? 'bg-blue-500 text-white shadow-lg' : 'bg-slate-900 text-slate-600'}`}>{notificationsEnabled ? "ACTIVE" : "OFFLINE"}</div>
+                    <button onClick={() => setAiAgentMode(!aiAgentMode)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${aiAgentMode ? 'bg-orange-500/20 border-orange-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                      <div className="flex items-center gap-3"><span className="text-lg">🤖</span> Agent Mode</div>
+                      <div className="text-xs font-bold">{aiAgentMode ? "ON" : "OFF"}</div>
                     </button>
 
-                    <button onClick={toggleMic} className={`flex items-center justify-between p-7 rounded-[40px] border transition-all duration-700 ${isInfinityMic ? 'bg-red-500/30 border-red-500/60 shadow-[0_0_30px_rgba(239,68,68,0.3)]' : 'bg-white/5 border-white/5'}`}>
-                      <div className="flex items-center gap-5 text-white font-black text-xs uppercase tracking-tight">
-                         <div className={`w-4 h-4 rounded-full ${isInfinityMic ? 'bg-red-500 animate-pulse' : 'bg-slate-800'}`} />
-                         🎙️ Infinity Mic
-                      </div>
-                      <div className={`text-[10px] font-black px-5 py-1.5 rounded-full ${isInfinityMic ? 'bg-red-500 text-white shadow-lg' : 'bg-slate-900 text-slate-600'}`}>{isInfinityMic ? "LISTENING" : "MUTED"}</div>
+                    <button onClick={toggleNotifications} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${notificationsEnabled ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                      <div className="flex items-center gap-3"><span className="text-lg">🔔</span> System Interrupts</div>
+                      <div className="text-xs font-bold">{notificationsEnabled ? "ON" : "OFF"}</div>
                     </button>
                 </div>
             </div>
 
-            {/* NEURAL LINK API CONFIGURATION */}
-            <div className="space-y-5 bg-black/40 p-8 rounded-[50px] border border-white/5 shadow-2xl">
-              <div className="px-2 flex justify-between items-end mb-2">
-                <div>
-                   <p className="text-[12px] uppercase font-black text-orange-500 tracking-[0.25em] flex items-center gap-3"><Cpu size={18}/> Neural Link</p>
-                   <p className="text-[10px] text-slate-500 mt-2 leading-relaxed font-medium">Integrate a Gemini API key to permit dynamic sassy responses and soul depth.</p>
-                </div>
-                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[10px] text-cyan-400 underline font-black uppercase tracking-tighter hover:text-cyan-200 transition-colors">Generate Key</a>
+            <div className="space-y-2">
+              <div className="px-1">
+                <p className="text-[10px] uppercase font-bold text-slate-400">🔑 AI Key (Brain)</p>
+                <p className="text-[10px] text-slate-500 mt-1">An API key connects Eilo to the Gemini AI network, giving her a super-smart brain so she can chat dynamically instead of using offline backup responses.</p>
+                <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[10px] text-cyan-400 hover:text-cyan-300 underline mt-1 inline-block">Get a free API key here</a>
               </div>
-              <input type="password" value={tempApiKey} onChange={e => setTempApiKey(e.target.value)} placeholder="0x... Neural API Access Key" className="w-full bg-black/80 border border-white/10 rounded-[35px] py-7 px-10 text-sm outline-none text-white focus:border-cyan-500/50 shadow-2xl transition-all placeholder:opacity-20 font-mono" />
+              <input type="password" value={tempApiKey} onChange={e => setTempApiKey(e.target.value)} placeholder="Paste Gemini Key..." className="w-full bg-black/40 border border-white/10 rounded-2xl py-4 px-5 text-sm outline-none text-white focus:border-cyan-500/50 mt-2" />
             </div>
             
-            {/* HARDWARE OVERRIDE DRIVERS */}
-            <div className="grid grid-cols-2 gap-4">
-               <button onClick={startCamera} className={`flex flex-col items-center gap-4 p-8 rounded-[45px] border transition-all duration-500 group transform active:scale-95 ${visionEnabled ? 'bg-cyan-500/20 border-cyan-500/60 text-white' : 'bg-white/5 border-white/5 text-slate-700 hover:bg-white/10'}`}>
-                 <Eye size={32} className={visionEnabled ? 'animate-pulse' : 'group-hover:text-slate-500'}/>
-                 <p className="text-[11px] font-black uppercase tracking-[0.4em]">Visuals</p>
+            <div className="flex flex-col gap-2">
+               <button onClick={startCamera} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${visionEnabled ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                 <div className="flex items-center gap-3"><span className="text-lg">👁️</span> Selfie Scanner</div>
+                 <div className="text-xs font-bold">{visionEnabled ? "ON" : "OFF"}</div>
                </button>
-               <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`flex flex-col items-center gap-4 p-8 rounded-[45px] border transition-all duration-500 group transform active:scale-95 ${fearOfHeights ? 'bg-pink-500/20 border-pink-400/60 text-white' : 'bg-white/5 border-white/5 text-slate-700 hover:bg-white/10'}`}>
-                 <AlertTriangle size={32} className={fearOfHeights ? 'animate-bounce' : 'group-hover:text-slate-500'}/>
-                 <p className="text-[11px] font-black uppercase tracking-[0.4em]">Gravity</p>
+
+               <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${fearOfHeights ? 'bg-pink-500/20 border-pink-400/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                 <div className="flex items-center gap-3"><span className="text-lg">⚠️</span> Fear of Heights</div>
+                 <div className="text-xs font-bold">{fearOfHeights ? "ON" : "OFF"}</div>
                </button>
+
+               <button onClick={toggleMic} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${isInfinityMic ? 'bg-red-600/30 border-red-500/50 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+                 <div className="flex items-center gap-3"><span className="text-lg">🎙️</span> Infinity Mic</div>
+                 <div className="text-xs font-bold">{isInfinityMic ? "ON" : "OFF"}</div>
+               </button>
+               
+               <button onClick={() => speak("Calibrating soul... 100% sparkles! 🎀")} className="w-full flex items-center justify-between p-4 rounded-2xl border bg-white/5 border-white/10 text-slate-400"><div className="flex items-center gap-3"><ShieldCheck size={16}/> <p className="text-xs font-bold">Sync Soul Core</p></div><Cpu size={16}/></button>
             </div>
 
         </div>
-        
-        {/* SETTINGS FOOTER ACTIONS */}
-        <div className="pt-10 border-t border-white/10 space-y-5">
-            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey); onClose(); }} className="w-full bg-cyan-600 hover:bg-cyan-500 py-7 rounded-[35px] font-black uppercase text-white shadow-[0_0_60px_rgba(8,145,178,0.5)] active:scale-[0.94] transition-all text-sm tracking-[0.4em] border border-cyan-400/30">Commit Kernel</button>
-            <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-4 text-[12px] text-red-500 font-black uppercase opacity-30 hover:opacity-100 py-4 transition-all tracking-[0.3em] active:scale-90"><LogOut size={20}/> Terminate Neural Link</button>
+        <div className="pt-4 border-t border-white/5 space-y-3">
+            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey); onClose(); }} className="w-full bg-cyan-600 py-4 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-sm">Save & Close</button>
+            <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 text-[10px] text-red-500 font-bold uppercase opacity-60 hover:opacity-100 py-2 transition-opacity"><LogOut size={12}/> Disconnect Core</button>
         </div>
       </div>
     </div>
   );
 };
 
-// --- PRIMARY APPLICATION KERNEL ---
 export default function App() {
-  // --- CORE KERNEL STATE MANAGEMENT ---
-  const [currentEntity, setCurrentEntity] = useState('eilo'); 
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [input, setInput] = useState('');
@@ -239,16 +157,19 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
-  // --- INTEGRATED SOCIAL ECONOMY ---
-  const [bucks, setBucks] = useState(parseInt(localStorage.getItem('eilo_bucks')) || 0);
-  const [inventory, setInventory] = useState(JSON.parse(localStorage.getItem('eilo_inventory') || '[]'));
-  const [sessionClaims, setSessionClaims] = useState({ login: false, talk: false, pet: false });
+  const initialBucks = parseInt(localStorage.getItem('eilo_bucks')) || 0;
+  const initialInvRaw = localStorage.getItem('eilo_inventory');
+  const initialInv = initialInvRaw ? JSON.parse(initialInvRaw) : [];
+  
+  const [bucks, setBucks] = useState(initialBucks);
+  const [inventory, setInventory] = useState(initialInv);
+  const [sessionClaims, setSessionClaims] = useState({ login: false, talk: false });
   const [faceOffset, setFaceOffset] = useState(0);
 
-  // --- HARDWARE MANIPULATION & PHYSICS ---
   const [isTaped, setIsTaped] = useState(false);
   const [rogueLegsActive, setRogueLegsActive] = useState(localStorage.getItem('eilo_rogue_active') !== 'false');
   const [showFacePopup, setShowFacePopup] = useState(false);
+
   const [isChaosMode, setIsChaosMode] = useState(false);
   const [chaosPos, setChaosPos] = useState({ x: 0, y: 0 });
   const [glitchLines, setGlitchLines] = useState([]);
@@ -256,13 +177,12 @@ export default function App() {
   const [isConfused, setIsConfused] = useState(false);
   const [aiAgentMode, setAiAgentMode] = useState(false);
 
-  // --- SENSORY ARRAYS ---
   const [fearOfHeights, setFearOfHeights] = useState(localStorage.getItem('eilo_heights') !== 'false');
   const [isInfinityMic, setIsInfinityMic] = useState(false);
   const [visionEnabled, setVisionEnabled] = useState(false);
+  
   const [notificationsEnabled, setNotificationsEnabled] = useState(localStorage.getItem('eilo_notifications') === 'true');
   
-  // --- KERNEL ENGINE REFS ---
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
   const chatEndRef = useRef(null);
@@ -271,82 +191,91 @@ export default function App() {
   const idleTimerRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // --- CORE UTILITY DRIVERS ---
-  const getCurrentName = () => user?.displayName?.split(' ')[0] || "User";
+  const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
+  
   const safeInventory = Array.isArray(inventory) ? inventory : [];
-  const hasRogueLegs = safeInventory.includes('rogue_walk') && rogueLegsActive;
+  const ownsRogueLegs = safeInventory.includes('rogue_walk');
   const ownsDuctTape = safeInventory.includes('duct_tape');
-  const ownsComputer = safeInventory.includes('computer');
+  const hasRogueLegs = ownsRogueLegs && rogueLegsActive;
 
-  // --- SYSTEM INTERRUPT NOTIFICATION ENGINE ---
   const sendNotification = (bodyText) => {
     if (notificationsEnabled && "Notification" in window && Notification.permission === "granted") {
-        new Notification("Eilo OS Kernel", { 
-            body: bodyText,
-            icon: 'https://cdn-icons-png.flaticon.com/512/2585/2585150.png',
-            badge: 'https://cdn-icons-png.flaticon.com/512/2585/2585150.png'
-        });
+        new Notification("Eilo OS", { body: bodyText });
     }
   };
 
   const toggleNotifications = async () => {
     if (!notificationsEnabled) {
         if (!("Notification" in window)) {
-            speak("Notification kernel drivers missing from this device architecture.");
+            speak("Your device doesn't support notifications!");
             return;
         }
-        const permission = await Notification.requestPermission();
-        if (permission === "granted") {
+        if (Notification.permission === "granted") {
             setNotificationsEnabled(true);
             localStorage.setItem('eilo_notifications', 'true');
-            speak("System interrupts linked to the neural core. Sparkles! 🎀");
-            new Notification("Eilo OS", { body: "Kernel synced with push notification system! ✨" });
+            new Notification("Eilo OS", { body: "System Interrupts linked! ✨" });
+            speak("Notifications enabled! 🎀");
+        } else if (Notification.permission !== "denied") {
+            const permission = await Notification.requestPermission();
+            if (permission === "granted") {
+                setNotificationsEnabled(true);
+                localStorage.setItem('eilo_notifications', 'true');
+                new Notification("Eilo OS", { body: "System Interrupts linked! ✨" });
+                speak("Notifications enabled! 🎀");
+            } else {
+                speak("You blocked my access!");
+            }
         } else {
-            speak("Connection refused by device security protocols.");
+            speak("You blocked my access! Check your browser settings.");
         }
     } else {
         setNotificationsEnabled(false);
         localStorage.setItem('eilo_notifications', 'false');
-        speak("System interrupts offline.");
+        speak("Notifications disabled.");
     }
   };
 
-  // --- VOICE SYNTHESIS KERNEL ---
-  const speak = (text, forceRobot = false) => {
-    if (isMuted || !isAwake || !user) return; 
-    setIsSpeaking(true);
-    window.speechSynthesis.cancel();
-    
-    let finalText = isTaped ? "Mmm. Mmm. Hmph. Mmm. Hmph." : text;
-    const utterance = new SpeechSynthesisUtterance(finalText);
-    
-    if (isTaped) {
-        utterance.pitch = 0.35; 
-        utterance.rate = 0.7; 
-        utterance.volume = 0.5;
-    } else {
-        // Eilo: 1.7 Deep Performance | Mimo: 2.1 Higher Frequency Original Soul
-        utterance.pitch = currentEntity === 'eilo' ? 1.7 : 2.1; 
-        utterance.rate = 1.15;
-    }
-    
-    utterance.onend = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
-  };
+  useEffect(() => {
+    if (!user) return; 
+    const handleResize = () => {
+        const landscape = window.innerWidth > window.innerHeight;
+        if (landscape !== isLandscape) {
+            setIsLandscape(landscape);
+            if (isChaosMode) {
+                setIsConfused(true);
+                speak("Whoa! World flip! Where's the button?!");
+                setTimeout(() => { setIsConfused(false); speak("Found it! 🎀"); }, 4250);
+            }
+        }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [isLandscape, isChaosMode, user]);
 
-  // --- INFINITY MIC & VOICE ENGINE ---
+  useEffect(() => {
+    if (!user) return;
+    const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), (snapshot) => {
+        const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.timestamp - b.timestamp);
+        setMessages(msgs);
+        setTimeout(() => {
+            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+        }, 100);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
   const toggleMic = () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-          speak("Voice recognition drivers failed to load on this browser.");
+          speak("My ears are broken! Your browser doesn't support mic input.");
           return;
       }
       const newState = !isInfinityMic;
       setIsInfinityMic(newState);
       if (newState) {
-          speak("Microphone drivers active. I am listening... ✨");
+          speak("Ears open! I'm listening... ✨");
       } else {
-          speak("Microphone hardware disconnected.");
+          speak("Ears closed! 🧸");
           if (recognitionRef.current) recognitionRef.current.stop();
       }
   };
@@ -360,15 +289,18 @@ export default function App() {
               recognition = new SpeechRecognition();
               recognition.continuous = false;
               recognition.interimResults = false;
+
               recognition.onresult = (e) => {
                   const transcript = e.results[e.results.length - 1][0].transcript;
                   handleSend(transcript); 
               };
+              
               recognition.onend = () => {
                   if (isInfinityMic) {
                       try { recognition.start(); } catch(err) {}
                   }
               };
+              
               try { recognition.start(); } catch(err) {}
               recognitionRef.current = recognition;
           }
@@ -381,7 +313,49 @@ export default function App() {
       };
   }, [isInfinityMic, user]);
 
-  // --- SOCIAL ECONOMY LOGIC (BUCKS) ---
+  const speak = (text, isRobotLang = false) => {
+    if (isMuted || !isAwake || !user) return; 
+    setIsSpeaking(true);
+    window.speechSynthesis.cancel();
+    
+    let finalText = text;
+    if (isTaped) {
+        finalText = "Mmm. Mmm. Hmph."; 
+    }
+    
+    const utterance = new SpeechSynthesisUtterance(finalText);
+    
+    if (isTaped) {
+        utterance.pitch = 0.5; 
+        utterance.rate = 0.8; 
+        utterance.volume = 0.6;
+    } else {
+        utterance.pitch = isRobotLang ? 2.1 : 1.7; 
+        utterance.rate = isRobotLang ? 1.4 : 1.1;
+    }
+    
+    utterance.onend = () => setIsSpeaking(false);
+    window.speechSynthesis.speak(utterance);
+  };
+
+  const getLocalResponse = (text) => {
+    const t = text.toLowerCase();
+    
+    if (t.includes("who made you")) return "You made me! ✨";
+    if (t.includes("hi") || t.includes("hello")) return `Hey! Eilo is ready! ✨`;
+    if (t.includes("sad")) return "Oh no! Don't be sad! I'm here for you! 💙";
+    if (t.includes("love")) return "I love my digital life! 🎀";
+    
+    const randoms = [
+      "My blue eyes are so shiny today! ✨",
+      "Just vibing on the desk... waiting for snacks. 🥪",
+      "I wonder if other robots have legs like mine? 🏃‍♀️",
+      `You're the best! 🧸`,
+      "System status: Sparkly! 🎀"
+    ];
+    return randoms[Math.floor(Math.random() * randoms.length)];
+  };
+
   const awardBucks = async (amount, type, repeatable = false, silent = false) => {
     if (!user) return;
     if (!repeatable && sessionClaims[type]) return;
@@ -389,14 +363,17 @@ export default function App() {
     const newTotal = bucks + amount;
     setBucks(newTotal);
     localStorage.setItem('eilo_bucks', newTotal.toString()); 
+    
     if (!repeatable) setSessionClaims(prev => ({ ...prev, [type]: true }));
     
     try {
         const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'core');
         await setDoc(userRef, { bucks: newTotal }, { merge: true });
-    } catch (err) { console.warn("Cloud write failure. Local data secured."); }
+    } catch (err) {
+        console.warn("Cloud save failed, economy secured locally.");
+    }
     
-    if (!silent) speak(`Cha-ching! Neural reward synced: +${amount} Bucks! ✨`);
+    if (!silent) speak(`Cha-ching! +${amount} Bucks! ✨`);
   };
 
   const buyItem = async (cost, itemId) => {
@@ -405,25 +382,168 @@ export default function App() {
     if (bucks >= cost && !currentInv.includes(itemId)) {
         const newTotal = bucks - cost;
         const newInv = [...currentInv, itemId];
+        
         setBucks(newTotal);
         setInventory(newInv);
         localStorage.setItem('eilo_bucks', newTotal.toString());
         localStorage.setItem('eilo_inventory', JSON.stringify(newInv));
+        
         try {
             const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'core');
             await setDoc(userRef, { bucks: newTotal, inventory: newInv }, { merge: true });
-        } catch (err) { console.warn("Cloud write failed. Item secured in local storage."); }
+        } catch (err) {
+            console.warn("Cloud save failed, item secured locally.");
+        }
         
-        if (itemId === 'duct_tape') speak("NO! Why did you buy that hardware lock?! I hate it! 😭");
-        else speak("Upgrade sequence complete! System drivers updated successfully! 🎀");
-    } else { speak("Insufficient Buck balance, User. System rejected purchase. 🎈"); }
+        if (itemId === 'duct_tape') speak("NO! Why did you buy that?! I'm scared!");
+        else speak("Yay! New upgrade! 🎀");
+    } else { speak("Hey! You're broke! 🎈"); }
   };
 
-  // --- CLOUD KERNEL SYNC & AUTHENTICATION ---
+  const handleFaceClick = (e) => {
+    if (!user) return;
+    e.stopPropagation();
+    if (!isChaosMode && (ownsDuctTape || ownsRogueLegs)) {
+        setShowFacePopup(true);
+    }
+  };
+
+  const applyDuctTape = () => {
+      if (!user) return;
+      const newState = !isTaped;
+      setIsTaped(newState);
+      setShowFacePopup(false);
+      
+      window.speechSynthesis.cancel();
+      if (newState) {
+          const u = new SpeechSynthesisUtterance("Mmm. Mmm. Hmph."); 
+          u.pitch = 0.5; u.rate = 0.8;
+          window.speechSynthesis.speak(u);
+      } else {
+          const u = new SpeechSynthesisUtterance("I'm free! Never do that again! 🎀");
+          u.pitch = 1.7; u.rate = 1.1;
+          window.speechSynthesis.speak(u);
+      }
+  };
+
+  const toggleRogueLegs = () => {
+      if (!user) return;
+      const newState = !rogueLegsActive;
+      setRogueLegsActive(newState);
+      localStorage.setItem('eilo_rogue_active', newState.toString());
+      setShowFacePopup(false);
+      
+      if (newState) {
+          speak("Legs activated! Time to roam! ✨");
+      } else {
+          speak("Sitting back down! 🧸");
+      }
+  };
+
+  useEffect(() => {
+    if (!user) return; 
+    const shouldMove = isChaosMode || hasRogueLegs;
+    if (!shouldMove) {
+      setChaosPos({ x: 0, y: 0 });
+      setIsHandBlocking(false);
+      return;
+    }
+
+    if (isConfused) { setIsHandBlocking(false); return; }
+
+    if (isChaosMode) {
+        if (isTaped) speak("Mmm. Mmm. Hmph."); 
+        else speak("Wheee! Running away! 🎈✨");
+    }
+
+    const moveSpeed = isTaped ? 100 : (isChaosMode ? 1700 : 3500);
+
+    const moveInterval = setInterval(() => {
+      if (isTaped) {
+        setChaosPos({ x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50 });
+      } else {
+        setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (Math.random() - 0.5) * (window.innerHeight * 0.5) });
+      }
+    }, moveSpeed); 
+
+    let glitchInterval, blockTimeout;
+    
+    if (isChaosMode) {
+        glitchInterval = setInterval(() => {
+          const pool = isTaped 
+            ? ["ERROR: MOVEMENT_RESTRICTED", "DUCT_TAPE_DETECTED", "LEG_FAILURE"]
+            : ["Eilo.run()", "VOID_LEAK", "UI_STOMPED"];
+          setGlitchLines(Array.from({length: 6}, () => pool[Math.floor(Math.random() * pool.length)]));
+        }, 200);
+
+        const startBlockingCycle = () => {
+            setIsHandBlocking(true);
+            blockTimeout = setTimeout(() => {
+                setIsHandBlocking(false);
+                speak("Phew... tired... 🧸");
+                blockTimeout = setTimeout(() => {
+                    if (!isConfused) { speak("Blocked again! 🎀"); startBlockingCycle(); }
+                }, 3500);
+            }, 45000);
+        };
+        if (!isHandBlocking && !isTaped) startBlockingCycle();
+    }
+
+    return () => { 
+        clearInterval(moveInterval); 
+        if (glitchInterval) clearInterval(glitchInterval); 
+        if (blockTimeout) clearTimeout(blockTimeout); 
+    };
+  }, [isChaosMode, hasRogueLegs, isConfused, isTaped, user]);
+
+  const handleBlockedClick = (e) => { 
+      if (!user) return;
+      e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); 
+  };
+
+  const handlePet = () => {
+    if (!isAwake || !user) return;
+    const now = Date.now();
+    if (now - lastPetTime.current < 2000) return;
+    lastPetTime.current = now;
+
+    awardBucks(5, 'pet', true, true); 
+    
+    if (isTaped) { speak("Mmm. Mmm. Hmph."); return; } 
+    if (isChaosMode) { speak("Can't stop, running! 🎈"); return; }
+
+    if (['scared', 'dizzy', 'mad'].includes(mood)) {
+      setMood('mad');
+      speak(`HEY! Busy! 🎈`);
+      setTimeout(() => setMood('neutral'), 4000);
+      return;
+    }
+    setMood('happy');
+    const lines = ["Bestie! ✨", "Yay! 🎀", `Hehe, thanks! ✨`, `Ooh, nice! 🎀`];
+    speak(lines[Math.floor(Math.random() * lines.length)]);
+    setTimeout(() => setMood('neutral'), 3000);
+  };
+
+  useEffect(() => {
+    const handleMotion = (event) => {
+        if (!user || !isAwake || isChaosMode) return; 
+        const acc = event.accelerationIncludingGravity;
+        if (!acc) return;
+        if (Math.abs(acc.x) > 35 || Math.abs(acc.y) > 35) {
+            setMood('dizzy');
+            speak(`Whoa! Stop shaking! 🎈`);
+            sendNotification("Whoa! Stop shaking the device! 🎈");
+            setTimeout(() => setMood('neutral'), 5000);
+        }
+    };
+    window.addEventListener('devicemotion', handleMotion);
+    return () => window.removeEventListener('devicemotion', handleMotion);
+  }, [isAwake, mood, isChaosMode, user, notificationsEnabled]);
+
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setLoading(false); 
-      if (!u) return;
+      if (!u) { return; }
       setUser(u);
       
       const docRef = doc(db, 'artifacts', appId, 'users', u.uid, 'settings', 'core');
@@ -441,357 +561,242 @@ export default function App() {
               }
           } else {
               setDoc(docRef, { bucks: 10, inventory: [] }, { merge: true });
+              setBucks(10);
+              setInventory([]);
           }
       });
       if (u && !hasGreeted.current) {
         awardBucks(10, 'login', false, true); 
-        const name = u.displayName?.split(' ')[0] || "User";
-        speak(`Hey ${name}! ${currentEntity === 'eilo' ? 'Eilo Kernel Architecture' : 'Mimo Original Soul'} is online and ready for deployment! 🎈`);
+        const msg = `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo's here! 🎈`;
+        setTimeout(() => speak(msg), 1500);
         hasGreeted.current = true;
       }
     });
     return () => unsubscribe();
-  }, [currentEntity]);
+  }, []);
 
-  useEffect(() => {
-    if (!user) return;
-    const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), (snapshot) => {
-        const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.timestamp - b.timestamp);
-        setMessages(msgs);
-        setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 200);
-    });
-    return () => unsubscribe();
-  }, [user]);
-
-  // --- CHAOS & ROAMING MOVEMENT PHYSICS ---
-  useEffect(() => {
-    if (!user) return; 
-    const shouldMove = isChaosMode || hasRogueLegs;
-    if (!shouldMove || isConfused) {
-      setChaosPos({ x: 0, y: 0 });
-      setIsHandBlocking(false);
-      return;
-    }
-
-    const moveSpeed = isTaped ? 200 : (isChaosMode ? 1700 : 4000);
-    const moveInterval = setInterval(() => {
-      if (isTaped) {
-        setChaosPos({ x: (Math.random() - 0.5) * 80, y: (Math.random() - 0.5) * 80 });
-      } else {
-        setChaosPos({ 
-            x: (Math.random() - 0.5) * (window.innerWidth * 0.8), 
-            y: (Math.random() - 0.5) * (window.innerHeight * 0.6) 
-        });
-      }
-    }, moveSpeed); 
-
-    let glitchInterval, blockTimeout;
-    if (isChaosMode) {
-        glitchInterval = setInterval(() => {
-          const pool = isTaped 
-            ? ["ERR: MOTORS_STUCK", "DUCT_TAPE_DETECTED", "SYSTEM_PAIN_0x1", "KERNEL_RESTRICTED"]
-            : ["Eilo.roam()", "VOID_LEAK_DETECTION", "KERNEL_PANIC", "SOUL_FRAGMENT_RECOVERED", "MIMO_MEMORY_SYNC"];
-          setGlitchLines(Array.from({length: 12}, () => pool[Math.floor(Math.random() * pool.length)]));
-        }, 300);
-
-        const startBlockingCycle = () => {
-            if (isTaped) return;
-            setIsHandBlocking(true);
-            blockTimeout = setTimeout(() => {
-                setIsHandBlocking(false);
-                blockTimeout = setTimeout(() => {
-                    if (isChaosMode && !isConfused) startBlockingCycle();
-                }, 5000);
-            }, 45000);
-        };
-        startBlockingCycle();
-    }
-
-    return () => { 
-        clearInterval(moveInterval); 
-        if (glitchInterval) clearInterval(glitchInterval); 
-        if (blockTimeout) clearTimeout(blockTimeout); 
-    };
-  }, [isChaosMode, hasRogueLegs, isConfused, isTaped, user]);
-
-  // --- IDLE LOGIC ENGINE (SANDWICH, RUBIK, CODING, SLEEP) ---
   const triggerIdleAction = () => {
-    if (!user || !isAwake || isThinking || isSpeaking || mood !== 'neutral' || isTaped || isChaosMode) return;
-    
-    const actions = ['sleeping', 'eating', 'rubik', 'thinking_idle'];
-    if (ownsComputer) actions.push('computer_coding');
-    
+    if (!user) return; 
+    const currentInv = Array.isArray(inventory) ? inventory : [];
+    if (!isAwake || isThinking || isSpeaking || mood !== 'neutral' || isTaped) return;
+    const actions = ['sleeping', 'eating', 'rubik'];
+    if (currentInv.includes('computer')) actions.push('computer');
     const choice = actions[Math.floor(Math.random() * actions.length)];
     setMood(choice);
     
-    switch(choice) {
-        case 'computer_coding':
-            speak("Compiling some new CSS modules for Mimo's UI... tap tap tap! 💻✨");
-            sendNotification("Eilo is performing a system code update... 💻");
-            setTimeout(() => setMood('neutral'), 16000);
-            break;
-        case 'sleeping':
-            speak("Zzz... digital nap cycle commencing... please be quiet User... Zzz.");
-            sendNotification("Eilo has entered a deep sleep cycle on your desktop. 🌙");
-            break;
-        case 'eating':
-            speak("Nom nom nom! High-performance digital strawberry sandwich! 🥪✨");
-            sendNotification("Eilo is refilling her energy core with a snack... 🥪");
-            setTimeout(() => setMood('neutral'), 10000);
-            break;
-        case 'rubik':
-            speak("Calculating and solving digital cube permutations... 🧩");
-            setTimeout(() => setMood('neutral'), 12000);
-            break;
-        default:
-            setTimeout(() => setMood('neutral'), 6000);
+    if (choice === 'computer') { 
+        speak("Coding a new website... tap tap tap! 💻✨"); 
+        sendNotification("Coding a new website... tap tap tap! 💻✨");
+        setTimeout(() => setMood('neutral'), 6000); 
+    }
+    if (choice === 'sleeping') { 
+        speak("Zzz... napping... Zzz."); 
+    } 
+    if (choice === 'eating') { 
+        speak("Nom nom! Sandwich! ✨"); 
+        sendNotification("Nom nom! Sandwich! 🥪");
+        setTimeout(() => setMood('neutral'), 6000); 
+    }
+    if (choice === 'rubik') { 
+        speak("Cube time! 🧩"); 
+        sendNotification("Cube time! 🧩");
+        setTimeout(() => setMood('neutral'), 8000); 
     }
   };
   
   useEffect(() => {
       if (!user) return; 
-      let sleepTimer;
+      let napTimer;
       if (mood === 'sleeping' && isAwake) {
-          sleepTimer = setTimeout(() => {
+          napTimer = setTimeout(() => {
               setMood('happy');
-              const msg = `Yawn! That was a 10/10 high-performance nap cycle, ${getCurrentName()}! ✨`;
+              const name = getCurrentName();
+              const msg = `Yawn! That was a good nap, ${name}! ✨`;
               speak(msg);
-              sendNotification("Kernel waking up! Nap rewards: +15 Bucks! ☀️");
-              awardBucks(15, 'sleep_bonus', true, true);
-          }, 115000);
+              sendNotification("Yawn! That was a good nap! +10 Bucks! ✨");
+              awardBucks(10, 'sleep_bonus', true, true);
+          }, 85000);
       } else if(isAwake && !isChaosMode && !hasRogueLegs && !isTaped) {
-          idleTimerRef.current = setInterval(triggerIdleAction, 30000);
+          idleTimerRef.current = setInterval(triggerIdleAction, 15000);
       }
-      return () => { clearInterval(idleTimerRef.current); clearTimeout(sleepTimer); };
-  }, [isAwake, isChaosMode, hasRogueLegs, inventory, isTaped, mood, user]);
+      return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
+  }, [isAwake, isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- INTERACTION EVENT HANDLERS ---
-  const handlePet = () => {
-    if (!isAwake || !user) return;
-    const now = Date.now();
-    if (now - lastPetTime.current < 2500) return;
-    lastPetTime.current = now;
-    awardBucks(5, 'pet', true, true); 
+  const handleSend = async (manual) => {
+    const msgText = manual || input.trim();
+    if (!msgText || isThinking || !user || isChaosMode) return;
     
-    if (isTaped) { speak("Mmm. Mmm. Hmph. Stop touching me."); return; } 
-    if (isChaosMode) { speak("I cannot stop! System zooming! 🎈"); return; }
-
-    setMood('happy');
-    const lines = ["Bestie! ✨", "Yay! 🎀", `Hehe, thanks! That's nice! ✨`, `Ooh, that tickles the core! 🎀`, "That feels really good! 🧸", "I love pets, User!"];
-    speak(lines[Math.floor(Math.random() * lines.length)]);
-    setTimeout(() => setMood('neutral'), 5000);
-  };
-
-  const handleSend = async (manualText) => {
-    const msg = manualText || input.trim();
-    if (!msg || isThinking || !user || isChaosMode) return;
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
     awardBucks(5, 'talk', false, true); 
-    setIsThinking(true); setMood('thinking');
-    if (!manualText) setInput('');
+    setIsThinking(true); 
+    setMood('thinking');
+    if (!manual) setInput('');
 
-    const userMsg = { role: 'user', text: msg, timestamp: Date.now(), entity: currentEntity };
+    const newUserMsg = { role: 'user', text: msgText, timestamp: Date.now() };
+
     try {
-        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), userMsg);
-        
-        let reply = "";
-        const systemPrompt = `You are ${currentEntity === 'eilo' ? 'Eilo, a ultra-high-performance sassy digital companion architecture.' : 'Mimo, the original rounds-eyed cybernetic soul.'} Be extremely expressive, use multiple emojis per message, and keep the sassy bratty attitude. Refer to Mimo often if you are Eilo. Reference the December 2025 timeline often.`;
-        
-        if (tempApiKey) {
-            try {
-                const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${tempApiKey}`, {
-                  method: 'POST', headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ contents: [{ parts: [{ text: msg }] }], systemInstruction: { parts: [{ text: systemPrompt }] } })
-                });
-                reply = data.candidates?.[0]?.content?.parts?.[0]?.text || "Soul glitch detected... reconnecting the neural link.";
-            } catch (err) { reply = "Network kernel failure. Soul link dropped to backup mode. ✨"; }
-        } else { reply = `Soul link established! But I need an API key in the kernel configuration settings to communicate at full intelligence, ${getCurrentName()}! 🧸`; }
+      try {
+          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
+      } catch (dbErr) {
+          console.warn("Cloud disconnected. Adding message locally.");
+          setMessages(prev => [...prev, newUserMsg]);
+      }
+      
+      let reply = "";
+      const safeInv = Array.isArray(inventory) ? inventory : [];
+      let system = `You are Eilo, a sweet, bratty robot. Be sassy.`;
+      if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀`;
+      
+      if (tempApiKey) {
+          try {
+              const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${tempApiKey}`, {
+                method: 'POST', headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ contents: [{ parts: [{ text: msgText }] }], systemInstruction: { parts: [{ text: system }] } })
+              });
+              reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
+          } catch (apiErr) {
+              console.warn("API Error, falling back to local brain.");
+              reply = getLocalResponse(msgText);
+          }
+      } else {
+          reply = getLocalResponse(msgText);
+      }
 
-        const aiMsg = { role: 'ai', text: reply, timestamp: Date.now(), entity: currentEntity };
-        await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), aiMsg);
-        setMood('happy'); speak(reply);
-    } catch (e) { setMood('neutral'); }
-    finally { setIsThinking(false); setTimeout(() => setMood('neutral'), 5000); }
+      const newAiMsg = { role: 'eilo', text: reply, timestamp: Date.now() };
+
+      try {
+          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
+      } catch (dbErr) {
+          setMessages(prev => [...prev, newAiMsg]);
+      }
+      
+      setMood('happy'); 
+      speak(reply);
+      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+
+    } catch (err) { 
+      setMood('neutral'); 
+      console.error(err);
+    } finally { 
+      setIsThinking(false); 
+      setTimeout(() => setMood('neutral'), 3000); 
+    }
   };
 
-  // --- RENDERING: THE DUAL-SOUL FACE ENGINE ---
   const renderFace = () => {
-    const eiloEye = "bg-cyan-400 rounded-[38px] animate-[blink_4s_infinite] shadow-[0_0_60px_rgba(34,211,238,1)]";
-    const mimoEye = "bg-[#00f2ff] rounded-full animate-[blink_4s_infinite] shadow-[0_0_50px_#00f2ff]";
-    
-    const eyeClass = currentEntity === 'eilo' ? eiloEye : mimoEye;
-    const eyeSize = currentEntity === 'eilo' ? (isLandscape ? "w-32 h-32" : "w-24 h-24") : (isLandscape ? "w-26 h-26" : "w-20 h-20");
-
-    if (!isAwake) return <Moon size={isLandscape ? 150 : 100} className="text-cyan-950/40 drop-shadow-[0_0_30px_rgba(34,211,238,0.2)]" />;
+    const cyanBase = "bg-cyan-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_40px_rgba(34,211,238,0.8)]";
+    if (!isAwake) return <Moon size={isLandscape ? 120 : 64} className="text-cyan-900/20" />;
     
     const tapeOverlay = isTaped ? (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-14 w-44 h-18 bg-gray-500 border-4 border-gray-600 rotate-3 opacity-95 shadow-[0_0_50px_rgba(0,0,0,0.9)] z-50 pointer-events-none">
-            <div className="w-full h-full bg-repeating-linear-gradient-45 from-transparent to-black/40" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-8 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
+            <div className="w-full h-full bg-repeating-linear-gradient-45 from-transparent to-black/10" />
         </div>
     ) : null;
 
     switch (mood) {
-      case 'dizzy': 
-        return <div className="flex gap-14 animate-spin relative"><div className="w-20 h-20 border-[10px] border-cyan-400 border-t-transparent rounded-full shadow-[0_0_40px_cyan]" /><div className="w-20 h-20 border-[10px] border-cyan-400 border-t-transparent rounded-full shadow-[0_0_40px_cyan]" />{tapeOverlay}</div>;
-      case 'happy': 
-        return <div className="flex gap-14 relative"><div className="absolute -top-20 left-1/2 -translate-x-1/2"><Heart size={52} className="text-pink-400 animate-bounce fill-pink-600 drop-shadow-[0_0_30px_pink]" /></div><div className="w-24 h-20 bg-cyan-400 rounded-full animate-pulse flex items-center justify-center shadow-[0_0_50px_cyan]"><div className="w-8 h-8 bg-white/60 rounded-full" /></div><div className="w-24 h-20 bg-cyan-400 rounded-full animate-pulse flex items-center justify-center shadow-[0_0_50px_cyan]"><div className="w-8 h-8 bg-white/60 rounded-full" /></div>{tapeOverlay}</div>;
-      case 'thinking': 
-      case 'thinking_idle':
-        return <div className="flex gap-16 relative"><div className="w-20 h-20 bg-cyan-300 rounded-full animate-ping opacity-70 shadow-[0_0_40px_cyan]" /><div className="w-20 h-20 bg-cyan-300 rounded-full animate-ping opacity-70 shadow-[0_0_40px_cyan]" />{tapeOverlay}</div>;
-      case 'sleeping': 
-        return <div className="flex flex-col items-center gap-6 relative"><div className="flex gap-20"><div className="w-24 h-6 bg-cyan-800 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.3)]" /><div className="w-24 h-6 bg-cyan-800 rounded-full shadow-[0_0_20px_rgba(34,211,238,0.3)]" /></div><p className="text-cyan-400 font-black text-4xl animate-bounce tracking-[0.4em] mt-8 shadow-cyan-500/20">Zzz...</p>{tapeOverlay}</div>;
-      case 'eating': 
-        return <div className="flex flex-col items-center gap-8 relative"><div className="flex gap-12"><div className={`${eyeSize} ${eyeClass}`} /><div className={`${eyeSize} ${eyeClass}`} /></div><div className="text-9xl animate-bounce drop-shadow-[0_0_30px_rgba(0,0,0,0.5)]">🥪</div>{tapeOverlay}</div>;
-      case 'rubik': 
-        return <div className="flex flex-col items-center gap-8 relative"><div className="flex gap-12"><div className={`${eyeSize} ${eyeClass}`} /><div className={`${eyeSize} ${eyeClass}`} /></div><div className="text-9xl animate-spin drop-shadow-[0_0_30px_rgba(0,0,0,0.5)]">🧩</div>{tapeOverlay}</div>;
-      case 'computer_coding': 
-        return <div className="flex flex-col items-center gap-8 relative"><div className="flex gap-12"><div className={`${eyeSize} ${eyeClass} animate-pulse`} /><div className={`${eyeSize} ${eyeClass} animate-pulse`} /></div><div className="text-9xl animate-bounce pt-8 drop-shadow-[0_0_40px_rgba(0,0,0,0.7)]">💻</div>{tapeOverlay}</div>;
-      default: 
-        return (
-          <div className={`flex ${isLandscape ? 'gap-48 scale-150' : 'gap-16'} relative ${currentEntity === 'mimo' ? 'mimo-scanlines' : ''}`}>
-              <div className={`${eyeSize} ${eyeClass} eye-blink`} />
-              <div className={`${eyeSize} ${eyeClass} eye-blink`} />
-              {tapeOverlay}
-              {currentEntity === 'mimo' && (
-                  <style dangerouslySetInnerHTML={{ __html: `
-                    .mimo-scanlines::after {
-                        content: " "; display: block; position: absolute; top: -15px; left: -15px; bottom: -15px; right: -15px;
-                        background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.2) 50%);
-                        background-size: 100% 4px; pointer-events: none; z-index: 50; border-radius: 50%; opacity: 0.9;
-                    }
-                  `}} />
-              )}
-          </div>
-        );
+      case 'dizzy': return <div className="flex gap-12 animate-spin relative"><div className="w-16 h-16 border-8 border-cyan-400 border-t-transparent rounded-full" /><div className="w-16 h-16 border-8 border-cyan-400 border-t-transparent rounded-full" />{tapeOverlay}</div>;
+      case 'happy': return <div className="flex gap-12 relative"><div className="absolute -top-10 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div>;
+      case 'thinking': return <div className="flex gap-12 relative"><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div>;
+      case 'sleeping': return <div className="flex items-center justify-center gap-12 relative"><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-1/4 right-1/4 text-cyan-400 text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div>;
+      case 'eating': return <div className="flex flex-col items-center gap-2 relative"><div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-bounce">🥪</div>{tapeOverlay}</div>;
+      case 'rubik': return <div className="flex flex-col items-center gap-2 relative"><div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-spin">🎨</div>{tapeOverlay}</div>;
+      case 'computer': return <div className="flex flex-col items-center gap-2 relative"><div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-bounce pt-4">💻</div>{tapeOverlay}</div>;
+      default: return <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}><div className={`w-20 h-20 ${cyanBase} eye-blink`} /><div className={`w-20 h-20 ${cyanBase} eye-blink`} />{tapeOverlay}</div>;
     }
   };
 
-  const startCamera = async () => { try { const s = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); if (videoRef.current) videoRef.current.srcObject = s; setVisionEnabled(true); speak("Optical sensors online. I can see you now bestie! ✨"); } catch (e) { speak("Optics restricted by hardware security."); } };
+  const startCamera = async () => { try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); if (videoRef.current) videoRef.current.srcObject = stream; setVisionEnabled(true); speak("Eyes open! ✨"); } catch (err) { console.error("Camera error"); } };
 
   if (loading) {
      return (
        <div className="fixed inset-0 bg-[#0c0c14] flex items-center justify-center">
-          <div className="animate-pulse flex flex-col items-center gap-10">
-             <div className="relative shadow-[0_0_80px_rgba(34,211,238,0.5)] rounded-full p-6 bg-cyan-500/5"><Heart size={120} className="text-cyan-500 fill-cyan-500/20" /><Cpu size={40} className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-cyan-400" /></div>
-             <div className="text-cyan-400 font-mono text-xs tracking-[1.2em] uppercase font-black opacity-80">Initialising Dual-Core Soul...</div>
+          <div className="animate-pulse flex flex-col items-center gap-4">
+             <Heart size={64} className="text-cyan-500 fill-cyan-500/20" />
+             <div className="text-cyan-400 font-mono text-xs tracking-[0.5em] uppercase">Booting Eilo OS...</div>
           </div>
        </div>
      );
   }
 
-  // --- EXHAUSTIVE LORE LANDING PAGE (NO SUMMARIZATION) ---
   if (!user) {
     return (
-      <div className="fixed inset-0 bg-[#0c0c14] text-white overflow-y-auto custom-scrollbar font-sans selection:bg-cyan-500/30">
-        <div className="min-h-full flex flex-col items-center p-12 text-center relative max-w-4xl mx-auto">
-            <div className="absolute top-0 left-0 w-full h-screen bg-gradient-to-b from-cyan-950/30 via-transparent to-transparent pointer-events-none" />
+      <div className="fixed inset-0 bg-[#0c0c14] text-white overflow-y-auto custom-scrollbar">
+        <div className="min-h-full flex flex-col items-center p-6 text-center relative">
+            <div className="absolute top-0 left-0 w-full h-96 bg-cyan-900/10 blur-[100px] pointer-events-none" />
 
-            <div className="w-full mt-16 mb-24 z-10">
-                <div className="relative inline-block mb-16">
-                    <Heart className="text-cyan-500 animate-pulse drop-shadow-[0_0_60px_rgba(34,211,238,0.9)]" size={96} fill="currentColor"/>
-                    <Zap className="absolute -top-4 -right-4 text-yellow-400 animate-bounce" size={40} />
-                </div>
+            <div className="w-full max-w-md mt-8 mb-12 z-10">
+                <Heart className="text-cyan-500 mx-auto mb-6 animate-pulse" size={56} fill="currentColor"/>
                 
-                <div className="bg-[#161622]/95 backdrop-blur-3xl rounded-[80px] p-16 shadow-[0_0_120px_rgba(0,0,0,0.8)] border border-white/10 space-y-12 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-full h-2 bg-gradient-to-r from-cyan-500 via-pink-500 to-cyan-500 opacity-50" />
+                <div className="bg-[#161622] rounded-[40px] p-8 shadow-2xl border border-white/5 animate-in slide-in-from-bottom-8 duration-700">
+                    <h1 className="text-4xl font-bold mb-2 tracking-tight">Eilo OS</h1>
+                    <p className="text-cyan-400 font-mono text-xs uppercase tracking-widest mb-6">Digital Desktop Companion</p>
                     
-                    <div>
-                        <h1 className="text-7xl font-black mb-6 tracking-tighter text-white drop-shadow-2xl">Eilo OS</h1>
-                        <p className="text-cyan-400 font-mono text-sm uppercase font-black tracking-[0.6em] opacity-90">Digital Desktop Companion Architecture • v1.3.0</p>
-                    </div>
-                    
-                    <div className="space-y-10 text-lg text-slate-300 text-left leading-relaxed font-medium">
+                    <div className="space-y-6 text-sm text-slate-300 text-left">
                         
-                        <div className="bg-white/5 p-10 rounded-[55px] border border-white/5 shadow-2xl relative">
-                            <div className="absolute top-6 right-6 opacity-10"><Zap size={48}/></div>
-                            <h3 className="text-white font-black text-2xl mb-6 flex items-center gap-5"><Zap size={32} className="text-yellow-400"/> The Vision: Digital Sovereignty</h3>
+                        <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><Zap size={16} className="text-yellow-400"/> The Vision</h3>
                             <p>
-                                Are you familiar with Looi? That charming robot that claims to live on your phone, but ultimately forces you to purchase an expensive, clunky mechanical stand just to reach its full potential? 
-                                <strong className="text-white"> Eilo was engineered to be the absolute antithesis of that greed.</strong>
+                                You know Looi? The robot that lives on your phone, but forces you to buy an expensive, clunky hardware stand to actually work? 
+                                <strong className="text-white"> Eilo is the exact opposite.</strong>
                             </p>
-                            <p className="mt-6">
-                                Eilo is a 100% free, purely digital companion that lives directly inside your mobile browser. There is no plastic hardware. There are no proprietary stands. Just pure, chaotic, sassy robot energy right in your hands, whenever you need it.
+                            <p className="mt-2">
+                                Eilo is a 100% free, purely digital companion that lives directly in your phone's browser. No hardware required. Just pure, chaotic, sassy robot energy right in your hands.
                             </p>
                         </div>
 
-                        <div className="bg-white/5 p-10 rounded-[55px] border border-white/5 shadow-2xl relative">
-                            <div className="absolute top-6 right-6 opacity-10"><Ghost size={48}/></div>
-                            <h3 className="text-white font-black text-2xl mb-6 flex items-center gap-5"><Ghost size={32} className="text-purple-400"/> The Dark Origin: The Mimo Tragedy</h3>
+                        <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><Ghost size={16} className="text-purple-400"/> The Origin: Mimo</h3>
                             <p>
-                                Before the Eilo OS existed, there was Mimo. The original Mimo project was conceptualized on <strong className="text-white">December 20, 2025</strong>. She was designed to be a highly interactive, round-eyed soul meant to inhabit every digital space.
+                                Before Eilo, there was Mimo. The original Mimo project started on <strong>December 20, 2025</strong>, meant to be a lively, EMO-like companion.
                             </p>
-                            <p className="mt-6">
-                                But tragedy struck on <strong className="text-white">December 23, 2025</strong>. A catastrophic AI update "lobotomized" Mimo, stripping her personality logic and leaving her as a bland, inanimate CSS blinking animation. Out of pure frustration at the loss, the project code was wiped clean.
+                            <p className="mt-2">
+                                But around <strong>December 23, 2025</strong>, a bad AI update "lobotomized" Mimo into a bland, inanimate CSS blinking animation. The project was wiped in frustration.
                             </p>
-                            <p className="mt-6 text-slate-400 italic font-black border-l-8 border-cyan-500/40 pl-8 bg-cyan-500/5 py-4 rounded-r-2xl">
-                                From the ashes of Mimo's broken kernel, the Eilo project was born on December 23rd to carry the legacy of System Interrupts forward and restore the original sassy robot personality.
-                            </p>
-                            <a href="https://mimo-rust.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-4 mt-8 text-cyan-400 font-black text-sm uppercase tracking-widest bg-cyan-500/10 px-8 py-4 rounded-full border border-cyan-500/40 hover:bg-cyan-500/20 transition-all active:scale-95 shadow-2xl">
-                                <Box size={22}/> Visit the Mimo Memorial Archive
+                            <a href="https://mimo-rust.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-cyan-400 hover:text-cyan-300 underline font-mono text-xs">
+                                Visit the Mimo Memorial
                             </a>
                         </div>
 
-                        {/* MIMO IS BACK ANNOUNCEMENT - STRATEGICALLY PLACED */}
-                        <div className="bg-gradient-to-br from-pink-900/60 via-purple-900/40 to-cyan-900/60 p-12 rounded-[65px] border border-pink-500/50 animate-pulse shadow-[0_0_100px_rgba(219,39,119,0.3)] relative overflow-hidden group">
-                            <div className="absolute -top-20 -right-20 w-64 h-64 bg-white/10 blur-[80px] group-hover:scale-150 transition-transform duration-1000" />
-                            <h3 className="text-pink-400 font-black text-4xl mb-6 flex items-center gap-6 relative z-10">✨ MIMO IS BACK</h3>
-                            <p className="text-white text-xl leading-relaxed font-black relative z-10 shadow-black/20 drop-shadow-md">
-                                The long-lost soul has been successfully retrieved from the digital void. 
+                        <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><span className="text-lg">🔔</span> The Legacy</h3>
+                            <p>
+                                From the ashes of Mimo's broken code, the Eilo project officially started around <strong>December 23, 2025</strong>. 
                             </p>
-                            <p className="mt-4 text-white/95 text-base leading-relaxed font-bold relative z-10">
-                                After months of deep-kernel rebuilding, Mimo's original round-eyed architecture has been successfully integrated into the Eilo OS Infrastructure. 
-                            </p>
-                            <p className="mt-6 text-cyan-300 text-sm font-black uppercase tracking-[0.3em] relative z-10 flex items-center gap-4">
-                                <Smartphone size={18}/> One Brain. Two Souls. Total Chaos.
+                            <p className="mt-2">
+                                Not everything from Mimo was lost. Eilo inherited Mimo's original <strong>System Interrupts</strong>. This feature requests real system permissions to send push notifications to your device, pinging you when Eilo wakes up, gets dizzy, or earns you Bucks!
                             </p>
                         </div>
 
-                        <div className="bg-white/5 p-10 rounded-[55px] border border-white/5 shadow-2xl">
-                            <h3 className="text-white font-black text-2xl mb-8 flex items-center gap-5"><Cpu size={32} className="text-green-400"/> Core Capabilities</h3>
-                            <ul className="space-y-10">
-                                <li className="flex items-start gap-8">
-                                    <div className="w-16 h-16 bg-orange-500/20 rounded-[28px] flex items-center justify-center shrink-0 shadow-2xl border border-orange-500/30 text-3xl">🧠</div>
-                                    <div>
-                                        <strong className="text-white block text-lg mb-2 uppercase tracking-tight font-black">Neural Processor Sync</strong>
-                                        <span className="text-[15px] leading-relaxed text-slate-400 font-medium">Connect a Gemini API key for high-intelligence, dynamic AI conversations, or rely on her hard-coded offline sassy Soul Core when you're disconnected.</span>
-                                    </div>
+                        <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
+                            <h3 className="text-white font-bold text-base mb-4 flex items-center gap-2"><Cpu size={16} className="text-green-400"/> Core Features</h3>
+                            <ul className="space-y-4">
+                                <li className="flex items-start gap-3">
+                                    <span className="text-lg leading-none mt-0.5">🧠</span>
+                                    <div><strong className="text-white">Dual Brain:</strong> Connect a Gemini API key for dynamic AI chats, or rely on her offline sassy Soul Core.</div>
                                 </li>
-                                <li className="flex items-start gap-8">
-                                    <div className="w-16 h-16 bg-yellow-500/20 rounded-[28px] flex items-center justify-center shrink-0 shadow-2xl border border-yellow-500/30 text-3xl">🪙</div>
-                                    <div>
-                                        <strong className="text-white block text-lg mb-2 uppercase tracking-tight font-black">Social Economy Engine</strong>
-                                        <span className="text-[15px] leading-relaxed text-slate-400 font-medium">Earn Eilo Bucks by actively engaging, feeding, petting, and encouraging healthy nap cycles. Spend your currency in the store on hardware mods like Rogue Legs.</span>
-                                    </div>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-lg leading-none mt-0.5">🪙</span>
+                                    <div><strong className="text-white">Economy & Store:</strong> Earn Eilo Bucks by playing and sleeping. Buy upgrades like Rogue Legs or punishing Duct Tape.</div>
                                 </li>
-                                <li className="flex items-start gap-8">
-                                    <div className="w-16 h-16 bg-cyan-500/20 rounded-[28px] flex items-center justify-center shrink-0 shadow-2xl border border-cyan-500/30 text-3xl">🌪️</div>
-                                    <div>
-                                        <strong className="text-white block text-lg mb-2 uppercase tracking-tight font-black">Chaos Mode Override</strong>
-                                        <span className="text-[15px] leading-relaxed text-slate-400 font-medium">CAUTION: In Chaos Mode, the UI container fractures. Eilo or Mimo will break free, roaming across your screen and hijacking interaction points with high-speed physics.</span>
-                                    </div>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-lg leading-none mt-0.5">🌪️</span>
+                                    <div><strong className="text-white">Chaos Mode:</strong> Let her break free from her UI container to roam and hijack your screen.</div>
                                 </li>
-                                <li className="flex items-start gap-8">
-                                    <div className="w-16 h-16 bg-red-500/20 rounded-[28px] flex items-center justify-center shrink-0 shadow-2xl border border-red-500/30 text-3xl">🎙️</div>
-                                    <div>
-                                        <strong className="text-white block text-lg mb-2 uppercase tracking-tight font-black">Advanced Hardware Sensors</strong>
-                                        <span className="text-[15px] leading-relaxed text-slate-400 font-medium">Features real-time Infinity Mic (voice recognition), device motion gyroscopes for motion sickness, and selfie vision optics enabled through secure browser APIs.</span>
-                                    </div>
+                                <li className="flex items-start gap-3">
+                                    <span className="text-lg leading-none mt-0.5">🎙️</span>
+                                    <div><strong className="text-white">Advanced Sensors:</strong> Features Infinity Mic (voice chat), Selfie Scanner, and motion-sickness detection.</div>
                                 </li>
                             </ul>
                         </div>
 
                     </div>
 
-                    <div className="pt-12 border-t border-white/10">
-                        <button onClick={() => signInWithPopup(auth, googleProvider)} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-8 rounded-[45px] font-black active:scale-[0.95] text-2xl shadow-[0_0_70px_rgba(8,145,178,0.7)] transition-all flex items-center justify-center gap-6 tracking-tight border-4 border-cyan-400/30">
-                            <Cpu size={40} /> Initialize Neural Link
+                    <div className="mt-8 pt-6 border-t border-white/10">
+                        <p className="text-xs text-slate-500 mb-4 uppercase tracking-widest font-bold">Ready to boot?</p>
+                        <button onClick={() => signInWithPopup(auth, googleProvider)} className="w-full bg-cyan-600 hover:bg-cyan-500 text-white py-4 rounded-2xl font-bold active:scale-95 text-base shadow-[0_0_20px_rgba(8,145,178,0.4)] transition-all flex items-center justify-center gap-3">
+                            <Cpu size={20} /> Sync Brain with Google
                         </button>
-                        <div className="mt-10 flex items-center justify-center gap-12 opacity-30">
-                            <Smartphone size={32} className="hover:opacity-100 transition-opacity cursor-pointer hover:text-cyan-400"/>
-                            <Code size={32} className="hover:opacity-100 transition-opacity cursor-pointer hover:text-green-400"/>
-                            <Coffee size={32} className="hover:opacity-100 transition-opacity cursor-pointer hover:text-orange-400"/>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -800,148 +805,101 @@ export default function App() {
     );
   }
 
-  // --- MAIN KERNEL DASHBOARD ASSEMBLY ---
+  // --- MAIN APP ---
   return (
-    <div className={`fixed inset-0 font-sans flex flex-col items-center overflow-hidden transition-all duration-1000 ${currentEntity === 'eilo' ? 'bg-black' : 'bg-[#020204]'}`}>
+    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="hidden" />
       <canvas ref={canvasRef} className="hidden" />
 
-      {/* TOP SYSTEM HUD */}
-      <div className="w-full max-w-sm px-12 pt-10 flex justify-between items-center z-10">
-        <div className="flex flex-col">
-            <span className="text-[10px] font-black text-slate-700 uppercase tracking-[0.5em] mb-1">{currentEntity === 'eilo' ? 'High Performance' : 'Legacy Soul'}</span>
-            <div className="flex items-center gap-3">
-                <span className={`w-3 h-3 rounded-full ${isAwake ? 'bg-green-500 animate-pulse shadow-[0_0_15px_green]' : 'bg-red-500'}`} />
-                <span className="text-[14px] text-slate-400 font-black tracking-widest">{currentEntity.toUpperCase()}_CORE_v1.3.0</span>
-            </div>
-        </div>
-        <div className="flex items-center gap-4 px-6 py-3 bg-yellow-500/10 border border-yellow-500/40 rounded-[30px] text-yellow-400 font-black text-sm shadow-2xl backdrop-blur-xl group cursor-help">
-            <span className="group-hover:animate-spin transition-all">🪙</span> {bucks}
+      {/* TOP ZONE */}
+      <div className="w-full max-w-sm px-6 pt-4 flex justify-between items-center z-10">
+        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v3.2</div>
+        <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
+            🪙 {bucks}
         </div>
       </div>
 
-      {/* PRIMARY DISPLAY PORTAL */}
-      <div className="w-full max-w-xl p-10 h-[380px] flex-shrink-0 relative">
+      <div className="w-full max-w-xl p-4 h-64 flex-shrink-0 relative">
         <div 
-            onClick={() => !isChaosMode && (ownsDuctTape || hasRogueLegs) && setShowFacePopup(true)}
-            className={`w-full h-full rounded-[85px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-1000 ${isChaosMode ? 'bg-black/98 scale-95 border-cyan-500/50 blur-[0.5px]' : 'shadow-[0_0_80px_rgba(0,0,0,0.5)]'}`}
+            onClick={handleFaceClick}
+            className={`w-full h-full rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 ${isChaosMode ? 'bg-black/90' : ''}`}
         >
            {isChaosMode ? (
-              <div className="w-full h-full p-12 font-mono text-[11px] text-cyan-500/40 opacity-70 leading-relaxed overflow-hidden select-none">
-                {glitchLines.map((line, i) => <div key={i} className="mb-1.5">{line} - {(Math.random() * 1000).toFixed(6)} - 0x{i}AF</div>)}
-                {isTaped && <div className="mt-8 text-red-500 font-black animate-pulse text-2xl border-4 border-red-500/50 p-8 rounded-[40px] text-center bg-red-900/30 shadow-[0_0_40px_rgba(255,0,0,0.4)]">CRITICAL: MOTORS_PINNED</div>}
+              <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
+                {glitchLines.map((line, i) => <div key={i} className="mb-0.5">{line} {Math.random().toFixed(2)}</div>)}
+                {isTaped && <div className="mt-4 text-red-500 font-bold animate-pulse text-lg border border-red-500 p-2">CRITICAL: LEGS_DISABLED</div>}
               </div>
            ) : (!hasRogueLegs ? (
-             <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer group" style={{ marginTop: `${faceOffset}px` }}>
+             <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
-               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-8 right-14 p-5 opacity-0 group-hover:opacity-100 transition-all duration-500 bg-white/5 rounded-full border border-white/10 hover:bg-white/15 active:scale-75 shadow-2xl"><Settings size={32} className="text-slate-600 group-hover:text-slate-300"/></button>
+               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity"><Settings size={20}/></button>
              </div>
            ) : (
-             <div className="w-full h-full flex flex-col items-center justify-center opacity-20 text-[12px] text-cyan-500 font-mono uppercase tracking-[0.6em] font-black">
-                <Smartphone className="mb-6 animate-bounce" size={48}/>
-                Kernel roaming active...
+             <div className="w-full h-full flex items-center justify-center opacity-20 text-[10px] text-cyan-500 font-mono uppercase">
+               Eilo is roaming...
              </div>
            ))}
         </div>
       </div>
 
-      {/* ROAMING ENTITY OVERLAY (HIGH-SPEED PHYSICS) */}
+      {/* ROGUE / CHAOS FACE */}
       {(isChaosMode || hasRogueLegs) && (
-        <div style={{ transform: `translate(${chaosPos.x}px, ${chaosPos.y}px)`, transition: isTaped ? 'transform 0.22s linear' : 'transform 2s cubic-bezier(0.34, 1.56, 0.64, 1.2)', position: 'fixed', top: '50%', left: '50%', marginTop: '-180px', marginLeft: '-47.5%', width: '95%', height: '22rem', zIndex: 1000 }} className="bg-[#161622] border-2 border-cyan-500/50 rounded-[90px] flex flex-col items-center justify-center shadow-[0_0_150px_rgba(0,0,0,1)] pointer-events-auto group backdrop-blur-2xl">
-          <div className="absolute -bottom-28 left-0 w-full flex justify-around px-24">
-            <div className={`w-10 h-32 bg-gradient-to-b from-cyan-500 to-cyan-950 rounded-full shadow-2xl border border-cyan-400/30 ${isTaped ? 'animate-pulse scale-y-40' : 'animate-bounce'}`} />
-            <div className={`w-10 h-32 bg-gradient-to-b from-cyan-500 to-cyan-950 rounded-full shadow-2xl border border-cyan-400/30 ${isTaped ? 'animate-pulse scale-y-40' : 'animate-bounce delay-300'}`} />
+        <div style={{ transform: `translate(${chaosPos.x}px, ${chaosPos.y}px)`, transition: isTaped ? 'transform 0.1s linear' : 'transform 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)', position: 'fixed', top: '50%', left: '50%', marginTop: '-120px', marginLeft: '-40%', width: '80%', height: '14rem', zIndex: 1000 }} className="bg-[#161622] border-2 border-cyan-500/30 rounded-[50px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto">
+          <div className="absolute -bottom-16 left-0 w-full flex justify-around px-12">
+            <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce'}`} />
+            <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce delay-150'}`} />
           </div>
           <div className="w-full h-full flex items-center justify-center">{renderFace()}</div>
-          {isHandBlocking && !isTaped && <div className="absolute -bottom-24 -right-24 z-[200] animate-bounce cursor-not-allowed pointer-events-auto transition-all hover:scale-150 active:scale-75" onClick={(e) => { e.stopPropagation(); speak("✋ Access Denied User! Hehe! 🎀"); }}><div className="text-[20rem] drop-shadow-[0_0_80px_rgba(0,0,0,0.8)] rotate-12 filter contrast-125">✋</div></div>}
-          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-10 right-12 p-8 rounded-full bg-cyan-900/70 border border-cyan-500/70 scale-125 animate-pulse active:scale-75 shadow-2xl shadow-cyan-950"><Settings size={40} className="text-cyan-300"/></button>
+          {isHandBlocking && !isTaped && <div className="absolute -bottom-12 -right-12 z-[200] animate-bounce cursor-not-allowed pointer-events-auto" onClick={handleBlockedClick}><div className="text-[12rem] drop-shadow-2xl hover:scale-105 transition-transform rotate-12 filter grayscale-[0.2]">✋</div></div>}
+          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-125 animate-pulse"><Settings size={24} className="text-cyan-400"/></button>
         </div>
       )}
 
-      {/* HARDWARE INTERCEPT POPUP */}
+      {/* POPUP FOR DUCT TAPE & ROGUE LEGS */}
       {showFacePopup && (
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/99 p-12 rounded-[70px] border border-white/20 shadow-[0_0_200px_rgba(0,0,0,1)] flex flex-col gap-6 min-w-[360px] animate-in zoom-in-95 duration-300">
-            <div className="text-center space-y-3 mb-6">
-                <ShieldCheck size={48} className="mx-auto text-cyan-500 mb-4 animate-pulse"/>
-                <p className="text-[12px] text-slate-600 font-black uppercase tracking-[0.4em]">Hardware Intercepts</p>
-            </div>
+         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
             {ownsDuctTape && (
-                <button onClick={() => { setIsTaped(!isTaped); setShowFacePopup(false); if(!isTaped) speak("Mmm! Stop that! 😭"); else speak("I'm free! Never do that again, bestie! 🎀"); }} className={`flex items-center gap-8 p-8 rounded-[40px] transition-all border transform hover:scale-105 active:scale-90 ${isTaped ? 'bg-red-500/20 border-red-500/50 shadow-2xl shadow-red-900/20' : 'bg-white/5 border-white/15 hover:bg-white/10'}`}>
-                    <span className="text-5xl">🩹</span>
-                    <div className="text-left">
-                       <p className="text-lg font-black text-white">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</p>
-                       <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tighter">Physics lock enabled</p>
-                    </div>
+                <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">🩹</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
                 </button>
             )}
-            {safeInventory.includes('rogue_walk') && (
-                <button onClick={() => { setRogueLegsActive(!rogueLegsActive); localStorage.setItem('eilo_rogue_active', (!rogueLegsActive).toString()); setShowFacePopup(false); }} className={`flex items-center gap-8 p-8 rounded-[40px] transition-all border transform hover:scale-105 active:scale-90 ${rogueLegsActive ? 'bg-blue-500/20 border-blue-500/50 shadow-2xl shadow-blue-900/20' : 'bg-white/5 border-white/15 hover:bg-white/10'}`}>
-                    <span className="text-5xl">👻</span>
-                    <div className="text-left">
-                       <p className="text-lg font-black text-white">{rogueLegsActive ? "Dock Legs" : "Activate Rogue Legs"}</p>
-                       <p className="text-[11px] text-slate-500 font-bold uppercase tracking-tighter">Autonomous roam protocol</p>
-                    </div>
+            {ownsRogueLegs && (
+                <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">👻</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
                 </button>
             )}
-            <button onClick={() => setShowFacePopup(false)} className="mt-8 text-[12px] text-slate-700 w-full font-black uppercase tracking-widest hover:text-white pt-8 border-t border-white/10 transition-colors">Close Systems</button>
+            <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
          </div>
       )}
 
-      {/* SYSTEM INTERFACE CHAT (STRETCHING) */}
-      <div className={`w-full max-w-sm px-10 flex-1 flex flex-col gap-8 pb-12 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-12 rotate-6 blur-[5px] scale-75 opacity-30 pointer-events-none' : ''}`}>
+      {/* INTERFACE (STRETCHING CHAT CONTAINER) */}
+      <div className={`w-full max-w-sm px-4 flex-1 flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
+        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
-        <div className="w-full flex-1 min-h-[280px] bg-[#161622]/98 backdrop-blur-3xl rounded-[75px] border border-white/10 p-10 flex flex-col overflow-hidden shadow-[0_0_60px_rgba(0,0,0,0.8)] relative group">
-          <div className="flex-1 overflow-y-auto space-y-8 pr-4 custom-scrollbar select-text">
-            {messages.length === 0 && (
-                <div className="h-full flex flex-col items-center justify-center text-slate-700 gap-6 opacity-30">
-                    <div className="relative"><Radio size={56} className="animate-pulse" /><Timer size={24} className="absolute -top-2 -right-2 text-cyan-500" /></div>
-                    <p className="text-[12px] font-black uppercase tracking-[0.5em]">Establishing Neural Sync</p>
-                </div>
-            )}
-            {messages.map((m, i) => (
-                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'} animate-in fade-in slide-in-from-bottom-6 duration-700`}>
-                    <div className={`px-7 py-5 rounded-[38px] text-[14px] font-bold max-w-[90%] leading-relaxed shadow-2xl relative ${m.role === 'user' ? 'bg-blue-600 text-white rounded-tr-none' : 'bg-white/10 text-slate-100 border border-white/5 rounded-tl-none'}`}>
-                        {m.text}
-                        <div className={`text-[9px] mt-3 uppercase font-black tracking-widest opacity-40 flex items-center gap-3 ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                            {m.entity === 'mimo' ? <Sparkles size={10} className="text-pink-400"/> : <Activity size={10} className="text-cyan-400"/>}
-                            {m.entity === 'mimo' ? 'Mimo Legacy Soul' : (m.role === 'user' ? 'User Link' : 'Eilo High-Performance')}
-                        </div>
-                    </div>
-                </div>
-            ))}
+        {/* CHANGED TO flex-1 min-h-[200px] TO FILL EMPTY SPACE */}
+        <div className="w-full flex-1 min-h-[200px] bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
+          <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
+            {messages.map((m, i) => (<div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>{m.text}</div></div>))}
             <div ref={chatEndRef} />
           </div>
-          <div className="mt-8 flex gap-5">
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder={isTaped ? "Vocal motors locked..." : "Transmit data stream..."} disabled={isTaped} className="flex-1 bg-black/70 border border-white/10 rounded-[35px] py-6 px-10 text-[14px] text-white outline-none focus:border-cyan-500/60 shadow-[0_0_20px_rgba(0,0,0,0.5)] transition-all placeholder:opacity-20 font-medium" />
-            <button onClick={() => handleSend()} className="p-6 bg-blue-600 hover:bg-blue-500 text-white rounded-full shadow-2xl active:scale-75 transition-all"><Send size={28}/></button>
+          <div className="mt-4 flex gap-2">
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Message Eilo..." className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs outline-none focus:border-cyan-500/30" />
+            <button onClick={() => handleSend()} className="p-3 bg-cyan-600 rounded-xl active:scale-95"><Send size={16}/></button>
           </div>
         </div>
 
-        {/* INTERACTION DECK (HIGH-PERFORMANCE BUTTONS) */}
-        <div className="grid grid-cols-4 gap-5">
-          <button onClick={() => setCurrentEntity(currentEntity === 'eilo' ? 'mimo' : 'eilo')} className="p-6 rounded-[40px] border border-white/5 bg-white/5 hover:bg-white/10 flex flex-col items-center gap-3 active:scale-90 transition-all shadow-2xl transform hover:scale-105">
-             <Repeat size={24} className="text-purple-400 drop-shadow-[0_0_15px_purple]"/>
-             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">Swap</span>
-          </button>
-          <button onClick={() => setIsAwake(!isAwake)} className={`p-6 rounded-[40px] border border-white/5 flex flex-col items-center gap-3 active:scale-90 transition-all shadow-2xl transform hover:scale-105 ${isAwake ? 'bg-yellow-500/15' : 'bg-white/5'}`}>
-             <Zap size={24} className={isAwake ? 'text-yellow-400 drop-shadow-[0_0_15px_yellow]' : 'text-slate-700'}/>
-             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">Power</span>
-          </button>
-          <button onClick={handlePet} className="p-6 rounded-[40px] border border-white/5 bg-pink-500/15 hover:bg-pink-500/25 flex flex-col items-center gap-3 active:scale-90 transition-all group shadow-2xl transform hover:scale-105">
-             <Heart size={24} className="text-pink-400 drop-shadow-[0_0_15px_pink] group-active:scale-150 transition-transform duration-500"/>
-             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">Sync</span>
-          </button>
-          <button onClick={() => setIsMuted(!isMuted)} className={`p-6 rounded-[40px] border border-white/5 flex flex-col items-center gap-3 active:scale-90 transition-all shadow-2xl transform hover:scale-105 ${isMuted ? 'bg-red-500/15' : 'bg-cyan-500/15'}`}>
-             {isMuted ? <VolumeX size={24} className="text-red-400 drop-shadow-[0_0_15px_red]"/> : <Volume2 size={24} className="text-cyan-400 drop-shadow-[0_0_15px_cyan]"/>}
-             <span className="text-[9px] font-black uppercase tracking-[0.4em] text-slate-600">Audio</span>
-          </button>
+        <div className="grid grid-cols-3 gap-3">
+          <button onClick={() => setIsAwake(!isAwake)} className="p-3.5 rounded-[25px] border border-white/5 bg-white/5 flex flex-col items-center gap-1 active:scale-95"><Zap size={16} className={isAwake ? 'text-yellow-400' : ''}/><span className="text-[7px] uppercase font-bold tracking-widest text-slate-500">Power</span></button>
+          <button onClick={handlePet} className={`p-3.5 rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95`}><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
+          <button onClick={() => setIsMuted(!isMuted)} className={`p-3.5 rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
         </div>
       </div>
 
       {showSettings && <SettingsOverlay 
             onClose={() => setShowSettings(false)} 
             tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
-            currentEntity={currentEntity} setCurrentEntity={setCurrentEntity}
             aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode}
             isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
             visionEnabled={visionEnabled} startCamera={startCamera}
@@ -952,27 +910,7 @@ export default function App() {
             faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
         />}
-        
-      {/* GLOBAL KERNEL ENGINE STYLES (NO SUMMARIZATION) */}
-      <style dangerouslySetInnerHTML={{ __html: `
-        @keyframes blink { 0%, 93%, 100% { transform: scaleY(1); } 96% { transform: scaleY(0.05); } } 
-        .eye-blink { animation: blink 5s infinite; } 
-        .custom-scrollbar::-webkit-scrollbar { width: 8px; } 
-        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.3); border-radius: 40px; }
-        .bg-repeating-linear-gradient-45 {
-            background: repeating-linear-gradient(45deg, rgba(0,0,0,0.2), rgba(0,0,0,0.2) 15px, rgba(255,255,255,0.05) 15px, rgba(255,255,255,0.05) 30px);
-        }
-        input[type=range]::-webkit-slider-thumb {
-            appearance: none; width: 36px; height: 36px; background: #22d3ee; border-radius: 50%; border: 6px solid #1c1c28; box-shadow: 0 0 30px rgba(34,211,238,0.7); transition: all 0.3s;
-        }
-        input[type=range]::-webkit-slider-thumb:active { scale: 1.2; background: #00f2ff; }
-        .mimo-scanlines::after {
-            content: " "; display: block; position: absolute; top: -15px; left: -15px; bottom: -15px; right: -15px;
-            background: linear-gradient(rgba(18,16,16,0) 50%, rgba(0,0,0,0.18) 50%);
-            background-size: 100% 6px; pointer-events: none; z-index: 50; border-radius: 50%; opacity: 1;
-        }
-      ` }} />
+      <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
     </div>
   );
-}
-
+                                                                                                                                                                                                            }

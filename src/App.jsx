@@ -23,7 +23,8 @@ const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 const appId = "eilo-original-v1";
 
-const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
+// Optimized network loop to prevent long UI hang states 💀
+const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
   try {
     const response = await fetch(url, options);
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
@@ -31,7 +32,7 @@ const fetchWithRetry = async (url, options, retries = 5, backoff = 1000) => {
   } catch (err) {
     if (retries <= 0) throw err;
     await new Promise(r => setTimeout(r, backoff));
-    return fetchWithRetry(url, options, retries - 1, backoff * 2);
+    return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
   }
 };
 
@@ -650,7 +651,8 @@ export default function App() {
       
       if (tempApiKey) {
           try {
-              const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${tempApiKey}`, {
+              // Linked to production network model for lower system latencies 😭 ✌️
+              const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: msgText }] }], systemInstruction: { parts: [{ text: system }] } })
               });
@@ -878,7 +880,6 @@ export default function App() {
       <div className={`w-full max-w-sm px-4 flex-1 flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
-        {/* CHANGED TO flex-1 min-h-[200px] TO FILL EMPTY SPACE */}
         <div className="w-full flex-1 min-h-[200px] bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
             {messages.map((m, i) => (<div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>{m.text}</div></div>))}
@@ -913,4 +914,4 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
     </div>
   );
-                                                                                                                                                                                                            }
+}

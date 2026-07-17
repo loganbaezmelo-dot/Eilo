@@ -296,7 +296,7 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // Trusted flat database path tracking logic
+  // Safe multi-session synchronization profile engine
   useEffect(() => {
     if (!user || !activeThreadId) return;
     const unsubscribe = onSnapshot(
@@ -712,42 +712,49 @@ export default function App() {
       threadId: activeThreadId
     };
 
+    // Isolated real-time rendering layers unhooked from database write stalls 😭 ✌️
     setMessages(prev => [...(Array.isArray(prev) ? prev : []), newUserMsg]);
 
+    let reply = "";
+    const safeInv = Array.isArray(inventory) ? inventory : [];
+    let system = `You are Eilo, a sweet, bratty robot. Be sassy.`;
+    if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀`;
+    
+    if (tempApiKey) {
+        try {
+            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
+              method: 'POST', headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ contents: [{ parts: [{ text: msgText }] }], systemInstruction: { parts: [{ text: system }] } })
+            });
+            reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
+        } catch (apiErr) {
+            console.warn("API Error, falling back to local brain.");
+            reply = getLocalResponse(msgText);
+        }
+    } else {
+        reply = getLocalResponse(msgText);
+    }
+
+    const newAiMsg = { 
+      role: 'eilo', 
+      text: reply, 
+      timestamp: Date.now(),
+      threadId: activeThreadId
+    };
+    
+    // Updates UI immediately before trying background operations 😭 ✌️
+    setMessages(prev => [...(Array.isArray(prev) ? prev : []), newAiMsg]);
+    setMood('happy'); 
+    speak(reply);
+    setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+    setIsThinking(false);
+    setTimeout(() => setMood('neutral'), 3000);
+
+    // Processes standard collection prints safely in a separate task context loop 😭 ✌️
     try {
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
-      
-      let reply = "";
-      const safeInv = Array.isArray(inventory) ? inventory : [];
-      let system = `You are Eilo, a sweet, bratty robot. Be sassy.`;
-      if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀`;
-      
-      if (tempApiKey) {
-          try {
-              const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
-                method: 'POST', headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ contents: [{ parts: [{ text: msgText }] }], systemInstruction: { parts: [{ text: system }] } })
-              });
-              reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
-          } catch (apiErr) {
-              console.warn("API Error, falling back to local brain.");
-              reply = getLocalResponse(msgText);
-          }
-      } else {
-          reply = getLocalResponse(msgText);
-      }
-
-      const newAiMsg = { 
-        role: 'eilo', 
-        text: reply, 
-        timestamp: Date.now(),
-        threadId: activeThreadId
-      };
-      
-      setMessages(prev => [...(Array.isArray(prev) ? prev : []), newAiMsg]);
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
-      // Title generation isolated into its own background safety loop 😭 ✌️
       if (isFirstMessage) {
         if (tempApiKey) {
           fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
@@ -765,17 +772,8 @@ export default function App() {
           setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t));
         }
       }
-
-      setMood('happy'); 
-      speak(reply);
-      setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-
-    } catch (err) { 
-      setMood('neutral'); 
-      console.error(err);
-    } finally { 
-      setIsThinking(false); 
-      setTimeout(() => setMood('neutral'), 3000); 
+    } catch (databaseErr) {
+       console.warn("Database sync suspended, conversational memory kept locally.");
     }
   };
 

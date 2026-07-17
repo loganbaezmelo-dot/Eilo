@@ -616,7 +616,11 @@ export default function App() {
       if (isTaped) {
         setChaosPos({ x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50 });
       } else {
-        setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (window.innerHeight * 0.5) });
+        // FIXED CHAOS MOVEMENT HEIGHT CLIPPING TO PREVENT GETTING PERMANENTLY STUCK AT THE BOTTOM
+        setChaosPos({ 
+          x: (Math.random() - 0.5) * (window.innerWidth * 0.65), 
+          y: (Math.random() - 0.5) * (window.innerHeight * 0.35) 
+        });
       }
     }, moveSpeed); 
 
@@ -801,7 +805,6 @@ export default function App() {
     let reply = "";
     const safeInv = Array.isArray(inventory) ? inventory : [];
     
-    // ANCHORING YOUR ACTUAL LOGGED IN DISPLAYNAME SO SHE NEVER FORGETS HER CREATOR
     const currentYear = new Date().getFullYear();
     const activeAccountName = user?.displayName || "Logan Baez";
     
@@ -813,7 +816,10 @@ export default function App() {
         try {
             const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ contents: [{ parts: [{ text: msgText }] }], systemInstruction: { parts: [{ text: system }] } })
+              body: JSON.stringify({ 
+                contents: [{ role: "user", parts: [{ text: msgText }] }], 
+                systemInstruction: { parts: [{ text: system }] } 
+              })
             });
             reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
         } catch (apiErr) {
@@ -1263,4 +1269,4 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
     </div>
   );
-      }
+                 }

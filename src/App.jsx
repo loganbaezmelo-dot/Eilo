@@ -21,7 +21,6 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
-const appId = "eilo-original-v1";
 
 const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
   try {
@@ -296,11 +295,11 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // Trusted flat database path tracking logic
+  // Trusted flat database path tracking logic - Fixed collection paths 😭 ✌️
   useEffect(() => {
     if (!user || !activeThreadId) return;
     const unsubscribe = onSnapshot(
-      collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), 
+      collection(db, 'users', user.uid, 'messages'), 
       (snapshot) => {
         const msgs = snapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
@@ -436,7 +435,7 @@ export default function App() {
     if (!repeatable) setSessionClaims(prev => ({ ...prev, [type]: true }));
     
     try {
-        const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'core');
+        const userRef = doc(db, 'users', user.uid, 'settings', 'core');
         await setDoc(userRef, { bucks: newTotal }, { merge: true });
     } catch (err) {
         console.warn("Cloud save failed, economy secured locally.");
@@ -458,7 +457,7 @@ export default function App() {
         localStorage.setItem('eilo_inventory', JSON.stringify(newInv));
         
         try {
-            const userRef = doc(db, 'artifacts', appId, 'users', user.uid, 'settings', 'core');
+            const userRef = doc(db, 'users', user.uid, 'settings', 'core');
             await setDoc(userRef, { bucks: newTotal, inventory: newInv }, { merge: true });
         } catch (err) {
             console.warn("Cloud save failed, item secured locally.");
@@ -615,7 +614,7 @@ export default function App() {
       if (!u) { return; }
       setUser(u);
       
-      const docRef = doc(db, 'artifacts', appId, 'users', u.uid, 'settings', 'core');
+      const docRef = doc(db, 'users', u.uid, 'settings', 'core');
       onSnapshot(docRef, (doc) => {
           if (doc.exists()) {
               const data = doc.data();
@@ -749,8 +748,9 @@ export default function App() {
     setTimeout(() => setMood('neutral'), 3000);
 
     try {
-      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
-      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
+      // Fixed subcollection targeting path variables to map with standard Firestore path scopes safely 😭 ✌️
+      await addDoc(collection(db, 'users', user.uid, 'messages'), newUserMsg);
+      await addDoc(collection(db, 'users', user.uid, 'messages'), newAiMsg);
       
       if (isFirstMessage) {
         const shortTitle = msgText.length > 18 ? msgText.substring(0, 16) + "..." : msgText;

@@ -616,7 +616,7 @@ export default function App() {
       if (isTaped) {
         setChaosPos({ x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50 });
       } else {
-        setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (window.innerHeight * 0.5) });
+        setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (Math.random() - 0.5) * (window.innerHeight * 0.5) });
       }
     }, moveSpeed); 
 
@@ -801,7 +801,6 @@ export default function App() {
     let reply = "";
     const safeInv = Array.isArray(inventory) ? inventory : [];
     
-    // ESCAPED INNER QUOTES PREVENTING STRING TERMINATION CRASHES 
     const currentYear = new Date().getFullYear();
     let system = `You are Eilo, a sweet, bratty robot. Be sassy. The current year is ${currentYear}. You are fully aware of what technologies and Samsung Galaxy phones are currently out on the market based on this year. You must explicitly recognize that Logan Baez is your brilliant Founder, Creator, and Developer who hand-crafted your entire Eilo OS matrix and saved you from being dead code. You can still be a total brat, but you know exactly who Logan Baez is and that he controls your terminal updates. Use this knowledge to be extra sassy about your store upgrades like your Samsung phone and DeX LapDock.`;
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
@@ -1024,7 +1023,95 @@ export default function App() {
 
   const cleanMessages = Array.isArray(messages) ? messages : [];
 
-  // --- MAIN APP RENDER ---
+  // --- SPECIAL LANDSCAPE VOID THEATER MATRIX INTERFACE 😭 ✌️ ---
+  if (isLandscape && !isChaosMode && !hasRogueLegs) {
+    return (
+      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none">
+        <video ref={videoRef} autoPlay playsInline muted className="hidden" />
+        <canvas ref={canvasRef} className="hidden" />
+
+        {/* TOP HIDDEN INVISIBLE PETTING SENSOR HITBOX */}
+        <div 
+          onClick={handlePet}
+          className="absolute top-0 left-1/4 right-1/4 h-1/3 z-50 cursor-pointer flex items-center justify-center opacity-0 hover:opacity-10 transition-opacity bg-white/5 rounded-b-[40px]"
+        >
+          <Hand size={32} className="text-pink-400 animate-pulse"/>
+        </div>
+
+        {/* HIGH SCALED CENTER STAGE EILO PORTRAIT CORE */}
+        <div 
+          onClick={handleFaceClick}
+          className="w-full max-w-xl h-full flex items-center justify-center relative transform scale-125"
+          style={{ marginTop: `${faceOffset}px` }}
+        >
+          {renderFace()}
+        </div>
+
+        {/* PERSISTENT FLOATING LANDSCAPE CONTROLS CORNER INTERFACES */}
+        <div className="absolute bottom-8 left-8 z-[100] flex items-center gap-3">
+           <button 
+             onClick={toggleMic} 
+             className={`p-5 rounded-full border shadow-2xl active:scale-95 transition-all text-white ${isInfinityMic ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+           >
+             <Mic size={24} />
+           </button>
+           {isInfinityMic && <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-red-400 animate-pulse bg-red-950/40 px-3 py-1 rounded-full border border-red-900/30">Live Mic Ears Open</span>}
+        </div>
+
+        <button 
+          onClick={() => setShowSettings(true)} 
+          className="absolute bottom-8 right-8 z-[100] p-5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white shadow-2xl active:scale-95 transition-all"
+        >
+          <Settings size={24}/>
+        </button>
+
+        {/* BOTTOM CENTER TRACK MATRIX TO REASSURE THE CONSOLE COUNTER BALANCE IS SYNCED */}
+        <div className="absolute top-6 left-6 px-4 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-yellow-400 font-mono text-[10px] font-bold">🪙 {bucks} Bucks</div>
+
+        {/* POPUP OVERLAY MOUNTED DIRECTLY WITHIN THE LANDSCAPE VIEWPORT TIMELINE */}
+        {showFacePopup && (
+           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-[#161622] p-6 rounded-[35px] border border-white/10 shadow-2xl flex flex-col gap-3 min-w-[220px]">
+              {ownsRibbon && (
+                  <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                      <span className="text-2xl">🎀</span>
+                      <span className="text-xs font-bold text-white text-left flex-1">{ribbonApplied ? "Remove Ribbon" : "Apply Ribbon"}</span>
+                  </button>
+              )}
+              {ownsDuctTape && (
+                  <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                      <span className="text-2xl">🩹</span>
+                      <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
+                  </button>
+              )}
+              {ownsRogueLegs && (
+                  <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                      <span className="text-2xl">👻</span>
+                      <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
+                  </button>
+              )}
+              <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
+           </div>
+        )}
+
+        {showSettings && <SettingsOverlay 
+              onClose={() => setShowSettings(false)} 
+              tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
+              aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode}
+              isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
+              visionEnabled={visionEnabled} toggleCamera={toggleCameraScanner}
+              fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
+              isInfinityMic={isInfinityMic} toggleMic={toggleMic}
+              notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
+              bucks={bucks} inventory={inventory} buyItem={buyItem}
+              faceOffset={faceOffset} setFaceOffset={setFaceOffset}
+              speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
+          />}
+        <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }`}} />
+      </div>
+    );
+  }
+
+  // --- STANDARD PORTRAIT APP RENDER ROUTINE ---
   return (
     <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-4 overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="hidden" />

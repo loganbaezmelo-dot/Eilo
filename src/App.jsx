@@ -183,7 +183,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   
-  // Multiple Thread History States 😭 ✌️
+  // Multiple Thread History States 
   const [threads, setThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(localStorage.getItem('eilo_active_thread') || 'default_session');
   const [showHistory, setShowHistory] = useState(false);
@@ -292,7 +292,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isLandscape, isChaosMode, user]);
 
-  // Sync Global Thread Lists from cloud metrics 😭 ✌5
+  // Sync Global Thread Lists from cloud metrics
   useEffect(() => {
     if (!user) return;
     const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'threads'), (snapshot) => {
@@ -710,7 +710,6 @@ export default function App() {
     const newUserMsg = { role: 'user', text: msgText, timestamp: Date.now() };
 
     try {
-      // Ensure the thread metadata profile is properly seeded in Firestore 😭 ✌️
       const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId);
       await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
 
@@ -739,7 +738,7 @@ export default function App() {
       const newAiMsg = { role: 'eilo', text: reply, timestamp: Date.now() };
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId, 'messages'), newAiMsg);
       
-      // Auto-generate a title based on the first text layer matching your constraints 😭 ✌️
+      // Auto-generates a short title via Gemini if it's the start of a thread
       if (isFirstMessage && tempApiKey) {
         try {
           const titleGen = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
@@ -764,7 +763,7 @@ export default function App() {
     } catch (err) { 
       setMood('neutral'); 
       console.error(err);
-    } final { 
+    } finally { 
       setIsThinking(false); 
       setTimeout(() => setMood('neutral'), 3000); 
     }
@@ -964,7 +963,7 @@ export default function App() {
          </div>
       )}
 
-      {/* INTERFACE ZONE (Height constraints updated to allow proper global swipe ups) 😭 ✌️ */}
+      {/* INTERFACE ZONE (Height constraints updated to allow proper global swipe ups) */}
       <div className={`w-full max-w-sm px-4 h-[calc(100vh-310px)] flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         

@@ -1,9 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
 import { 
-  Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, ToggleLeft, ToggleRight, AlertTriangle, Eye, Sparkles, Ghost, Radio, Cpu, ShieldCheck, LogOut
+  Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, ToggleLeft, ToggleRight, AlertTriangle, Eye, Sparkles, Ghost, Radio, Cpu, ShieldCheck, LogOut, Menu, Plus, MessageSquare
 } from 'lucide-react';
 
 // --- FIREBASE CONFIG ---
@@ -143,11 +143,51 @@ const SettingsOverlay = ({
   );
 };
 
+// --- CHAT HISTORY SIDEBAR OVERLAY ---
+const HistorySidebar = ({ isOpen, onClose, threads, activeThreadId, onSelectThread, onNewThread }) => {
+  if (!isOpen) return null;
+  return (
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] flex justify-start animate-fade-in">
+      <div className="bg-[#161622] w-72 h-full border-r border-white/5 p-6 flex flex-col shadow-2xl relative">
+        <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-white"><X size={20}/></button>
+        <h3 className="text-sm font-bold uppercase tracking-widest text-cyan-400 mb-6 flex items-center gap-2 mt-2"><MessageSquare size={16}/> Soul Sessions</h3>
+        
+        <button onClick={() => { onNewThread(); onClose(); }} className="w-full flex items-center justify-center gap-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs py-3 rounded-xl transition-all mb-4 shadow-lg shadow-cyan-600/10">
+          <Plus size={14}/> New Chat Session
+        </button>
+
+        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2">
+          {threads.length === 0 ? (
+            <div className="text-[10px] text-slate-500 font-mono text-center pt-8">NO PRIOR CORE DATA LOGGED.</div>
+          ) : (
+            threads.map((t) => (
+              <button 
+                key={t.id} 
+                onClick={() => { onSelectThread(t.id); onClose(); }}
+                className={`w-full text-left px-4 py-3 rounded-xl text-xs transition-all border block truncate ${t.id === activeThreadId ? 'bg-cyan-600/10 border-cyan-500/30 text-cyan-200 font-bold' : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10'}`}
+              >
+                {t.title || "Untitled Brainwave"}
+              </button>
+            ))
+          )}
+        </div>
+      </div>
+      <div className="flex-1" onClick={onClose} />
+    </div>
+  );
+};
+
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [user, setUser] = useState(null);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
+  
+  // Multiple Thread History States 😭 ✌️
+  const [threads, setThreads] = useState([]);
+  const [activeThreadId, setActiveThreadId] = useState(localStorage.getItem('eilo_active_thread') || 'default_session');
+  const [showHistory, setShowHistory] = useState(false);
+
   const [mood, setMood] = useState('neutral');
   const [isMuted, setIsMuted] = useState(false);
   const [isAwake, setIsAwake] = useState(true);
@@ -252,17 +292,49 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isLandscape, isChaosMode, user]);
 
+  // Sync Global Thread Lists from cloud metrics 😭 ✌5
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'threads'), (snapshot) => {
+      const parsedThreads = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.updatedAt - a.updatedAt);
+      setThreads(parsedThreads);
+    });
+    return () => unsubscribe();
+  }, [user]);
+
+  // Connect listener specifically for the isolated context thread ID
+  useEffect(() => {
+    if (!user || !activeThreadId) return;
+    const unsubscribe = onSnapshot(
+      collection(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId, 'messages'), 
+      (snapshot) => {
         const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.timestamp - b.timestamp);
         setMessages(msgs);
         setTimeout(() => {
             chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
         }, 100);
-    });
+      }
+    );
     return () => unsubscribe();
-  }, [user]);
+  }, [user, activeThreadId]);
+
+  const handleSelectThread = (id) => {
+    setActiveThreadId(id);
+    localStorage.setItem('eilo_active_thread', id);
+  };
+
+  const handleNewThread = async () => {
+    if (!user) return;
+    const nextId = "thread_" + Date.now();
+    const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'threads', nextId);
+    await setDoc(threadRef, {
+      title: "New Soul Sync...",
+      createdAt: Date.now(),
+      updatedAt: Date.now()
+    }, { merge: true });
+    handleSelectThread(nextId);
+    speak("New timeline initialized! ✨");
+  };
 
   const toggleMic = () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -628,6 +700,8 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
+    const isFirstMessage = messages.length === 0;
+
     awardBucks(5, 'talk', false, true); 
     setIsThinking(true); 
     setMood('thinking');
@@ -636,12 +710,11 @@ export default function App() {
     const newUserMsg = { role: 'user', text: msgText, timestamp: Date.now() };
 
     try {
-      try {
-          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
-      } catch (dbErr) {
-          console.warn("Cloud disconnected. Adding message locally.");
-          setMessages(prev => [...prev, newUserMsg]);
-      }
+      // Ensure the thread metadata profile is properly seeded in Firestore 😭 ✌️
+      const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId);
+      await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
+
+      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId, 'messages'), newUserMsg);
       
       let reply = "";
       const safeInv = Array.isArray(inventory) ? inventory : [];
@@ -664,13 +737,26 @@ export default function App() {
       }
 
       const newAiMsg = { role: 'eilo', text: reply, timestamp: Date.now() };
-
-      try {
-          await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
-      } catch (dbErr) {
-          setMessages(prev => [...prev, newAiMsg]);
-      }
+      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId, 'messages'), newAiMsg);
       
+      // Auto-generate a title based on the first text layer matching your constraints 😭 ✌️
+      if (isFirstMessage && tempApiKey) {
+        try {
+          const titleGen = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ 
+              contents: [{ parts: [{ text: `Create a very short 2-4 word maximum chat title based on this opening user statement: "${msgText}". Do not include quotes or punctuation.` }] }]
+            })
+          });
+          const generatedTitle = titleGen.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || msgText.substring(0, 15) + "...";
+          await setDoc(threadRef, { title: generatedTitle }, { merge: true });
+        } catch(e) {
+          await setDoc(threadRef, { title: msgText.substring(0, 15) + "..." }, { merge: true });
+        }
+      } else if (isFirstMessage) {
+         await setDoc(threadRef, { title: msgText.substring(0, 15) + "..." }, { merge: true });
+      }
+
       setMood('happy'); 
       speak(reply);
       setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
@@ -678,7 +764,7 @@ export default function App() {
     } catch (err) { 
       setMood('neutral'); 
       console.error(err);
-    } finally { 
+    } final { 
       setIsThinking(false); 
       setTimeout(() => setMood('neutral'), 3000); 
     }
@@ -812,14 +898,18 @@ export default function App() {
       <canvas ref={canvasRef} className="hidden" />
 
       {/* TOP ZONE */}
-      <div className="w-full max-w-sm px-6 pt-4 flex justify-between items-center z-10">
+      <div className="w-full max-w-sm px-6 pt-4 flex justify-between items-center z-10 flex-shrink-0">
+        <button onClick={() => setShowHistory(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95">
+          <Menu size={16}/>
+        </button>
         <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v3.2</div>
         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}
         </div>
       </div>
 
-      <div className="w-full max-w-xl p-4 h-64 flex-shrink-0 relative">
+      {/* PORTRAIT CORE CONTAINER */}
+      <div className="w-full max-w-xl p-4 h-60 flex-shrink-0 relative">
         <div 
             onClick={handleFaceClick}
             className={`w-full h-full rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 ${isChaosMode ? 'bg-black/90' : ''}`}
@@ -874,14 +964,13 @@ export default function App() {
          </div>
       )}
 
-      {/* INTERFACE (STRETCHING CHAT CONTAINER) */}
-      <div className={`w-full max-w-sm px-4 flex-1 flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
+      {/* INTERFACE ZONE (Height constraints updated to allow proper global swipe ups) 😭 ✌️ */}
+      <div className={`w-full max-w-sm px-4 h-[calc(100vh-310px)] flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
-        <div className="w-full flex-1 min-h-[200px] bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
+        <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
             {messages.map((m, i) => {
-              // Decodes Eilo's internal markdown formatting engine down into clean JSX text layers 😭 ✌️
               const formatMarkdown = (txt) => {
                 if (!txt) return '';
                 const parts = txt.split(/(\*\*.*?\*\*|\*.*?\*)/g);
@@ -906,18 +995,28 @@ export default function App() {
             })}
             <div ref={chatEndRef} />
           </div>
-          <div className="mt-4 flex gap-2">
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Message Eilo..." className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs outline-none focus:border-cyan-500/30" />
-            <button onClick={() => handleSend()} className="p-3 bg-cyan-600 rounded-xl active:scale-95"><Send size={16}/></button>
+          <div className="mt-4 flex gap-2 flex-shrink-0">
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Message Eilo..." className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs outline-none focus:border-cyan-500/30 text-white" />
+            <button onClick={() => handleSend()} className="p-3 bg-cyan-600 rounded-xl active:scale-95 text-white flex items-center justify-center"><Send size={16}/></button>
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-3">
+        <div className="grid grid-cols-3 gap-3 flex-shrink-0">
           <button onClick={() => setIsAwake(!isAwake)} className="p-3.5 rounded-[25px] border border-white/5 bg-white/5 flex flex-col items-center gap-1 active:scale-95"><Zap size={16} className={isAwake ? 'text-yellow-400' : ''}/><span className="text-[7px] uppercase font-bold tracking-widest text-slate-500">Power</span></button>
           <button onClick={handlePet} className={`p-3.5 rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95`}><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
           <button onClick={() => setIsMuted(!isMuted)} className={`p-3.5 rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
         </div>
       </div>
+
+      {/* COMPONENT RENDER OVERLAYS */}
+      <HistorySidebar 
+        isOpen={showHistory} 
+        onClose={() => setShowHistory(false)} 
+        threads={threads} 
+        activeThreadId={activeThreadId} 
+        onSelectThread={handleSelectThread} 
+        onNewThread={handleNewThread} 
+      />
 
       {showSettings && <SettingsOverlay 
             onClose={() => setShowSettings(false)} 

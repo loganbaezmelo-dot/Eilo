@@ -697,7 +697,6 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
-    // Hard fallback length check to guarantee state doesn't crash here 😭 ✌️
     const currentMsgCount = Array.isArray(messages) ? messages.length : 0;
     const isFirstMessage = currentMsgCount === 0;
 
@@ -713,7 +712,6 @@ export default function App() {
       threadId: activeThreadId
     };
 
-    // Pre-inject message locally right away so it renders instantly regardless of db status 😭 ✌️
     setMessages(prev => [...(Array.isArray(prev) ? prev : []), newUserMsg]);
 
     try {
@@ -749,21 +747,23 @@ export default function App() {
       setMessages(prev => [...(Array.isArray(prev) ? prev : []), newAiMsg]);
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
-      if (isFirstMessage && tempApiKey) {
-        try {
-          const titleGen = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
+      // Title generation isolated into its own background safety loop 😭 ✌️
+      if (isFirstMessage) {
+        if (tempApiKey) {
+          fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ 
               contents: [{ parts: [{ text: `Create a very short 2-4 word maximum chat title based on this opening user statement: "${msgText}". Do not include quotes or punctuation.` }] }]
             })
+          }).then(titleGen => {
+            const generatedTitle = titleGen?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || msgText.substring(0, 15) + "...";
+            setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: generatedTitle, updatedAt: Date.now() } : t));
+          }).catch(() => {
+            setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t));
           });
-          const generatedTitle = titleGen.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || msgText.substring(0, 15) + "...";
-          setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: generatedTitle, updatedAt: Date.now() } : t));
-        } catch(e) {
+        } else {
           setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t));
         }
-      } else if (isFirstMessage) {
-         setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t));
       }
 
       setMood('happy'); 

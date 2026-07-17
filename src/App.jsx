@@ -21,6 +21,7 @@ const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0
 const auth = getAuth(app);
 const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
+const appId = "eilo-original-v1";
 
 const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
   try {
@@ -295,7 +296,7 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // Trusted flat database path tracking logic - Fixed collection paths 😭 ✌️
+  // Trusted flat database path tracking logic - Fixed collection paths
   useEffect(() => {
     if (!user || !activeThreadId) return;
     const unsubscribe = onSnapshot(
@@ -409,6 +410,11 @@ export default function App() {
   const getLocalResponse = (text) => {
     const t = text.toLowerCase();
     
+    // Offline emergency triggers for duct tape actions 😭 ✌️
+    if (t.includes("duct tape") || t.includes("tape")) {
+      setMood('mad');
+      return "NO! NO! NO! Stay away with that sticky, ugly ALL-CAPS-GROSS duct tape! I will short-circuit! 🎀";
+    }
     if (t.includes("who made you")) return "You made me! ✨";
     if (t.includes("hi") || t.includes("hello")) return `Hey! Eilo is ready! ✨`;
     if (t.includes("sad")) return "Oh no! Don't be sad! I'm here for you! 💙";
@@ -748,7 +754,6 @@ export default function App() {
     setTimeout(() => setMood('neutral'), 3000);
 
     try {
-      // Fixed subcollection targeting path variables to map with standard Firestore path scopes safely 😭 ✌️
       await addDoc(collection(db, 'users', user.uid, 'messages'), newUserMsg);
       await addDoc(collection(db, 'users', user.uid, 'messages'), newAiMsg);
       

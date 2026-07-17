@@ -157,19 +157,15 @@ const HistorySidebar = ({ isOpen, onClose, threads, activeThreadId, onSelectThre
         </button>
 
         <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2">
-          {threads.length === 0 ? (
-            <div className="text-[10px] text-slate-500 font-mono text-center pt-8">NO PRIOR CORE DATA LOGGED.</div>
-          ) : (
-            threads.map((t) => (
-              <button 
-                key={t.id} 
-                onClick={() => { onSelectThread(t.id); onClose(); }}
-                className={`w-full text-left px-4 py-3 rounded-xl text-xs transition-all border block truncate ${t.id === activeThreadId ? 'bg-cyan-600/10 border-cyan-500/30 text-cyan-200 font-bold' : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10'}`}
-              >
-                {t.title || "Untitled Brainwave"}
-              </button>
-            ))
-          )}
+          {threads.map((t) => (
+            <button 
+              key={t.id} 
+              onClick={() => { onSelectThread(t.id); onClose(); }}
+              className={`w-full text-left px-4 py-3 rounded-xl text-xs transition-all border block truncate ${t.id === activeThreadId ? 'bg-cyan-600/10 border-cyan-500/30 text-cyan-200 font-bold' : 'bg-white/5 border-transparent text-slate-400 hover:bg-white/10'}`}
+            >
+              {t.title || "Untitled Brainwave"}
+            </button>
+          ))}
         </div>
       </div>
       <div className="flex-1" onClick={onClose} />
@@ -183,8 +179,11 @@ export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   
-  // Multiple Thread History States 
-  const [threads, setThreads] = useState([]);
+  // Localized Multi-Thread State to completely avoid Firebase rule locks 😭 ✌️
+  const [threads, setThreads] = useState(() => {
+    const saved = localStorage.getItem('eilo_threads_list');
+    return saved ? JSON.parse(saved) : [{ id: 'default_session', title: 'Main Core Sync', updatedAt: Date.now() }];
+  });
   const [activeThreadId, setActiveThreadId] = useState(localStorage.getItem('eilo_active_thread') || 'default_session');
   const [showHistory, setShowHistory] = useState(false);
 
@@ -292,17 +291,11 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isLandscape, isChaosMode, user]);
 
-  // Sync Global Thread Lists from cloud metrics
   useEffect(() => {
-    if (!user) return;
-    const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'historyThreads'), (snapshot) => {
-      const parsedThreads = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.updatedAt - a.updatedAt);
-      setThreads(parsedThreads);
-    });
-    return () => unsubscribe();
-  }, [user]);
+    localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
+  }, [threads]);
 
-  // Connects messages directly to the verified original subcollection path using filtering variables
+  // Messages listener pointed exclusively at the trusted flat database collection path 😭 ✌️
   useEffect(() => {
     if (!user || !activeThreadId) return;
     const unsubscribe = onSnapshot(
@@ -330,15 +323,11 @@ export default function App() {
     localStorage.setItem('eilo_active_thread', id);
   };
 
-  const handleNewThread = async () => {
+  const handleNewThread = () => {
     if (!user) return;
     const nextId = "thread_" + Date.now();
-    const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'historyThreads', nextId);
-    await setDoc(threadRef, {
-      title: "New Soul Sync...",
-      createdAt: Date.now(),
-      updatedAt: Date.now()
-    }, { merge: true });
+    const newSession = { id: nextId, title: "New Soul Sync...", updatedAt: Date.now() };
+    setThreads(prev => [newSession, ...prev]);
     handleSelectThread(nextId);
     speak("New timeline initialized! ✨");
   };
@@ -722,9 +711,7 @@ export default function App() {
     };
 
     try {
-      const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'historyThreads', activeThreadId);
-      await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
-
+      // Stripped out secondary cloud collection triggers to prevent writing permission lockouts 😭 ✌️
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       
       let reply = "";
@@ -764,12 +751,12 @@ export default function App() {
             })
           });
           const generatedTitle = titleGen.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || msgText.substring(0, 15) + "...";
-          await setDoc(threadRef, { title: generatedTitle }, { merge: true });
+          setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: generatedTitle, updatedAt: Date.now() } : t));
         } catch(e) {
-          await setDoc(threadRef, { title: msgText.substring(0, 15) + "..." }, { merge: true });
+          setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t));
         }
       } else if (isFirstMessage) {
-         await setDoc(threadRef, { title: msgText.substring(0, 15) + "..." }, { merge: true });
+         setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t));
       }
 
       setMood('happy'); 

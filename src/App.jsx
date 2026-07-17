@@ -183,7 +183,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   
-  // Safe Flat thread metadata states
+  // Multiple Thread History States 
   const [threads, setThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(localStorage.getItem('eilo_active_thread') || 'default_session');
   const [showHistory, setShowHistory] = useState(false);
@@ -292,7 +292,7 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isLandscape, isChaosMode, user]);
 
-  // Sync Thread Profiles safely from a verified working path 😭 ✌️
+  // Sync Global Thread Lists from cloud metrics
   useEffect(() => {
     if (!user) return;
     const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'historyThreads'), (snapshot) => {
@@ -310,7 +310,11 @@ export default function App() {
       (snapshot) => {
         const msgs = snapshot.docs
           .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(m => m.threadId === activeThreadId || (!m.threadId && activeThreadId === 'default_session'))
+          .filter(m => {
+            if (m.threadId === activeThreadId) return true;
+            if (!m.threadId && activeThreadId === 'default_session') return true;
+            return false;
+          })
           .sort((a, b) => a.timestamp - b.timestamp);
         setMessages(msgs);
         setTimeout(() => {
@@ -710,7 +714,6 @@ export default function App() {
     setMood('thinking');
     if (!manual) setInput('');
 
-    // Uses the original verified safe collection route with tagged tracking identifiers 😭 ✌️
     const newUserMsg = { 
       role: 'user', 
       text: msgText, 
@@ -793,7 +796,7 @@ export default function App() {
     ) : null;
 
     switch (mood) {
-      case 'dizzy': return <div className="flex gap-12 animate-spin relative"><div className="w-16 h-16 border-8 border-cyan-400 border-t-transparent rounded-full" /><div className="w-16 h-16 border-8 border-cyan-400 border-t-transparent rounded-full" />{tapeOverlay}</div>;
+      case 'dizzy': return <div className="flex gap-12 animate-spin relative"><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div>;
       case 'happy': return <div className="flex gap-12 relative"><div className="absolute -top-10 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div>;
       case 'thinking': return <div className="flex gap-12 relative"><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div>;
       case 'sleeping': return <div className="flex items-center justify-center gap-12 relative"><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-1/4 right-1/4 text-cyan-400 text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div>;

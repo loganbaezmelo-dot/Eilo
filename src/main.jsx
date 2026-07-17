@@ -1,18 +1,17 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import './style.css' // Hooks up the tailwind classes from your style.css asset 😭
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import './style.css';
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+const container = document.getElementById('root');
+const root = ReactDOM.createRoot(container);
+
+root.render(
   <React.StrictMode>
     <App />
-  </React.StrictMode>,
-)
+  </React.StrictMode>
+);
 ```eof
 
-### ⚠️ Final Verification Step:
-Before you save this, double-check that your `src/style.css` file contains these three critical lines at the very top:
-```css
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+### 🔍 If Vercel still throws a Red "X":
+Since you're executing this on GitHub without a terminal, the Vercel logs tell us exactly what line broke. If this safe layout still fails, what is the **exact red error line** showing up on your Vercel dashboard? 😭 💀

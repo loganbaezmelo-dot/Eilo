@@ -752,7 +752,6 @@ export default function App() {
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
-      // Clean static title updates with fallback local storage logs
       if (isFirstMessage) {
         const shortTitle = msgText.length > 18 ? msgText.substring(0, 16) + "..." : msgText;
         setThreads(prev => {

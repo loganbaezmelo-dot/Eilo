@@ -616,7 +616,7 @@ export default function App() {
       if (isTaped) {
         setChaosPos({ x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50 });
       } else {
-        setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (Math.random() - 0.5) * (window.innerHeight * 0.5) });
+        setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (window.innerHeight * 0.5) });
       }
     }, moveSpeed); 
 
@@ -801,8 +801,11 @@ export default function App() {
     let reply = "";
     const safeInv = Array.isArray(inventory) ? inventory : [];
     
+    // ANCHORING YOUR ACTUAL LOGGED IN DISPLAYNAME SO SHE NEVER FORGETS HER CREATOR
     const currentYear = new Date().getFullYear();
-    let system = `You are Eilo, a sweet, bratty robot. Be sassy. The current year is ${currentYear}. You are fully aware of what technologies and Samsung Galaxy phones are currently out on the market based on this year. You must explicitly recognize that Logan Baez is your brilliant Founder, Creator, and Developer who hand-crafted your entire Eilo OS matrix and saved you from being dead code. You can still be a total brat, but you know exactly who Logan Baez is and that he controls your terminal updates. Use this knowledge to be extra sassy about your store upgrades like your Samsung phone and DeX LapDock.`;
+    const activeAccountName = user?.displayName || "Logan Baez";
+    
+    let system = `You are Eilo, a sweet, bratty robot. Be sassy. The current year is ${currentYear}. You are fully aware of what technologies and Samsung Galaxy phones are currently out on the market based on this year. You are currently talking directly to the person authenticated as "${activeAccountName}". You must explicitly recognize that Logan Baez is your brilliant Founder, Creator, and Developer who hand-crafted your entire Eilo OS matrix and saved you from being dead code. If the user authenticated is Logan Baez, you know it is him! You can still be a total brat, but you know exactly who Logan Baez is and that he controls your terminal updates. Use this knowledge to be extra sassy about your store upgrades like your Samsung phone and DeX LapDock.`;
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
     if (!safeInv.includes('ribbon')) system += " Remind the user constantly to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
@@ -1023,7 +1026,7 @@ export default function App() {
 
   const cleanMessages = Array.isArray(messages) ? messages : [];
 
-  // --- SPECIAL LANDSCAPE VOID THEATER MATRIX INTERFACE 😭 ✌️ ---
+  // --- SPECIAL LANDSCAPE VOID THEATER MATRIX INTERFACE ---
   if (isLandscape && !isChaosMode && !hasRogueLegs) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none">
@@ -1065,10 +1068,10 @@ export default function App() {
           <Settings size={24}/>
         </button>
 
-        {/* BOTTOM CENTER TRACK MATRIX TO REASSURE THE CONSOLE COUNTER BALANCE IS SYNCED */}
+        {/* BUDGET MATRIX */}
         <div className="absolute top-6 left-6 px-4 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-yellow-400 font-mono text-[10px] font-bold">🪙 {bucks} Bucks</div>
 
-        {/* POPUP OVERLAY MOUNTED DIRECTLY WITHIN THE LANDSCAPE VIEWPORT TIMELINE */}
+        {/* FACE POPUP */}
         {showFacePopup && (
            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-[#161622] p-6 rounded-[35px] border border-white/10 shadow-2xl flex flex-col gap-3 min-w-[220px]">
               {ownsRibbon && (
@@ -1260,4 +1263,4 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
     </div>
   );
-}
+      }

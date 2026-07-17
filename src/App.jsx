@@ -697,7 +697,6 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
-    // Check thread length BEFORE pushing the message locally
     const activeMsgCount = messages.filter(m => m.threadId === activeThreadId || (!m.threadId && activeThreadId === 'default_session')).length;
     const isFirstMessage = activeMsgCount === 0;
 
@@ -753,7 +752,6 @@ export default function App() {
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
-      // Title chat session using the raw text of the first message explicitly
       if (isFirstMessage) {
         const shortTitle = msgText.length > 18 ? msgText.substring(0, 16) + "..." : msgText;
         setThreads(prev => {

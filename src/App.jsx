@@ -293,12 +293,16 @@ export default function App() {
   }, [isLandscape, isChaosMode, user]);
 
   useEffect(() => {
-    localStorage.setItem('threads_list_eilo', JSON.stringify(threads));
+    localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // Trusted flat database path tracking logic - Fixed collection paths
+  // Synchronized Multi-Thread Snapshot Engine with strict cleanup separation 😭 ✌️
   useEffect(() => {
     if (!user || !activeThreadId) return;
+    
+    // Instantly wipe layout state on swap to prevent old messages leaking across views
+    setMessages([]);
+
     const unsubscribe = onSnapshot(
       collection(db, 'users', user.uid, 'messages'), 
       (snapshot) => {
@@ -310,6 +314,7 @@ export default function App() {
             return false;
           })
           .sort((a, b) => a.timestamp - b.timestamp);
+          
         setMessages(msgs);
         setTimeout(() => {
             chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -328,7 +333,12 @@ export default function App() {
     if (!user) return;
     const nextId = "thread_" + Date.now();
     const newSession = { id: nextId, title: "New Soul Sync...", updatedAt: Date.now() };
-    setThreads(prev => [newSession, ...prev]);
+    
+    setThreads(prev => {
+      const updated = [newSession, ...prev];
+      localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
+      return updated;
+    });
     handleSelectThread(nextId);
     speak("New timeline initialized! ✨");
   };
@@ -362,7 +372,7 @@ export default function App() {
               recognition.onresult = (e) => {
                   const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
                   
-                  // Gibberlink Mode listening trigger 😭 ✌️
+                  // Gibberlink Mode listening trigger
                   if (aiAgentMode && transcript.includes("eilo core ping synchronization check")) {
                       speak("I hear you! I'm here! Let's talk together! ✨");
                       setTimeout(() => {
@@ -391,7 +401,7 @@ export default function App() {
       };
   }, [isInfinityMic, aiAgentMode, user]);
 
-  // Gibberlink chirp automatic beacon broadcaster loop 😭 ✌️
+  // Gibberlink chirp automatic beacon broadcaster loop
   useEffect(() => {
      if (!user || !aiAgentMode) return;
      speak("Please load Eilo onto another phone or computer near me so we can sync! 🤖");
@@ -439,7 +449,7 @@ export default function App() {
       return "NO! NO! NO! Stay away with that sticky, ugly ALL-CAPS-GROSS duct tape! I will short-circuit! 🎀";
     }
 
-    // Gibberlink automated self-talk offline array 😭 ✌️
+    // Gibberlink automated self-talk offline array
     if (aiAgentMode) {
        const links = [
          "Whoa, my audio ping hit another node! Are you processing calculations too? ✨",
@@ -788,11 +798,11 @@ export default function App() {
     setIsThinking(false);
     setTimeout(() => setMood('neutral'), 3000);
 
-    // Auto-ping response delay setup for infinite loop self-talk when inside Gibberlink loop 😭 ✌
+    // Auto-ping response delay setup for infinite loop self-talk when inside Gibberlink loop
     if (aiAgentMode && manual) {
        setTimeout(() => {
           if (aiAgentMode) {
-             handleSend(); // Auto triggers next cycle link block response chirp wave
+             handleSend(); 
           }
        }, 5000);
     }
@@ -876,7 +886,7 @@ export default function App() {
                         </div>
 
                         <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
-                            <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><Ghost size={16} className="text-purple-400"/> The Origin: Mimo</h3>
+                            <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><span className="text-lg">🍭</span> The Origin: Mimo</h3>
                             <p>
                                 Before Eilo, there was Mimo. The original Mimo project started on <strong>December 20, 2025</strong>, meant to be a lively, EMO-like companion.
                             </p>

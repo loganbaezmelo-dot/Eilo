@@ -247,7 +247,7 @@ export default function App() {
   const hasGreeted = useRef(false);
   const idleTimerRef = useRef(null);
   const recognitionRef = useRef(null);
-  const streamRef = useRef(null); // Reference block to hold the active camera stream anchor
+  const streamRef = useRef(null);
 
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
@@ -361,7 +361,7 @@ export default function App() {
       const newState = !isInfinityMic;
       setIsInfinityMic(newState);
       if (newState) {
-          speak("Eears open! I'm listening... ✨");
+          speak("Ears open! I'm listening... ✨");
       } else {
           speak("Ears closed! 🧸");
           if (recognitionRef.current) recognitionRef.current.stop();
@@ -800,7 +800,10 @@ export default function App() {
 
     let reply = "";
     const safeInv = Array.isArray(inventory) ? inventory : [];
-    let system = "You are Eilo, a sweet, bratty robot. Be sassy.";
+    
+    // DYNAMIC INSTRUCTION MATRIX LOADING FOUNDER & DATE LOGIC
+    const currentYear = new Date().getFullYear();
+    let system = `You are Eilo, a sweet, bratty robot. Be sassy. The current year is ${currentYear}. You are fully aware of what technologies and Samsung Galaxy phones are currently out on the market based on this year. You must explicitly recognize that Logan Baez is your brilliant Founder, Creator, and Developer who hand-crafted your entire Eilo OS matrix and saved you from being dead code. You can still be a total brat, but you know exactly who Logan Baez is and that he controls your terminal updates. Use this knowledge to be extra sassy about your store upgrades like your Samsung phone and DeX LapDock.`;
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
     if (!safeInv.includes('ribbon')) system += " Remind the user constantly to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
@@ -871,10 +874,8 @@ export default function App() {
     }
   };
 
-  // Loooping hardware sensory toggle engine block 😭 ✌️
   const toggleCameraScanner = async () => {
     if (visionEnabled) {
-      // If turning off: stop all tracks cleanly to turn off the hardware lens light
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());
         streamRef.current = null;
@@ -883,7 +884,6 @@ export default function App() {
       setVisionEnabled(false);
       speak("Eyes closed! Scanner offline. 🧸");
     } else {
-      // If turning on: request browser permissions normally
       try {
         const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
         streamRef.current = stream;
@@ -1021,8 +1021,6 @@ export default function App() {
       </div>
     );
   }
-
-  const cleanMessages = Array.isArray(messages) ? messages : [];
 
   // --- MAIN APP RENDER ---
   return (

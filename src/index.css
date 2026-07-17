@@ -2,48 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Custom CSS overrides if needed */
 body {
   margin: 0;
   background-color: #0c0c14;
 }
-```eof
-
----
-
-### Step 2: Inject it into `main.jsx`
-Open `src/main.jsx` on GitHub, click the **Pencil Icon** to edit, and add an import line at the top so Vite compiles the core layout styles. It should look like this:
-
-```javascript:Eilo OS: Main Entry Mount:src/main.jsx
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App.jsx'
-import './index.css' // <-- ADD THIS LINE RIGHT HERE TO INJECT TAILWIND 😭
-
-ReactDOM.createRoot(document.getElementById('root')).render(
-  <React.StrictMode>
-    <App />
-  </React.StrictMode>,
-)
-```eof
-
----
-
-### Step 3: Check Tailwind Framework Config
-If those steps don't fix the styling instantly after the Vercel deploy, make sure you have a `tailwind.config.js` file in the **root** folder of your repository. It needs to tell Tailwind to read your `App.jsx` classes:
-
-```javascript:Eilo OS: Tailwind Configuration:tailwind.config.js
-/** @type {import('tailwindcss').Config} */
-export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
-  theme: {
-    extend: {},
-  },
-  plugins: [],
-}
-```eof
-
-Once those modifications hit your main branch, Vite will automatically build the design compiler, and the black system layout will render perfectly 💀 😭. Let me know if she looks complete!

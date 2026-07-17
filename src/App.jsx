@@ -177,10 +177,14 @@ export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   
-  // Localized Multi-Thread State
+  // Localized Multi-Thread State safely fallback mapped
   const [threads, setThreads] = useState(() => {
-    const saved = localStorage.getItem('eilo_threads_list');
-    return saved ? JSON.parse(saved) : [{ id: 'default_session', title: 'Main Core Sync', updatedAt: Date.now() }];
+    try {
+      const saved = localStorage.getItem('eilo_threads_list');
+      return saved ? JSON.parse(saved) : [{ id: 'default_session', title: 'Main Core Sync', updatedAt: Date.now() }];
+    } catch (e) {
+      return [{ id: 'default_session', title: 'Main Core Sync', updatedAt: Date.now() }];
+    }
   });
   const [activeThreadId, setActiveThreadId] = useState(localStorage.getItem('eilo_active_thread') || 'default_session');
   const [showHistory, setShowHistory] = useState(false);
@@ -293,15 +297,18 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // 100% PURE LOCALSTORAGE MESSAGE HISTORY MATRIX ENGINE
+  // 100% PURE LOCALSTORAGE MESSAGE HISTORY MATRIX ENGINE WITH SAFE OPTIONAL CHAINS
   useEffect(() => {
     if (!user?.uid || !activeThreadId) return;
     
-    const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
-    const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
-    
-    const threadMessages = globalCache[activeThreadId] || [];
-    setMessages(threadMessages);
+    try {
+      const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+      const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+      const threadMessages = globalCache[activeThreadId] || [];
+      setMessages(threadMessages);
+    } catch (e) {
+      setMessages([]);
+    }
 
     setTimeout(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -452,7 +459,7 @@ export default function App() {
     const randoms = [
       "My blue eyes are so shiny today! ✨",
       "Just vibing on the desk... waiting for snacks. 🥪",
-      "I wonder if other robots have legs like mine? 🏃‍♀️",
+      "I wonder if other robots have legs like mine? running module. 🏃‍♀️",
       `You're the best! 🧸`,
       "System status: Sparkly! 🎀"
     ];
@@ -634,7 +641,7 @@ export default function App() {
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
       setLoading(false); 
-      if (!u) { return; }
+      if (!u) { setUser(null); return; }
       setUser(u);
       
       const savedBucks = localStorage.getItem(`eilo_bucks_backup_${u.uid}`);
@@ -703,7 +710,7 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
-    const activeMsgCount = messages.length;
+    const activeMsgCount = messages ? messages.length : 0;
     const isFirstMessage = activeMsgCount === 0;
 
     awardBucks(5, 'talk', false, true); 
@@ -718,7 +725,7 @@ export default function App() {
       threadId: activeThreadId
     };
 
-    const nextMessages = [...messages, newUserMsg];
+    const nextMessages = [...(messages || []), newUserMsg];
     setMessages(nextMessages);
 
     let reply = "";
@@ -756,10 +763,12 @@ export default function App() {
     setIsThinking(false);
     setTimeout(() => setMood('neutral'), 3000);
 
-    const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
-    const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
-    globalCache[activeThreadId] = finalMessages;
-    localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+    try {
+      const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+      const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+      globalCache[activeThreadId] = finalMessages;
+      localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+    } catch (e) {}
 
     if (isFirstMessage) {
       const shortTitle = msgText.length > 18 ? msgText.substring(0, 16) + "..." : msgText;
@@ -776,9 +785,13 @@ export default function App() {
              const autoChirp = getLocalResponse("agent_talk_trigger");
              const simulatedAiMsg = { role: 'eilo', text: autoChirp, timestamp: Date.now(), threadId: activeThreadId };
              setMessages(prev => {
-                const updatedMsgs = [...prev, simulatedAiMsg];
-                globalCache[activeThreadId] = updatedMsgs;
-                localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+                const updatedMsgs = [...(prev || []), simulatedAiMsg];
+                try {
+                  const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+                  const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+                  globalCache[activeThreadId] = updatedMsgs;
+                  localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+                } catch (e) {}
                 return updatedMsgs;
              });
              speak(autoChirp);
@@ -907,6 +920,8 @@ export default function App() {
       </div>
     );
   }
+
+  const cleanMessages = Array.isArray(messages) ? messages : [];
 
   // --- MAIN APP RENDER ---
   return (

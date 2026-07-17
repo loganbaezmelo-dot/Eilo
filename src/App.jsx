@@ -342,7 +342,7 @@ export default function App() {
       const newState = !isInfinityMic;
       setIsInfinityMic(newState);
       if (newState) {
-          speak("Eears open! I'm listening... ✨");
+          speak("Ears open! I'm listening... ✨");
       } else {
           speak("Ears closed! 🧸");
           if (recognitionRef.current) recognitionRef.current.stop();
@@ -485,7 +485,7 @@ export default function App() {
       
       window.speechSynthesis.cancel();
       if (newState) {
-          const u = new SpeechSynthesisUtterance("Mmm. Mmm. Hmph."); 
+          const u = new SynthesisUtterance("Mmm. Mmm. Hmph."); 
           u.pitch = 0.5; u.rate = 0.8;
           window.speechSynthesis.speak(u);
       } else {
@@ -600,7 +600,7 @@ export default function App() {
         if (!acc) return;
         if (Math.abs(acc.x) > 35 || Math.abs(acc.y) > 35) {
             setMood('dizzy');
-            speak(`Whoa! Stop shaking! 🎈`);
+            speak("Whoa! Stop shaking! 🎈");
             sendNotification("Whoa! Stop shaking the device! 🎈");
             setTimeout(() => setMood('neutral'), 5000);
         }
@@ -697,7 +697,7 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
-    // Evaluates length thresholds directly out of the matched filtered session block
+    // Check thread length BEFORE pushing the message locally
     const activeMsgCount = messages.filter(m => m.threadId === activeThreadId || (!m.threadId && activeThreadId === 'default_session')).length;
     const isFirstMessage = activeMsgCount === 0;
 
@@ -753,35 +753,14 @@ export default function App() {
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
-      // Forces instant thread title override state saves down into localStorage logs 😭 ✌️
+      // Title chat session using the raw text of the first message explicitly
       if (isFirstMessage) {
-        if (tempApiKey) {
-          fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ 
-              contents: [{ parts: [{ text: `Create a very short 2-4 word maximum chat title based on this opening user statement: "${msgText}". Do not include quotes or punctuation.` }] }]
-            })
-          }).then(titleGen => {
-            const generatedTitle = titleGen?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || msgText.substring(0, 15) + "...";
-            setThreads(prev => {
-              const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: generatedTitle, updatedAt: Date.now() } : t);
-              localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
-              return updated;
-            });
-          }).catch(() => {
-            setThreads(prev => {
-              const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t);
-              localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
-              return updated;
-            });
-          });
-        } else {
-          setThreads(prev => {
-            const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t);
-            localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
-            return updated;
-          });
-        }
+        const shortTitle = msgText.length > 18 ? msgText.substring(0, 16) + "..." : msgText;
+        setThreads(prev => {
+          const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: shortTitle, updatedAt: Date.now() } : t);
+          localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
+          return updated;
+        });
       }
     } catch (databaseErr) {
        console.warn("Database sync suspended, conversational memory kept locally.");
@@ -913,7 +892,7 @@ export default function App() {
 
   // --- MAIN APP RENDER ---
   return (
-    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center overflow-hidden">
+    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-4 overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="hidden" />
       <canvas ref={canvasRef} className="hidden" />
 
@@ -929,10 +908,10 @@ export default function App() {
       </div>
 
       {/* PORTRAIT CORE CONTAINER */}
-      <div className="w-full max-w-xl p-4 h-60 flex-shrink-0 relative">
+      <div className="w-full max-w-xl p-4 flex-1 flex items-center justify-center relative min-h-0">
         <div 
             onClick={handleFaceClick}
-            className={`w-full h-full rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 ${isChaosMode ? 'bg-black/90' : ''}`}
+            className={`w-full max-w-sm h-56 rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 ${isChaosMode ? 'bg-black/90' : ''}`}
         >
            {isChaosMode ? (
               <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
@@ -984,8 +963,8 @@ export default function App() {
          </div>
       )}
 
-      {/* INTERFACE ZONE */}
-      <div className={`w-full max-w-sm px-4 h-[calc(100vh-310px)] flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
+      {/* INTERFACE ZONE - Viewport height constraint adjusted to prevent cutting off top header components */}
+      <div className={`w-full max-w-sm px-4 h-[52vh] flex flex-col gap-4 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
         <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
@@ -1023,7 +1002,7 @@ export default function App() {
 
         <div className="grid grid-cols-3 gap-3 flex-shrink-0">
           <button onClick={() => setIsAwake(!isAwake)} className="p-3.5 rounded-[25px] border border-white/5 bg-white/5 flex flex-col items-center gap-1 active:scale-95"><Zap size={16} className={isAwake ? 'text-yellow-400' : ''}/><span className="text-[7px] uppercase font-bold tracking-widest text-slate-500">Power</span></button>
-          <button onClick={handlePet} className={`p-3.5 rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95`}><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
+          <button onClick={handlePet} className="p-3.5 rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
           <button onClick={() => setIsMuted(!isMuted)} className={`p-3.5 rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
         </div>
       </div>

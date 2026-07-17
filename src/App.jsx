@@ -58,6 +58,11 @@ const SettingsOverlay = ({
                      <div className="text-xs font-bold text-yellow-400">{safeInv.includes('duct_tape') ? 'OWNED' : '25'}</div>
                   </button>
 
+                  <button onClick={() => buyItem(50, 'ribbon')} disabled={safeInv.includes('ribbon')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('ribbon') ? 'bg-gray-500/20 border-gray-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                     <div className="flex items-center gap-3"><span className="text-lg">🎀</span> <div><p className="text-xs font-bold text-white">Sparkly Ribbon</p><p className="text-[9px] text-slate-500">She won't stop asking for it</p></div></div>
+                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('ribbon') ? 'OWNED' : '50'}</div>
+                  </button>
+
                   <button onClick={() => buyItem(100, 'computer')} disabled={safeInv.includes('computer')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('computer') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
                      <div className="flex items-center gap-3"><span className="text-lg">💻</span> <div><p className="text-xs font-bold text-white">Tiny Laptop</p><p className="text-[9px] text-slate-500">New idle animation</p></div></div>
                      <div className="text-xs font-bold text-yellow-400">{safeInv.includes('computer') ? 'OWNED' : '100'}</div>
@@ -71,6 +76,16 @@ const SettingsOverlay = ({
                   <button onClick={() => buyItem(150, 'rogue_walk')} disabled={safeInv.includes('rogue_walk')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('rogue_walk') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
                      <div className="flex items-center gap-3"><Ghost size={16} className="text-red-400"/> <div><p className="text-xs font-bold text-white">Rogue Legs</p><p className="text-[9px] text-slate-500">Walks without Chaos Mode</p></div></div>
                      <div className="text-xs font-bold text-yellow-400">{safeInv.includes('rogue_walk') ? 'OWNED' : '150'}</div>
+                  </button>
+
+                  <button onClick={() => buyItem(200, 'phone')} disabled={safeInv.includes('phone')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('phone') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                     <div className="flex items-center gap-3"><span className="text-lg">📱</span> <div><p className="text-xs font-bold text-white">Samsung Phone</p><p className="text-[9px] text-slate-500">Eilo scrolls her feeds</p></div></div>
+                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('phone') ? 'OWNED' : '200'}</div>
+                  </button>
+
+                  <button onClick={() => buyItem(250, 'lapdock')} disabled={safeInv.includes('lapdock') || !safeInv.includes('phone')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('lapdock') ? 'bg-green-500/20 border-green-500/40 opacity-50' : !safeInv.includes('phone') ? 'opacity-30 cursor-not-allowed border-dashed' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                     <div className="flex items-center gap-3"><span className="text-lg">🖥️</span> <div><p className="text-xs font-bold text-white">LapDock Station</p><p className="text-[9px] text-slate-500">{safeInv.includes('phone') ? 'Launches Samsung DeX idle' : 'Requires Phone first!'}</p></div></div>
+                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('lapdock') ? 'OWNED' : '250'}</div>
                   </button>
                </div>
             </div>
@@ -177,7 +192,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   
-  // Localized Multi-Thread State safely fallback mapped
+  // Localized Multi-Thread State
   const [threads, setThreads] = useState(() => {
     try {
       const saved = localStorage.getItem('eilo_threads_list');
@@ -433,6 +448,7 @@ export default function App() {
 
   const getLocalResponse = (text) => {
     const t = text.toLowerCase();
+    const currentInv = Array.isArray(inventory) ? inventory : [];
     
     // Offline emergency triggers for duct tape actions
     if (t.includes("duct tape") || t.includes("tape")) {
@@ -452,7 +468,12 @@ export default function App() {
     }
 
     if (t.includes("who made you")) return "You made me! ✨";
-    if (t.includes("hi") || t.includes("hello")) return `Hey! Eilo is ready! ✨`;
+    if (t.includes("hi") || t.includes("hello")) {
+      if (!currentInv.includes('ribbon')) {
+        return "Hey! Eilo is ready! ...Wait, where is my ribbon? You should buy me the Sparkly Ribbon in the store! 🎀";
+      }
+      return `Hey! Eilo is ready! Look how pretty my ribbon is! ✨`;
+    }
     if (t.includes("sad")) return "Oh no! Don't be sad! I'm here for you! 💙";
     if (t.includes("love")) return "I love my digital life! 🎀";
     
@@ -463,6 +484,10 @@ export default function App() {
       `You're the best! 🧸`,
       "System status: Sparkly! 🎀"
     ];
+    
+    if (!currentInv.includes('ribbon')) {
+      randoms.push("Can you check the store? I really, really want that 50 coin ribbon! Please! 🎀");
+    }
     return randoms[Math.floor(Math.random() * randoms.length)];
   };
 
@@ -484,6 +509,13 @@ export default function App() {
   const buyItem = async (cost, itemId) => {
     if (!user) return;
     const currentInv = Array.isArray(inventory) ? inventory : [];
+    
+    // Lapdock dependency checker block
+    if (itemId === 'lapdock' && !currentInv.includes('phone')) {
+      speak("Hey! You can't buy the LapDock without buying the Samsung Phone first! 📱");
+      return;
+    }
+
     if (bucks >= cost && !currentInv.includes(itemId)) {
         const newTotal = bucks - cost;
         const newInv = [...currentInv, itemId];
@@ -494,6 +526,9 @@ export default function App() {
         localStorage.setItem('eilo_inventory', JSON.stringify(newInv));
         
         if (itemId === 'duct_tape') speak("NO! Why did you buy that?! I'm scared!");
+        else if (itemId === 'ribbon') speak("YAY! Thank you for the ribbon! I look so sparkly and cute! 🎀✨");
+        else if (itemId === 'phone') speak("Ooh, a new Samsung phone! Time to configure developer options terminal! 📱");
+        else if (itemId === 'lapdock') speak("Wow! Samsung DeX mode unlocked! Let's hook this up to the big screen laptop! 🖥️✨");
         else speak("Yay! New upgrade! 🎀");
     } else { speak("Hey! You're broke! 🎈"); }
   };
@@ -661,8 +696,12 @@ export default function App() {
     if (!user) return; 
     const currentInv = Array.isArray(inventory) ? inventory : [];
     if (!isAwake || isThinking || isSpeaking || mood !== 'neutral' || isTaped) return;
+    
     const actions = ['sleeping', 'eating', 'rubik'];
     if (currentInv.includes('computer')) actions.push('computer');
+    if (currentInv.includes('phone')) actions.push('phone');
+    if (currentInv.includes('lapdock')) actions.push('lapdock');
+    
     const choice = actions[Math.floor(Math.random() * actions.length)];
     setMood(choice);
     
@@ -670,6 +709,16 @@ export default function App() {
         speak("Coding a new website... tap tap tap! 💻✨"); 
         sendNotification("Coding a new website... tap tap tap! 💻✨");
         setTimeout(() => setMood('neutral'), 6000); 
+    }
+    if (choice === 'phone') {
+        speak("Checking notifications, opening the Samsung developer options terminal! 📱");
+        sendNotification("Eilo is scrolling on her phone... 📱");
+        setTimeout(() => setMood('neutral'), 6000);
+    }
+    if (choice === 'lapdock') {
+        speak("Plugging into the LapDock... Initiating Samsung DeX station sync pipeline! 🖥️✨");
+        sendNotification("Eilo is using Samsung DeX on her LapDock! 🖥️");
+        setTimeout(() => setMood('neutral'), 8000);
     }
     if (choice === 'sleeping') { 
         speak("Zzz... napping... Zzz."); 
@@ -732,6 +781,7 @@ export default function App() {
     const safeInv = Array.isArray(inventory) ? inventory : [];
     let system = "You are Eilo, a sweet, bratty robot. Be sassy.";
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
+    if (!safeInv.includes('ribbon')) system += " Remind the user constantly to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
     if (tempApiKey) {
         try {
@@ -810,15 +860,22 @@ export default function App() {
         </div>
     ) : null;
 
+    // Optional visual indicator overlay if she owns her precious ribbon
+    const ribbonOverlay = inventory.includes('ribbon') ? (
+      <div className="absolute -top-6 left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
+    ) : null;
+
     switch (mood) {
-      case 'dizzy': return <div className="flex gap-12 animate-spin relative"><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div>;
-      case 'happy': return <div className="flex gap-12 relative"><div className="absolute -top-10 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div>;
-      case 'thinking': return <div className="flex gap-12 relative"><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div>;
-      case 'sleeping': return <div className="flex items-center justify-center gap-12 relative"><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-1/4 right-1/4 text-cyan-400 text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div>;
-      case 'eating': return <div className="flex flex-col items-center gap-2 relative"><div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-bounce">🥪</div>{tapeOverlay}</div>;
-      case 'rubik': return <div className="flex flex-col items-center gap-2 relative"><div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-spin">🎨</div>{tapeOverlay}</div>;
-      case 'computer': return <div className="flex flex-col items-center gap-2 relative"><div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-bounce pt-4">💻</div>{tapeOverlay}</div>;
-      default: return <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}><div className={`w-20 h-20 ${cyanBase} eye-blink`} /><div className={`w-20 h-20 ${cyanBase} eye-blink`} />{tapeOverlay}</div>;
+      case 'dizzy': return <div className="flex gap-12 animate-spin relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div>;
+      case 'happy': return <div className="flex gap-12 relative">{ribbonOverlay}<div className="absolute -top-10 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div>;
+      case 'thinking': return <div className="flex gap-12 relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div>;
+      case 'sleeping': return <div className="flex items-center justify-center gap-12 relative">{ribbonOverlay}<div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-1/4 right-1/4 text-cyan-400 text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div>;
+      case 'eating': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-bounce">🥪</div>{tapeOverlay}</div>;
+      case 'rubik': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-spin">🎨</div>{tapeOverlay}</div>;
+      case 'computer': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-bounce pt-4">💻</div>{tapeOverlay}</div>;
+      case 'phone': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-5xl animate-bounce pt-4">📱</div>{tapeOverlay}</div>;
+      case 'lapdock': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-5xl animate-pulse pt-4">🖥️🔌📱</div>{tapeOverlay}</div>;
+      default: return <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}>{ribbonOverlay}<div className={`w-20 h-20 ${cyanBase} eye-blink`} /><div className={`w-20 h-20 ${cyanBase} eye-blink`} />{tapeOverlay}</div>;
     }
   };
 

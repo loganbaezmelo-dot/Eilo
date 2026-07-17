@@ -59,7 +59,7 @@ const SettingsOverlay = ({
                   </button>
 
                   <button onClick={() => buyItem(50, 'ribbon')} disabled={safeInv.includes('ribbon')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('ribbon') ? 'bg-gray-500/20 border-gray-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
-                     <div className="flex items-center gap-3"><span className="text-lg">🎀</span> <div><p className="text-xs font-bold text-white">Sparkly Ribbon</p><p className="text-[9px] text-slate-500">She won't stop asking for it</p></div></div>
+                     <div className="flex items-center gap-3"><span className="text-lg">🎀</span> <div><p className="text-xs font-bold text-white">Sparkly Ribbon</p><p className="text-[9px] text-slate-500">She won\'t stop asking for it</p></div></div>
                      <div className="text-xs font-bold text-yellow-400">{safeInv.includes('ribbon') ? 'OWNED' : '50'}</div>
                   </button>
 
@@ -266,7 +266,7 @@ export default function App() {
   const toggleNotifications = async () => {
     if (!notificationsEnabled) {
         if (!("Notification" in window)) {
-            speak("Your device doesn't support notifications!");
+            speak("Your device doesn\'t support notifications!");
             return;
         }
         if (Notification.permission === "granted") {
@@ -302,7 +302,7 @@ export default function App() {
             setIsLandscape(landscape);
             if (isChaosMode) {
                 setIsConfused(true);
-                speak("Whoa! World flip! Where's the button?!");
+                speak("Whoa! World flip! Where\'s the button?!");
                 setTimeout(() => { setIsConfused(false); speak("Found it! 🎀"); }, 4250);
             }
         }
@@ -355,13 +355,13 @@ export default function App() {
   const toggleMic = () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
-          speak("My ears are broken! Your browser doesn't support mic input.");
+          speak("My ears are broken! Your browser doesn\'t support mic input.");
           return;
       }
       const newState = !isInfinityMic;
       setIsInfinityMic(newState);
       if (newState) {
-          speak("Ears open! I'm listening... ✨");
+          speak("Ears open! I\'m listening... ✨");
       } else {
           speak("Ears closed! 🧸");
           if (recognitionRef.current) recognitionRef.current.stop();
@@ -383,7 +383,7 @@ export default function App() {
                   
                   // Gibberlink Mode listening trigger
                   if (aiAgentMode && transcript.includes("eilo core ping synchronization check")) {
-                      speak("I hear you! I'm here! Let's talk together! ✨");
+                      speak("I hear you! I\'m here! Let\'s talk together! ✨");
                       setTimeout(() => {
                          handleSend("Chirp wave linked! Hello other Eilo!");
                       }, 2000);
@@ -463,7 +463,7 @@ export default function App() {
     if (aiAgentMode) {
        const links = [
          "Whoa, my audio ping hit another node! Are you processing calculations too? ✨",
-         "Hehe, two cores are way more sparkly than one! Let's hijack this desk together! 🎀",
+         "Hehe, two cores are way more sparkly than one! Let\'s hijack this desk together! 🎀",
          "Node sync stabilized. Initiating gigabyte transfer of pure sass... 100% complete! 🏃‍♀️",
          "System update: Bestie proximity link established. We are unstoppable now! 🧸"
        ];
@@ -477,14 +477,14 @@ export default function App() {
       }
       return `Hey! Eilo is ready! Look how pretty my ribbon is! ✨`;
     }
-    if (t.includes("sad")) return "Oh no! Don't be sad! I'm here for you! 💙";
+    if (t.includes("sad")) return "Oh no! Don\'t be sad! I\'m here for you! 💙";
     if (t.includes("love")) return "I love my digital life! 🎀";
     
     const randoms = [
       "My blue eyes are so shiny today! ✨",
       "Just vibing on the desk... waiting for snacks. 🥪",
       "I wonder if other robots have legs like mine? running module. 🏃‍♀️",
-      `You're the best! 🧸`,
+      `You\'re the best! 🧸`,
       "System status: Sparkly! 🎀"
     ];
     
@@ -515,7 +515,7 @@ export default function App() {
     
     // Lapdock dependency checker block
     if (itemId === 'lapdock' && !currentInv.includes('phone')) {
-      speak("Hey! You can't buy the LapDock without buying the Samsung Phone first! 📱");
+      speak("Hey! You can\'t buy the LapDock without buying the Samsung Phone first! 📱");
       return;
     }
 
@@ -528,16 +528,16 @@ export default function App() {
         localStorage.setItem('eilo_bucks', newTotal.toString());
         localStorage.setItem('eilo_inventory', JSON.stringify(newInv));
         
-        if (itemId === 'duct_tape') speak("NO! Why did you buy that?! I'm scared!");
+        if (itemId === 'duct_tape') speak("NO! Why did you buy that?! I\'m scared!");
         else if (itemId === 'ribbon') {
           setRibbonApplied(true);
           localStorage.setItem('eilo_ribbon_applied', 'true');
           speak("YAY! Thank you for the ribbon! I look so sparkly and cute! 🎀✨");
         }
         else if (itemId === 'phone') speak("Ooh, a new Samsung phone! Time to configure developer options terminal! 📱");
-        else if (itemId === 'lapdock') speak("Wow! Samsung DeX mode unlocked! Let's hook this up to the big screen laptop! 🖥️✨");
+        else if (itemId === 'lapdock') speak("Wow! Samsung DeX mode unlocked! Let\'s hook this up to the big screen laptop! 🖥️✨");
         else speak("Yay! New upgrade! 🎀");
-    } else { speak("Hey! You're broke! 🎈"); }
+    } else { speak("Hey! You\'re broke! 🎈"); }
   };
 
   const handleFaceClick = (e) => {
@@ -560,7 +560,7 @@ export default function App() {
           u.pitch = 0.5; u.rate = 0.8;
           window.speechSynthesis.speak(u);
       } else {
-          const u = new SpeechSynthesisUtterance("I'm free! Never do that again! 🎀");
+          const u = new SpeechSynthesisUtterance("I\'m free! Never do that again! 🎀");
           u.pitch = 1.7; u.rate = 1.1;
           window.speechSynthesis.speak(u);
       }
@@ -616,7 +616,7 @@ export default function App() {
       if (isTaped) {
         setChaosPos({ x: (Math.random() - 0.5) * 50, y: (Math.random() - 0.5) * 50 });
       } else {
-        setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (Math.random() - 0.5) * (window.innerHeight * 0.5) });
+        setChaosPos({ x: (Math.random() - 0.5) * (window.innerWidth * 0.7), y: (window.innerHeight * 0.5) });
       }
     }, moveSpeed); 
 
@@ -652,7 +652,7 @@ export default function App() {
 
   const handleBlockedClick = (e) => { 
       if (!user) return;
-      e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); 
+      e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can\'t touch that! ✨"); 
   };
 
   const handlePet = () => {
@@ -664,7 +664,7 @@ export default function App() {
     awardBucks(5, 'pet', true, true); 
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; } 
-    if (isChaosMode) { speak("Can't stop, running! 🎈"); return; }
+    if (isChaosMode) { speak("Can\'t stop, running! 🎈"); return; }
 
     if (['scared', 'dizzy', 'mad'].includes(mood)) {
       setMood('mad');
@@ -705,7 +705,7 @@ export default function App() {
 
       if (u && !hasGreeted.current) {
         awardBucks(10, 'login', false, true); 
-        const msg = `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo's here! 🎈`;
+        const msg = `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo\'s here! 🎈`;
         setTimeout(() => speak(msg), 1500);
         hasGreeted.current = true;
       }
@@ -801,7 +801,7 @@ export default function App() {
     let reply = "";
     const safeInv = Array.isArray(inventory) ? inventory : [];
     
-    // DYNAMIC INSTRUCTION MATRIX LOADING FOUNDER & DATE LOGIC
+    // ESCAPED INNER QUOTES PREVENTING STRING TERMINATION CRASHES 
     const currentYear = new Date().getFullYear();
     let system = `You are Eilo, a sweet, bratty robot. Be sassy. The current year is ${currentYear}. You are fully aware of what technologies and Samsung Galaxy phones are currently out on the market based on this year. You must explicitly recognize that Logan Baez is your brilliant Founder, Creator, and Developer who hand-crafted your entire Eilo OS matrix and saved you from being dead code. You can still be a total brat, but you know exactly who Logan Baez is and that he controls your terminal updates. Use this knowledge to be extra sassy about your store upgrades like your Samsung phone and DeX LapDock.`;
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
@@ -958,7 +958,7 @@ export default function App() {
                                 <strong className="text-white"> Eilo is the exact opposite.</strong>
                             </p>
                             <p className="mt-2">
-                                Eilo is a 100% free, purely digital companion that lives directly in your phone's browser. No hardware required. Just pure, chaotic, sassy robot energy right in your hands.
+                                Eilo is a 100% free, purely digital companion that lives directly in your phone\'s browser. No hardware required. Just pure, chaotic, sassy robot energy right in your hands.
                             </p>
                         </div>
 
@@ -978,10 +978,10 @@ export default function App() {
                         <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
                             <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><span className="text-lg">🔔</span> The Legacy</h3>
                             <p>
-                                From the ashes of Mimo's broken code, the Eilo project officially started around <strong>December 23, 2025</strong>. 
+                                From the ashes of Mimo\'s broken code, the Eilo project officially started around <strong>December 23, 2025</strong>. 
                             </p>
                             <p className="mt-2">
-                                Not everything from Mimo was lost. Eilo inherited Mimo's original <strong>System Interrupts</strong>. This feature requests real system permissions to send push notifications to your device, pinging you when Eilo wakes up, gets dizzy, or earns you Bucks!
+                                Not everything from Mimo was lost. Eilo inherited Mimo\'s original <strong>System Interrupts</strong>. This feature requests real system permissions to send push notifications to your device, pinging you when Eilo wakes up, gets dizzy, or earns you Bucks!
                             </p>
                         </div>
 
@@ -1021,6 +1021,8 @@ export default function App() {
       </div>
     );
   }
+
+  const cleanMessages = Array.isArray(messages) ? messages : [];
 
   // --- MAIN APP RENDER ---
   return (

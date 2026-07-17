@@ -23,7 +23,6 @@ const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 const appId = "eilo-original-v1";
 
-// Optimized network loop to prevent long UI hang states 💀
 const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
   try {
     const response = await fetch(url, options);
@@ -651,7 +650,6 @@ export default function App() {
       
       if (tempApiKey) {
           try {
-              // Linked to production network model for lower system latencies 😭 ✌️
               const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
                 method: 'POST', headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ contents: [{ parts: [{ text: msgText }] }], systemInstruction: { parts: [{ text: system }] } })
@@ -882,7 +880,30 @@ export default function App() {
         
         <div className="w-full flex-1 min-h-[200px] bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
-            {messages.map((m, i) => (<div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}><div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>{m.text}</div></div>))}
+            {messages.map((m, i) => {
+              // Decodes Eilo's internal markdown formatting engine down into clean JSX text layers 😭 ✌️
+              const formatMarkdown = (txt) => {
+                if (!txt) return '';
+                const parts = txt.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+                return parts.map((part, index) => {
+                  if (part.startsWith('**') && part.endsWith('**')) {
+                    return <strong key={index} className="font-extrabold text-white">{part.slice(2, -2)}</strong>;
+                  }
+                  if (part.startsWith('*') && part.endsWith('*')) {
+                    return <em key={index} className="italic text-cyan-300 not-all-caps">{part.slice(1, -1)}</em>;
+                  }
+                  return part;
+                });
+              };
+
+              return (
+                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                  <div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>
+                    {formatMarkdown(m.text)}
+                  </div>
+                </div>
+              );
+            })}
             <div ref={chatEndRef} />
           </div>
           <div className="mt-4 flex gap-2">

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc, getDocs, query, orderBy, limit } from 'firebase/firestore';
+import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { 
   Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, ToggleLeft, ToggleRight, AlertTriangle, Eye, Sparkles, Ghost, Radio, Cpu, ShieldCheck, LogOut, Menu, Plus, MessageSquare
 } from 'lucide-react';
@@ -183,7 +183,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   
-  // Multiple Thread History States 
+  // Safe Flat thread metadata states
   const [threads, setThreads] = useState([]);
   const [activeThreadId, setActiveThreadId] = useState(localStorage.getItem('eilo_active_thread') || 'default_session');
   const [showHistory, setShowHistory] = useState(false);
@@ -292,23 +292,26 @@ export default function App() {
     return () => window.removeEventListener('resize', handleResize);
   }, [isLandscape, isChaosMode, user]);
 
-  // Sync Global Thread Lists from cloud metrics
+  // Sync Thread Profiles safely from a verified working path 😭 ✌️
   useEffect(() => {
     if (!user) return;
-    const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'threads'), (snapshot) => {
+    const unsubscribe = onSnapshot(collection(db, 'artifacts', appId, 'users', user.uid, 'historyThreads'), (snapshot) => {
       const parsedThreads = snapshot.docs.map(d => ({ id: d.id, ...d.data() })).sort((a,b) => b.updatedAt - a.updatedAt);
       setThreads(parsedThreads);
     });
     return () => unsubscribe();
   }, [user]);
 
-  // Connect listener specifically for the isolated context thread ID
+  // Connects messages directly to the verified original subcollection path using filtering variables
   useEffect(() => {
     if (!user || !activeThreadId) return;
     const unsubscribe = onSnapshot(
-      collection(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId, 'messages'), 
+      collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), 
       (snapshot) => {
-        const msgs = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() })).sort((a, b) => a.timestamp - b.timestamp);
+        const msgs = snapshot.docs
+          .map(doc => ({ id: doc.id, ...doc.data() }))
+          .filter(m => m.threadId === activeThreadId || (!m.threadId && activeThreadId === 'default_session'))
+          .sort((a, b) => a.timestamp - b.timestamp);
         setMessages(msgs);
         setTimeout(() => {
             chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -326,7 +329,7 @@ export default function App() {
   const handleNewThread = async () => {
     if (!user) return;
     const nextId = "thread_" + Date.now();
-    const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'threads', nextId);
+    const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'historyThreads', nextId);
     await setDoc(threadRef, {
       title: "New Soul Sync...",
       createdAt: Date.now(),
@@ -707,13 +710,19 @@ export default function App() {
     setMood('thinking');
     if (!manual) setInput('');
 
-    const newUserMsg = { role: 'user', text: msgText, timestamp: Date.now() };
+    // Uses the original verified safe collection route with tagged tracking identifiers 😭 ✌️
+    const newUserMsg = { 
+      role: 'user', 
+      text: msgText, 
+      timestamp: Date.now(),
+      threadId: activeThreadId
+    };
 
     try {
-      const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId);
+      const threadRef = doc(db, 'artifacts', appId, 'users', user.uid, 'historyThreads', activeThreadId);
       await setDoc(threadRef, { updatedAt: Date.now() }, { merge: true });
 
-      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId, 'messages'), newUserMsg);
+      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       
       let reply = "";
       const safeInv = Array.isArray(inventory) ? inventory : [];
@@ -735,10 +744,14 @@ export default function App() {
           reply = getLocalResponse(msgText);
       }
 
-      const newAiMsg = { role: 'eilo', text: reply, timestamp: Date.now() };
-      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'threads', activeThreadId, 'messages'), newAiMsg);
+      const newAiMsg = { 
+        role: 'eilo', 
+        text: reply, 
+        timestamp: Date.now(),
+        threadId: activeThreadId
+      };
+      await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
-      // Auto-generates a short title via Gemini if it's the start of a thread
       if (isFirstMessage && tempApiKey) {
         try {
           const titleGen = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
@@ -963,7 +976,7 @@ export default function App() {
          </div>
       )}
 
-      {/* INTERFACE ZONE (Height constraints updated to allow proper global swipe ups) */}
+      {/* INTERFACE ZONE */}
       <div className={`w-full max-w-sm px-4 h-[calc(100vh-310px)] flex flex-col gap-4 pb-6 transition-all duration-1000 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         

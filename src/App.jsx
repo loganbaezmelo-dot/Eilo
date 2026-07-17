@@ -342,7 +342,7 @@ export default function App() {
       const newState = !isInfinityMic;
       setIsInfinityMic(newState);
       if (newState) {
-          speak("Ears open! I'm listening... ✨");
+          speak("Eears open! I'm listening... ✨");
       } else {
           speak("Ears closed! 🧸");
           if (recognitionRef.current) recognitionRef.current.stop();
@@ -697,9 +697,9 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
-    // Evaluates length threshold *exclusively before* array appends execute 😭 ✌️
-    const currentMsgCount = Array.isArray(messages) ? messages.length : 0;
-    const isFirstMessage = currentMsgCount === 0;
+    // Evaluates length thresholds directly out of the matched filtered session block
+    const activeMsgCount = messages.filter(m => m.threadId === activeThreadId || (!m.threadId && activeThreadId === 'default_session')).length;
+    const isFirstMessage = activeMsgCount === 0;
 
     awardBucks(5, 'talk', false, true); 
     setIsThinking(true); 
@@ -753,7 +753,7 @@ export default function App() {
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
-      // Successfully renamed threads via verified local lookups 😭 ✌️
+      // Forces instant thread title override state saves down into localStorage logs 😭 ✌️
       if (isFirstMessage) {
         if (tempApiKey) {
           fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
@@ -763,12 +763,24 @@ export default function App() {
             })
           }).then(titleGen => {
             const generatedTitle = titleGen?.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || msgText.substring(0, 15) + "...";
-            setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: generatedTitle, updatedAt: Date.now() } : t));
+            setThreads(prev => {
+              const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: generatedTitle, updatedAt: Date.now() } : t);
+              localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
+              return updated;
+            });
           }).catch(() => {
-            setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t));
+            setThreads(prev => {
+              const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t);
+              localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
+              return updated;
+            });
           });
         } else {
-          setThreads(prev => prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t));
+          setThreads(prev => {
+            const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: msgText.substring(0, 15) + "...", updatedAt: Date.now() } : t);
+            localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
+            return updated;
+          });
         }
       }
     } catch (databaseErr) {

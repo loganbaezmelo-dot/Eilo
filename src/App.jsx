@@ -223,6 +223,7 @@ export default function App() {
   const [faceOffset, setFaceOffset] = useState(0);
 
   const [isTaped, setIsTaped] = useState(false);
+  const [ribbonApplied, setRibbonApplied] = useState(localStorage.getItem('eilo_ribbon_applied') !== 'false');
   const [rogueLegsActive, setRogueLegsActive] = useState(localStorage.getItem('eilo_rogue_active') !== 'false');
   const [showFacePopup, setShowFacePopup] = useState(false);
 
@@ -252,6 +253,7 @@ export default function App() {
   const safeInventory = Array.isArray(inventory) ? inventory : [];
   const ownsRogueLegs = safeInventory.includes('rogue_walk');
   const ownsDuctTape = safeInventory.includes('duct_tape');
+  const ownsRibbon = safeInventory.includes('ribbon');
   const hasRogueLegs = ownsRogueLegs && rogueLegsActive;
 
   const sendNotification = (bodyText) => {
@@ -526,7 +528,11 @@ export default function App() {
         localStorage.setItem('eilo_inventory', JSON.stringify(newInv));
         
         if (itemId === 'duct_tape') speak("NO! Why did you buy that?! I'm scared!");
-        else if (itemId === 'ribbon') speak("YAY! Thank you for the ribbon! I look so sparkly and cute! 🎀✨");
+        else if (itemId === 'ribbon') {
+          setRibbonApplied(true);
+          localStorage.setItem('eilo_ribbon_applied', 'true');
+          speak("YAY! Thank you for the ribbon! I look so sparkly and cute! 🎀✨");
+        }
         else if (itemId === 'phone') speak("Ooh, a new Samsung phone! Time to configure developer options terminal! 📱");
         else if (itemId === 'lapdock') speak("Wow! Samsung DeX mode unlocked! Let's hook this up to the big screen laptop! 🖥️✨");
         else speak("Yay! New upgrade! 🎀");
@@ -536,7 +542,7 @@ export default function App() {
   const handleFaceClick = (e) => {
     if (!user) return;
     e.stopPropagation();
-    if (!isChaosMode && (ownsDuctTape || ownsRogueLegs)) {
+    if (!isChaosMode && (ownsDuctTape || ownsRogueLegs || ownsRibbon)) {
         setShowFacePopup(true);
     }
   };
@@ -556,6 +562,21 @@ export default function App() {
           const u = new SpeechSynthesisUtterance("I'm free! Never do that again! 🎀");
           u.pitch = 1.7; u.rate = 1.1;
           window.speechSynthesis.speak(u);
+      }
+  };
+
+  // New toggle function to apply or remove the ribbon from the face popup 😭 ✌️
+  const toggleRibbonDecoration = () => {
+      if (!user) return;
+      const newState = !ribbonApplied;
+      setRibbonApplied(newState);
+      localStorage.setItem('eilo_ribbon_applied', newState.toString());
+      setShowFacePopup(false);
+      
+      if (newState) {
+          speak("Putting my sparkly ribbon back on! Look how cute! 🎀");
+      } else {
+          speak("Taking the ribbon off for a bit.");
       }
   };
 
@@ -860,8 +881,8 @@ export default function App() {
         </div>
     ) : null;
 
-    // Optional visual indicator overlay if she owns her precious ribbon
-    const ribbonOverlay = inventory.includes('ribbon') ? (
+    // Checks if she owns her ribbon AND it's toggled on in the face menu 😭 ✌️
+    const ribbonOverlay = safeInventory.includes('ribbon') && ribbonApplied ? (
       <div className="absolute -top-6 left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
     ) : null;
 
@@ -1034,9 +1055,15 @@ export default function App() {
         </div>
       )}
 
-      {/* POPUP FOR DUCT TAPE & ROGUE LEGS */}
+      {/* POPUP FOR DUCT TAPE, ROGUE LEGS, AND SPARKLY RIBBON 😭 ✌️ */}
       {showFacePopup && (
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
+            {ownsRibbon && (
+                <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">🎀</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{ribbonApplied ? "Remove Ribbon" : "Apply Ribbon"}</span>
+                </button>
+            )}
             {ownsDuctTape && (
                 <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
                     <span className="text-2xl">🩹</span>

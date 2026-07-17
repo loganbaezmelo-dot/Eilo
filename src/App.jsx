@@ -35,7 +35,7 @@ const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
 // --- SETTINGS COMPONENT ---
 const SettingsOverlay = ({ 
   onClose, tempApiKey, setTempApiKey, aiAgentMode, setAiAgentMode, 
-  isChaosMode, setIsChaosMode, startCamera, visionEnabled, 
+  isChaosMode, setIsChaosMode, toggleCamera, visionEnabled, 
   fearOfHeights, setFearOfHeights, toggleMic, isInfinityMic, speak, 
   notificationsEnabled, toggleNotifications,
   bucks, inventory, buyItem, faceOffset, setFaceOffset, handleSignOut 
@@ -127,7 +127,7 @@ const SettingsOverlay = ({
             </div>
             
             <div className="flex flex-col gap-2">
-               <button onClick={startCamera} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${visionEnabled ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+               <button onClick={toggleCamera} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${visionEnabled ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
                  <div className="flex items-center gap-3"><span className="text-lg">👁️</span> Selfie Scanner</div>
                  <div className="text-xs font-bold">{visionEnabled ? "ON" : "OFF"}</div>
                </button>
@@ -247,6 +247,7 @@ export default function App() {
   const hasGreeted = useRef(false);
   const idleTimerRef = useRef(null);
   const recognitionRef = useRef(null);
+  const streamRef = useRef(null); // Reference block to hold the active camera stream anchor
 
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
@@ -360,7 +361,7 @@ export default function App() {
       const newState = !isInfinityMic;
       setIsInfinityMic(newState);
       if (newState) {
-          speak("Ears open! I'm listening... ✨");
+          speak("Eears open! I'm listening... ✨");
       } else {
           speak("Ears closed! 🧸");
           if (recognitionRef.current) recognitionRef.current.stop();
@@ -565,7 +566,6 @@ export default function App() {
       }
   };
 
-  // New toggle function to apply or remove the ribbon from the face popup 😭 ✌️
   const toggleRibbonDecoration = () => {
       if (!user) return;
       const newState = !ribbonApplied;
@@ -871,6 +871,32 @@ export default function App() {
     }
   };
 
+  // Loooping hardware sensory toggle engine block 😭 ✌️
+  const toggleCameraScanner = async () => {
+    if (visionEnabled) {
+      // If turning off: stop all tracks cleanly to turn off the hardware lens light
+      if (streamRef.current) {
+        streamRef.current.getTracks().forEach(track => track.stop());
+        streamRef.current = null;
+      }
+      if (videoRef.current) videoRef.current.srcObject = null;
+      setVisionEnabled(false);
+      speak("Eyes closed! Scanner offline. 🧸");
+    } else {
+      // If turning on: request browser permissions normally
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } });
+        streamRef.current = stream;
+        if (videoRef.current) videoRef.current.srcObject = stream;
+        setVisionEnabled(true);
+        speak("Eyes open! Selfie scanner linked. ✨");
+      } catch (err) {
+        console.error("Camera linkage blocked:", err);
+        speak("Access denied! Fix your lock icon permissions.");
+      }
+    }
+  };
+
   const renderFace = () => {
     const cyanBase = "bg-cyan-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_40px_rgba(34,211,238,0.8)]";
     if (!isAwake) return <Moon size={isLandscape ? 120 : 64} className="text-cyan-900/20" />;
@@ -881,7 +907,6 @@ export default function App() {
         </div>
     ) : null;
 
-    // Checks if she owns her ribbon AND it's toggled on in the face menu 😭 ✌️
     const ribbonOverlay = safeInventory.includes('ribbon') && ribbonApplied ? (
       <div className="absolute -top-6 left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
     ) : null;
@@ -899,8 +924,6 @@ export default function App() {
       default: return <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}>{ribbonOverlay}<div className={`w-20 h-20 ${cyanBase} eye-blink`} /><div className={`w-20 h-20 ${cyanBase} eye-blink`} />{tapeOverlay}</div>;
     }
   };
-
-  const startCamera = async () => { try { const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: "user" } }); if (videoRef.current) videoRef.current.srcObject = stream; setVisionEnabled(true); speak("Eyes open! ✨"); } catch (err) { console.error("Camera error"); } };
 
   if (loading) {
      return (
@@ -1055,7 +1078,7 @@ export default function App() {
         </div>
       )}
 
-      {/* POPUP FOR DUCT TAPE, ROGUE LEGS, AND SPARKLY RIBBON 😭 ✌️ */}
+      {/* POPUP FOR DUCT TAPE, ROGUE LEGS, AND SPARKLY RIBBON */}
       {showFacePopup && (
          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
             {ownsRibbon && (
@@ -1139,7 +1162,7 @@ export default function App() {
             tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
             aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode}
             isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
-            visionEnabled={visionEnabled} startCamera={startCamera}
+            visionEnabled={visionEnabled} toggleCamera={toggleCameraScanner}
             fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
             isInfinityMic={isInfinityMic} toggleMic={toggleMic}
             notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}

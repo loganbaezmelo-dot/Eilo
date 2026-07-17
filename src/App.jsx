@@ -1,12 +1,11 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
-import { getFirestore, collection, addDoc, onSnapshot, doc, setDoc } from 'firebase/firestore';
 import { 
   Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, ToggleLeft, ToggleRight, AlertTriangle, Eye, Sparkles, Ghost, Radio, Cpu, ShieldCheck, LogOut, Menu, Plus, MessageSquare
 } from 'lucide-react';
 
-// --- FIREBASE CONFIG ---
+// --- FIREBASE CONFIG (ONLY FOR AUTH) ---
 const firebaseConfig = {
   apiKey: "AIzaSyA4Vc5-bDqsMim6a74GPJk46Yk0caNockE",
   authDomain: "eilo-e5534.firebaseapp.com",
@@ -19,9 +18,7 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
-const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
-const appId = "eilo-original-v1";
 
 const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
   try {
@@ -296,32 +293,19 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // Synchronized Multi-Thread Snapshot Engine with strict cleanup separation 😭 ✌️
+  // 100% PURE PURE LOCALSTORAGE MESSAGE HISTORY MATRIX ENGINE 😭 ✌️
   useEffect(() => {
     if (!user || !activeThreadId) return;
     
-    // Instantly wipe layout state on swap to prevent old messages leaking across views
-    setMessages([]);
+    const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+    const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+    
+    const threadMessages = globalCache[activeThreadId] || [];
+    setMessages(threadMessages);
 
-    const unsubscribe = onSnapshot(
-      collection(db, 'users', user.uid, 'messages'), 
-      (snapshot) => {
-        const msgs = snapshot.docs
-          .map(doc => ({ id: doc.id, ...doc.data() }))
-          .filter(m => {
-            if (m.threadId === activeThreadId) return true;
-            if (!m.threadId && activeThreadId === 'default_session') return true;
-            return false;
-          })
-          .sort((a, b) => a.timestamp - b.timestamp);
-          
-        setMessages(msgs);
-        setTimeout(() => {
-            chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-      }
-    );
-    return () => unsubscribe();
+    setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
   }, [user, activeThreadId]);
 
   const handleSelectThread = (id) => {
@@ -485,13 +469,8 @@ export default function App() {
     
     if (!repeatable) setSessionClaims(prev => ({ ...prev, [type]: true }));
     
-    try {
-        const userRef = doc(db, 'users', user.uid, 'settings', 'core');
-        await setDoc(userRef, { bucks: newTotal }, { merge: true });
-    } catch (err) {
-        console.warn("Cloud save failed, economy secured locally.");
-    }
-    
+    // Isolated secure local file saves only
+    localStorage.setItem(`eilo_bucks_backup_${user.uid}`, newTotal.toString());
     if (!silent) speak(`Cha-ching! +${amount} Bucks! ✨`);
   };
 
@@ -506,13 +485,6 @@ export default function App() {
         setInventory(newInv);
         localStorage.setItem('eilo_bucks', newTotal.toString());
         localStorage.setItem('eilo_inventory', JSON.stringify(newInv));
-        
-        try {
-            const userRef = doc(db, 'users', user.uid, 'settings', 'core');
-            await setDoc(userRef, { bucks: newTotal, inventory: newInv }, { merge: true });
-        } catch (err) {
-            console.warn("Cloud save failed, item secured locally.");
-        }
         
         if (itemId === 'duct_tape') speak("NO! Why did you buy that?! I'm scared!");
         else speak("Yay! New upgrade! 🎀");
@@ -665,25 +637,9 @@ export default function App() {
       if (!u) { return; }
       setUser(u);
       
-      const docRef = doc(db, 'users', u.uid, 'settings', 'core');
-      onSnapshot(docRef, (doc) => {
-          if (doc.exists()) {
-              const data = doc.data();
-              if (data.bucks !== undefined) {
-                  setBucks(data.bucks);
-                  localStorage.setItem('eilo_bucks', data.bucks.toString());
-              }
-              if (data.inventory) {
-                  const verifiedInv = Array.isArray(data.inventory) ? data.inventory : [];
-                  setInventory(verifiedInv);
-                  localStorage.setItem('eilo_inventory', JSON.stringify(verifiedInv));
-              }
-          } else {
-              setDoc(docRef, { bucks: 10, inventory: [] }, { merge: true });
-              setBucks(10);
-              setInventory([]);
-          }
-      });
+      const savedBucks = localStorage.getItem(`eilo_bucks_backup_${u.uid}`);
+      if (savedBucks) setBucks(parseInt(savedBucks));
+
       if (u && !hasGreeted.current) {
         awardBucks(10, 'login', false, true); 
         const msg = `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo's here! 🎈`;
@@ -747,7 +703,7 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
-    const activeMsgCount = messages.filter(m => m.threadId === activeThreadId || (!m.threadId && activeThreadId === 'default_session')).length;
+    const activeMsgCount = messages.length;
     const isFirstMessage = activeMsgCount === 0;
 
     awardBucks(5, 'talk', false, true); 
@@ -762,7 +718,8 @@ export default function App() {
       threadId: activeThreadId
     };
 
-    setMessages(prev => [...(Array.isArray(prev) ? prev : []), newUserMsg]);
+    const nextMessages = [...messages, newUserMsg];
+    setMessages(nextMessages);
 
     let reply = "";
     const safeInv = Array.isArray(inventory) ? inventory : [];
@@ -791,36 +748,33 @@ export default function App() {
       threadId: activeThreadId
     };
     
-    setMessages(prev => [...(Array.isArray(prev) ? prev : []), newAiMsg]);
+    const finalMessages = [...nextMessages, newAiMsg];
+    setMessages(finalMessages);
     setMood('happy'); 
     speak(reply);
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     setIsThinking(false);
     setTimeout(() => setMood('neutral'), 3000);
 
-    // Auto-ping response delay setup for infinite loop self-talk when inside Gibberlink loop
-    if (aiAgentMode && manual) {
-       setTimeout(() => {
-          if (aiAgentMode) {
-             handleSend(); 
-          }
-       }, 5000);
+    // Commit completely to local storage blocks separated by thread values 😭 ✌️
+    const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+    const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+    globalCache[activeThreadId] = finalMessages;
+    localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+
+    if (isFirstMessage) {
+      const shortTitle = msgText.length > 18 ? msgText.substring(0, 16) + "..." : msgText;
+      setThreads(prev => {
+        const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: shortTitle, updatedAt: Date.now() } : t);
+        localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
+        return updated;
+      });
     }
 
-    try {
-      await addDoc(collection(db, 'users', user.uid, 'messages'), newUserMsg);
-      await addDoc(collection(db, 'users', user.uid, 'messages'), newAiMsg);
-      
-      if (isFirstMessage) {
-        const shortTitle = msgText.length > 18 ? msgText.substring(0, 16) + "..." : msgText;
-        setThreads(prev => {
-          const updated = prev.map(t => t.id === activeThreadId ? { ...t, title: shortTitle, updatedAt: Date.now() } : t);
-          localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
-          return updated;
-        });
-      }
-    } catch (databaseErr) {
-       console.warn("Database sync suspended, conversational memory kept locally.");
+    if (aiAgentMode && manual) {
+       setTimeout(() => {
+          if (aiAgentMode) { handleSend(); }
+       }, 5000);
     }
   };
 
@@ -944,8 +898,6 @@ export default function App() {
       </div>
     );
   }
-
-  const cleanMessages = Array.isArray(messages) ? messages : [];
 
   // --- MAIN APP RENDER ---
   return (

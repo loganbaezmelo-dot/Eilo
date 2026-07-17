@@ -485,7 +485,7 @@ export default function App() {
       
       window.speechSynthesis.cancel();
       if (newState) {
-          const u = new SynthesisUtterance("Mmm. Mmm. Hmph."); 
+          const u = new SpeechSynthesisUtterance("Mmm. Mmm. Hmph."); 
           u.pitch = 0.5; u.rate = 0.8;
           window.speechSynthesis.speak(u);
       } else {
@@ -583,12 +583,12 @@ export default function App() {
 
     if (['scared', 'dizzy', 'mad'].includes(mood)) {
       setMood('mad');
-      speak(`HEY! Busy! 🎈`);
+      speak("HEY! Busy! 🎈");
       setTimeout(() => setMood('neutral'), 4000);
       return;
     }
     setMood('happy');
-    const lines = ["Bestie! ✨", "Yay! 🎀", `Hehe, thanks! ✨`, `Ooh, nice! 🎀`];
+    const lines = ["Bestie! ✨", "Yay! 🎀", "Hehe, thanks! ✨", "Ooh, nice! 🎀"];
     speak(lines[Math.floor(Math.random() * lines.length)]);
     setTimeout(() => setMood('neutral'), 3000);
   };
@@ -717,8 +717,8 @@ export default function App() {
 
     let reply = "";
     const safeInv = Array.isArray(inventory) ? inventory : [];
-    let system = `You are Eilo, a sweet, bratty robot. Be sassy.`;
-    if (bucks >= 25 && !safeInv.includes('duct_tape')) system += ` BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀`;
+    let system = "You are Eilo, a sweet, bratty robot. Be sassy.";
+    if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
     
     if (tempApiKey) {
         try {
@@ -963,7 +963,7 @@ export default function App() {
          </div>
       )}
 
-      {/* INTERFACE ZONE - Viewport height constraint adjusted to prevent cutting off top header components */}
+      {/* INTERFACE ZONE */}
       <div className={`w-full max-w-sm px-4 h-[52vh] flex flex-col gap-4 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         

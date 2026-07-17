@@ -296,7 +296,7 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // Safe multi-session synchronization profile engine
+  // Trusted flat database path tracking logic
   useEffect(() => {
     if (!user || !activeThreadId) return;
     const unsubscribe = onSnapshot(
@@ -697,6 +697,7 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
+    // Evaluates length threshold *exclusively before* array appends execute 😭 ✌️
     const currentMsgCount = Array.isArray(messages) ? messages.length : 0;
     const isFirstMessage = currentMsgCount === 0;
 
@@ -712,7 +713,6 @@ export default function App() {
       threadId: activeThreadId
     };
 
-    // Isolated real-time rendering layers unhooked from database write stalls 😭 ✌️
     setMessages(prev => [...(Array.isArray(prev) ? prev : []), newUserMsg]);
 
     let reply = "";
@@ -742,7 +742,6 @@ export default function App() {
       threadId: activeThreadId
     };
     
-    // Updates UI immediately before trying background operations 😭 ✌️
     setMessages(prev => [...(Array.isArray(prev) ? prev : []), newAiMsg]);
     setMood('happy'); 
     speak(reply);
@@ -750,11 +749,11 @@ export default function App() {
     setIsThinking(false);
     setTimeout(() => setMood('neutral'), 3000);
 
-    // Processes standard collection prints safely in a separate task context loop 😭 ✌️
     try {
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
+      // Successfully renamed threads via verified local lookups 😭 ✌️
       if (isFirstMessage) {
         if (tempApiKey) {
           fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {

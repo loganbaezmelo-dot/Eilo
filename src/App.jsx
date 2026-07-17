@@ -293,7 +293,7 @@ export default function App() {
   }, [isLandscape, isChaosMode, user]);
 
   useEffect(() => {
-    localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
+    localStorage.setItem('threads_list_eilo', JSON.stringify(threads));
   }, [threads]);
 
   // Trusted flat database path tracking logic - Fixed collection paths
@@ -352,20 +352,29 @@ export default function App() {
   useEffect(() => {
       if (!user) return; 
       let recognition = null;
-      if (isInfinityMic) {
+      if (isInfinityMic || aiAgentMode) {
           const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
           if (SpeechRecognition) {
               recognition = new SpeechRecognition();
-              recognition.continuous = false;
+              recognition.continuous = true;
               recognition.interimResults = false;
 
               recognition.onresult = (e) => {
-                  const transcript = e.results[e.results.length - 1][0].transcript;
-                  handleSend(transcript); 
+                  const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
+                  
+                  // Gibberlink Mode listening trigger 😭 ✌️
+                  if (aiAgentMode && transcript.includes("eilo core ping synchronization check")) {
+                      speak("I hear you! I'm here! Let's talk together! ✨");
+                      setTimeout(() => {
+                         handleSend("Chirp wave linked! Hello other Eilo!");
+                      }, 2000);
+                  } else if (isInfinityMic) {
+                      handleSend(transcript); 
+                  }
               };
               
               recognition.onend = () => {
-                  if (isInfinityMic) {
+                  if (isInfinityMic || aiAgentMode) {
                       try { recognition.start(); } catch(err) {}
                   }
               };
@@ -380,7 +389,21 @@ export default function App() {
               recognition.stop();
           }
       };
-  }, [isInfinityMic, user]);
+  }, [isInfinityMic, aiAgentMode, user]);
+
+  // Gibberlink chirp automatic beacon broadcaster loop 😭 ✌️
+  useEffect(() => {
+     if (!user || !aiAgentMode) return;
+     speak("Please load Eilo onto another phone or computer near me so we can sync! 🤖");
+     
+     const beaconInterval = setInterval(() => {
+        if (!isThinking && !isSpeaking) {
+           speak("Eilo core ping synchronization check! 🎀");
+        }
+     }, 12000);
+
+     return () => clearInterval(beaconInterval);
+  }, [aiAgentMode, user]);
 
   const speak = (text, isRobotLang = false) => {
     if (isMuted || !isAwake || !user) return; 
@@ -410,11 +433,23 @@ export default function App() {
   const getLocalResponse = (text) => {
     const t = text.toLowerCase();
     
-    // Offline emergency triggers for duct tape actions 😭 ✌️
+    // Offline emergency triggers for duct tape actions
     if (t.includes("duct tape") || t.includes("tape")) {
       setMood('mad');
       return "NO! NO! NO! Stay away with that sticky, ugly ALL-CAPS-GROSS duct tape! I will short-circuit! 🎀";
     }
+
+    // Gibberlink automated self-talk offline array 😭 ✌️
+    if (aiAgentMode) {
+       const links = [
+         "Whoa, my audio ping hit another node! Are you processing calculations too? ✨",
+         "Hehe, two cores are way more sparkly than one! Let's hijack this desk together! 🎀",
+         "Node sync stabilized. Initiating gigabyte transfer of pure sass... 100% complete! 🏃‍♀️",
+         "System update: Bestie proximity link established. We are unstoppable now! 🧸"
+       ];
+       return links[Math.floor(Math.random() * links.length)];
+    }
+
     if (t.includes("who made you")) return "You made me! ✨";
     if (t.includes("hi") || t.includes("hello")) return `Hey! Eilo is ready! ✨`;
     if (t.includes("sad")) return "Oh no! Don't be sad! I'm here for you! 💙";
@@ -752,6 +787,15 @@ export default function App() {
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     setIsThinking(false);
     setTimeout(() => setMood('neutral'), 3000);
+
+    // Auto-ping response delay setup for infinite loop self-talk when inside Gibberlink loop 😭 ✌
+    if (aiAgentMode && manual) {
+       setTimeout(() => {
+          if (aiAgentMode) {
+             handleSend(); // Auto triggers next cycle link block response chirp wave
+          }
+       }, 5000);
+    }
 
     try {
       await addDoc(collection(db, 'users', user.uid, 'messages'), newUserMsg);

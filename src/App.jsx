@@ -146,6 +146,7 @@ const SettingsOverlay = ({
 // --- CHAT HISTORY SIDEBAR OVERLAY ---
 const HistorySidebar = ({ isOpen, onClose, threads, activeThreadId, onSelectThread, onNewThread }) => {
   if (!isOpen) return null;
+  const safeThreads = Array.isArray(threads) ? threads : [];
   return (
     <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[999] flex justify-start animate-fade-in">
       <div className="bg-[#161622] w-72 h-full border-r border-white/5 p-6 flex flex-col shadow-2xl relative">
@@ -157,7 +158,7 @@ const HistorySidebar = ({ isOpen, onClose, threads, activeThreadId, onSelectThre
         </button>
 
         <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-2">
-          {threads.map((t) => (
+          {safeThreads.map((t) => (
             <button 
               key={t.id} 
               onClick={() => { onSelectThread(t.id); onClose(); }}
@@ -179,7 +180,7 @@ export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   
-  // Localized Multi-Thread State to completely avoid Firebase rule locks 😭 ✌️
+  // Localized Multi-Thread State
   const [threads, setThreads] = useState(() => {
     const saved = localStorage.getItem('eilo_threads_list');
     return saved ? JSON.parse(saved) : [{ id: 'default_session', title: 'Main Core Sync', updatedAt: Date.now() }];
@@ -295,7 +296,7 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // Messages listener pointed exclusively at the trusted flat database collection path 😭 ✌️
+  // Trusted flat database path tracking logic
   useEffect(() => {
     if (!user || !activeThreadId) return;
     const unsubscribe = onSnapshot(
@@ -696,7 +697,9 @@ export default function App() {
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
-    const isFirstMessage = messages.length === 0;
+    // Hard fallback length check to guarantee state doesn't crash here 😭 ✌️
+    const currentMsgCount = Array.isArray(messages) ? messages.length : 0;
+    const isFirstMessage = currentMsgCount === 0;
 
     awardBucks(5, 'talk', false, true); 
     setIsThinking(true); 
@@ -710,8 +713,10 @@ export default function App() {
       threadId: activeThreadId
     };
 
+    // Pre-inject message locally right away so it renders instantly regardless of db status 😭 ✌️
+    setMessages(prev => [...(Array.isArray(prev) ? prev : []), newUserMsg]);
+
     try {
-      // Stripped out secondary cloud collection triggers to prevent writing permission lockouts 😭 ✌️
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newUserMsg);
       
       let reply = "";
@@ -740,6 +745,8 @@ export default function App() {
         timestamp: Date.now(),
         threadId: activeThreadId
       };
+      
+      setMessages(prev => [...(Array.isArray(prev) ? prev : []), newAiMsg]);
       await addDoc(collection(db, 'artifacts', appId, 'users', user.uid, 'messages'), newAiMsg);
       
       if (isFirstMessage && tempApiKey) {
@@ -893,7 +900,9 @@ export default function App() {
     );
   }
 
-  // --- MAIN APP ---
+  const cleanMessages = Array.isArray(messages) ? messages : [];
+
+  // --- MAIN APP RENDER ---
   return (
     <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="hidden" />
@@ -972,7 +981,7 @@ export default function App() {
         
         <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
-            {messages.map((m, i) => {
+            {cleanMessages.map((m, i) => {
               const formatMarkdown = (txt) => {
                 if (!txt) return '';
                 const parts = txt.split(/(\*\*.*?\*\*|\*.*?\*)/g);

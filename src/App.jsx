@@ -293,7 +293,7 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // 100% PURE PURE LOCALSTORAGE MESSAGE HISTORY MATRIX ENGINE 😭 ✌️
+  // 100% PURE LOCALSTORAGE MESSAGE HISTORY MATRIX ENGINE 😭 ✌️
   useEffect(() => {
     if (!user || !activeThreadId) return;
     
@@ -756,7 +756,7 @@ export default function App() {
     setIsThinking(false);
     setTimeout(() => setMood('neutral'), 3000);
 
-    // Commit completely to local storage blocks separated by thread values 😭 ✌️
+    // Commit completely to local storage blocks separated by thread values
     const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
     const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
     globalCache[activeThreadId] = finalMessages;
@@ -771,10 +771,21 @@ export default function App() {
       });
     }
 
+    // FIXED: Removed the automated blank loop caller that caused the screen compilation blackouts
     if (aiAgentMode && manual) {
        setTimeout(() => {
-          if (aiAgentMode) { handleSend(); }
-       }, 5000);
+          if (aiAgentMode) { 
+             const autoChirp = getLocalResponse("agent_talk_trigger");
+             const simulatedAiMsg = { role: 'eilo', text: autoChirp, timestamp: Date.now(), threadId: activeThreadId };
+             setMessages(prev => {
+                const updatedMsgs = [...prev, simulatedAiMsg];
+                globalCache[activeThreadId] = updatedMsgs;
+                localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+                return updatedMsgs;
+             });
+             speak(autoChirp);
+          }
+       }, 6000);
     }
   };
 

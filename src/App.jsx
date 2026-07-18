@@ -348,7 +348,7 @@ export default function App() {
       localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
       return updated;
     });
-    handleSelectThread(nextId);
+    handleSelectThread(newSession.id);
     speak("New timeline initialized! ✨");
   };
 
@@ -921,7 +921,6 @@ export default function App() {
       <div className="absolute -top-6 left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
     ) : null;
 
-    // --- RESTRUCTURED MULTI-LAYER COMPONENT TREE MATRIX TO KEEP OVERLAYS ALIGNED 😭 ✌️ ---
     switch (mood) {
       case 'dizzy': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 animate-spin relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div></div>;
@@ -932,7 +931,7 @@ export default function App() {
       case 'sleeping': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex items-center justify-center gap-12 relative">{ribbonOverlay}<div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-0 right-0 text-cyan-400 text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div></div>;
       case 'eating': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay;<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">🥪</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">🥪</div>{tapeOverlay}</div></div>;
       case 'rubik': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-spin">🎨</div>{tapeOverlay}</div></div>;
       case 'computer': 
@@ -1297,4 +1296,4 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
-        }
+    }

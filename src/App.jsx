@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { 
-  Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, ToggleLeft, ToggleRight, AlertTriangle, Eye, Sparkles, Ghost, Radio, Cpu, ShieldCheck, LogOut, Menu, Plus, MessageSquare
+  Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, Eye, Sparkles, Ghost, Cpu, ShieldCheck, LogOut, Menu, Plus, MessageSquare
 } from 'lucide-react';
 
 // --- FIREBASE CONFIG (ONLY FOR AUTH) ---
@@ -597,7 +597,6 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return; 
-    // SAFELY COMPUTE ADVANCED WALKING SCHEMES ONLY AFTER ACTIVE USER HANDSHAKES CONFIRM 😭 ✌️
     const shouldMove = (isChaosMode || (ownsRogueLegs && rogueLegsActive)) && !showFacePopup;
     if (!shouldMove) {
       if (!isChaosMode && !(ownsRogueLegs && rogueLegsActive)) {
@@ -1033,6 +1032,8 @@ export default function App() {
     );
   }
 
+  const cleanMessages = Array.isArray(messages) ? messages : [];
+
   // --- SPECIAL LANDSCAPE VOID THEATER MATRIX INTERFACE ---
   if (isLandscape && !isChaosMode && !hasRogueLegs) {
     return (
@@ -1116,7 +1117,7 @@ export default function App() {
               faceOffset={faceOffset} setFaceOffset={setFaceOffset}
               speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
           />}
-        <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }`}} />
+        <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }" }} />
       </div>
     );
   }
@@ -1282,7 +1283,7 @@ export default function App() {
             faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
         />}
-      <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
-}
+      }

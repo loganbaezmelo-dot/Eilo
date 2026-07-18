@@ -909,10 +909,10 @@ export default function App() {
 
   const renderFace = () => {
     const cyanBase = "bg-cyan-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_40px_rgba(34,211,238,0.8)]";
-    if (!isAwake) return <Moon size={isLandscape ? 120 : 64} className="text-cyan-900/20" />;
+    if (!isAwake) return <div className="absolute inset-0 flex items-center justify-center"><Moon size={isLandscape ? 120 : 64} className="text-cyan-900/20" /></div>;
     
     const tapeOverlay = isTaped ? (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-8 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-4 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
             <div className="w-full h-full bg-repeating-linear-gradient-45 from-transparent to-black/10" />
         </div>
     ) : null;
@@ -921,17 +921,28 @@ export default function App() {
       <div className="absolute -top-6 left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
     ) : null;
 
+    // --- FIX FOR ALL INTERACTIVE ANIMATION CLIPPING GRAPHICS MATRICES ---
     switch (mood) {
-      case 'dizzy': return <div className="flex gap-12 animate-spin relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div>;
-      case 'happy': return <div className="flex gap-12 relative">{ribbonOverlay}<div className="absolute -top-10 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div>;
-      case 'thinking': return <div className="flex gap-12 relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div>;
-      case 'sleeping': return <div className="flex items-center justify-center gap-12 relative">{ribbonOverlay}<div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-1/4 right-1/4 text-cyan-400 text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div>;
-      case 'eating': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-bounce">🥪</div>{tapeOverlay}</div>;
-      case 'rubik': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-spin">🎨</div>{tapeOverlay}</div>;
-      case 'computer': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-6xl animate-bounce pt-4">💻</div>{tapeOverlay}</div>;
-      case 'phone': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-5xl animate-bounce pt-4">📱</div>{tapeOverlay}</div>;
-      case 'lapdock': return <div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-20 h-20 ${cyanBase}`} /><div className={`w-20 h-20 ${cyanBase}`} /></div><div className="text-5xl animate-pulse pt-4">🖥️🔌📱</div>{tapeOverlay}</div>;
-      default: return <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}>{ribbonOverlay}<div className={`w-20 h-20 ${cyanBase} eye-blink`} /><div className={`w-20 h-20 ${cyanBase} eye-blink`} />{tapeOverlay}</div>;
+      case 'dizzy': 
+        return <div className="absolute inset-0 flex items-center justify-center gap-12 animate-spin relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div>;
+      case 'happy': 
+        return <div className="absolute inset-0 flex items-center justify-center gap-12 relative">{ribbonOverlay}<div className="absolute -top-6 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div>;
+      case 'thinking': 
+        return <div className="absolute inset-0 flex items-center justify-center gap-12 relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div>;
+      case 'sleeping': 
+        return <div className="absolute inset-0 flex items-center justify-center gap-12 relative">{ribbonOverlay}<div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-6 right-12 text-cyan-400 text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div>;
+      case 'eating': 
+        return <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-bounce">🥪</div>{tapeOverlay}</div>;
+      case 'rubik': 
+        return <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-spin">🎨</div>{tapeOverlay}</div>;
+      case 'computer': 
+        return <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-bounce">💻</div>{tapeOverlay}</div>;
+      case 'phone': 
+        return <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-bounce">📱</div>{tapeOverlay}</div>;
+      case 'lapdock': 
+        return <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-3xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div>;
+      default: 
+        return <div className="absolute inset-0 flex items-center justify-center gap-10 relative">{ribbonOverlay}<div className={`w-20 h-20 ${cyanBase} eye-blink`} /><div className={`w-20 h-20 ${cyanBase} eye-blink`} />{tapeOverlay}</div>;
     }
   };
 
@@ -1143,7 +1154,7 @@ export default function App() {
       <div className="w-full max-w-xl p-4 flex-1 flex items-center justify-center relative min-h-0">
         <div 
             onClick={handleFaceClick}
-            className={`w-full max-w-sm h-56 rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 ${isChaosMode ? 'bg-black/90' : ''}`}
+            className={`w-full max-w-sm h-56 rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 relative ${isChaosMode ? 'bg-black/90' : ''}`}
         >
            {isChaosMode ? (
               <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
@@ -1153,7 +1164,7 @@ export default function App() {
            ) : (!hasRogueLegs ? (
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
-               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity"><Settings size={20}/></button>
+               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity z-50"><Settings size={20}/></button>
              </div>
            ) : (
              <div className="w-full h-full flex items-center justify-center opacity-20 text-[10px] text-cyan-500 font-mono uppercase">
@@ -1179,7 +1190,7 @@ export default function App() {
             height: '14rem', 
             zIndex: 1000 
           }} 
-          className="bg-[#161622] border-2 border-cyan-500/30 rounded-[50px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto cursor-pointer"
+          className="bg-[#161622] border-2 border-cyan-500/30 rounded-[50px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto cursor-pointer overflow-hidden"
         >
           <div className="absolute -bottom-16 left-0 w-full flex justify-around px-12">
             <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce'}`} />
@@ -1286,4 +1297,4 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
-      }
+    }

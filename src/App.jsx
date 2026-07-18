@@ -543,7 +543,6 @@ export default function App() {
   const handleFaceClick = (e) => {
     if (!user) return;
     e.stopPropagation();
-    // Allow opening popup from normal or walking state
     if (!isChaosMode && (ownsDuctTape || ownsRogueLegs || ownsRibbon)) {
         setShowFacePopup(true);
     }
@@ -591,7 +590,6 @@ export default function App() {
       if (newState) {
           speak("Legs activated! Time to roam! ✨");
       } else {
-          // SNAP HER POSITION BACK TO CENTER IMMEDIATELY WHEN TURNED OFF 😭 ✌️
           setChaosPos({ x: 0, y: 0 });
           speak("Sitting back down! 🧸");
       }
@@ -599,10 +597,10 @@ export default function App() {
 
   useEffect(() => {
     if (!user) return; 
-    // FREEZE WALKING MOVEMENT IF THE FACE POPUP MENU IS OPEN 😭 ✌️
-    const shouldMove = (isChaosMode || hasRogueLegs) && !showFacePopup;
+    // SAFELY COMPUTE ADVANCED WALKING SCHEMES ONLY AFTER ACTIVE USER HANDSHAKES CONFIRM 😭 ✌️
+    const shouldMove = (isChaosMode || (ownsRogueLegs && rogueLegsActive)) && !showFacePopup;
     if (!shouldMove) {
-      if (!isChaosMode && !hasRogueLegs) {
+      if (!isChaosMode && !(ownsRogueLegs && rogueLegsActive)) {
         setChaosPos({ x: 0, y: 0 });
       }
       setIsHandBlocking(false);
@@ -657,7 +655,7 @@ export default function App() {
         if (glitchInterval) clearInterval(glitchInterval); 
         if (blockTimeout) clearTimeout(blockTimeout); 
     };
-  }, [isChaosMode, hasRogueLegs, isConfused, isTaped, user, showFacePopup]);
+  }, [isChaosMode, rogueLegsActive, inventory, isConfused, isTaped, user, showFacePopup]);
 
   const handleBlockedClick = (e) => { 
       if (!user) return;
@@ -1010,7 +1008,7 @@ export default function App() {
                                     <div><strong className="text-white">Economy & Store:</strong> Earn Eilo Bucks by playing and sleeping. Buy upgrades like Rogue Legs or punishing Duct Tape.</div>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <span className="text-lg none mt-0.5">🌪️</span>
+                                    <span className="text-lg leading-none mt-0.5">🌪️</span>
                                     <div><strong className="text-white">Chaos Mode:</strong> Let her break free from her UI container to roam and hijack your screen.</div>
                                 </li>
                                 <li className="flex items-start gap-3">
@@ -1287,4 +1285,4 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
     </div>
   );
-      }
+                                                                                                               }

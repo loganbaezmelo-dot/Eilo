@@ -132,7 +132,7 @@ const SettingsOverlay = ({
                  <div className="text-xs font-bold">{visionEnabled ? "ON" : "OFF"}</div>
                </button>
 
-               <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${fearOfHeights ? 'bg-pink-500/20 border-pink-400/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+               <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${visionEnabled ? 'bg-pink-500/20 border-pink-400/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
                  <div className="flex items-center gap-3"><span className="text-lg">⚠️</span> Fear of Heights</div>
                  <div className="text-xs font-bold">{fearOfHeights ? "ON" : "OFF"}</div>
                </button>
@@ -543,6 +543,7 @@ export default function App() {
   const handleFaceClick = (e) => {
     if (!user) return;
     e.stopPropagation();
+    // Allow opening popup from normal or walking state
     if (!isChaosMode && (ownsDuctTape || ownsRogueLegs || ownsRibbon)) {
         setShowFacePopup(true);
     }
@@ -590,15 +591,20 @@ export default function App() {
       if (newState) {
           speak("Legs activated! Time to roam! ✨");
       } else {
+          // SNAP HER POSITION BACK TO CENTER IMMEDIATELY WHEN TURNED OFF 😭 ✌️
+          setChaosPos({ x: 0, y: 0 });
           speak("Sitting back down! 🧸");
       }
   };
 
   useEffect(() => {
     if (!user) return; 
-    const shouldMove = isChaosMode || hasRogueLegs;
+    // FREEZE WALKING MOVEMENT IF THE FACE POPUP MENU IS OPEN 😭 ✌️
+    const shouldMove = (isChaosMode || hasRogueLegs) && !showFacePopup;
     if (!shouldMove) {
-      setChaosPos({ x: 0, y: 0 });
+      if (!isChaosMode && !hasRogueLegs) {
+        setChaosPos({ x: 0, y: 0 });
+      }
       setIsHandBlocking(false);
       return;
     }
@@ -651,7 +657,7 @@ export default function App() {
         if (glitchInterval) clearInterval(glitchInterval); 
         if (blockTimeout) clearTimeout(blockTimeout); 
     };
-  }, [isChaosMode, hasRogueLegs, isConfused, isTaped, user]);
+  }, [isChaosMode, hasRogueLegs, isConfused, isTaped, user, showFacePopup]);
 
   const handleBlockedClick = (e) => { 
       if (!user) return;
@@ -1004,7 +1010,7 @@ export default function App() {
                                     <div><strong className="text-white">Economy & Store:</strong> Earn Eilo Bucks by playing and sleeping. Buy upgrades like Rogue Legs or punishing Duct Tape.</div>
                                 </li>
                                 <li className="flex items-start gap-3">
-                                    <span className="text-lg leading-none mt-0.5">🌪️</span>
+                                    <span className="text-lg none mt-0.5">🌪️</span>
                                     <div><strong className="text-white">Chaos Mode:</strong> Let her break free from her UI container to roam and hijack your screen.</div>
                                 </li>
                                 <li className="flex items-start gap-3">
@@ -1029,8 +1035,6 @@ export default function App() {
     );
   }
 
-  const cleanMessages = Array.isArray(messages) ? messages : [];
-
   // --- SPECIAL LANDSCAPE VOID THEATER MATRIX INTERFACE ---
   if (isLandscape && !isChaosMode && !hasRogueLegs) {
     return (
@@ -1049,7 +1053,7 @@ export default function App() {
         {/* HIGH SCALED CENTER STAGE EILO PORTRAIT CORE */}
         <div 
           onClick={handleFaceClick}
-          className="w-full max-w-xl h-full flex items-center justify-center relative transform scale-125"
+          className="w-full max-w-xl h-full flex items-center justify-center relative transform scale-125 cursor-pointer"
           style={{ marginTop: `${faceOffset}px` }}
         >
           {renderFace()}
@@ -1078,7 +1082,7 @@ export default function App() {
 
         {/* FACE POPUP */}
         {showFacePopup && (
-           <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-[#161622] p-6 rounded-[35px] border border-white/10 shadow-2xl flex flex-col gap-3 min-w-[220px]">
+           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-[#161622] p-6 rounded-[35px] border border-white/10 shadow-2xl flex flex-col gap-3 min-w-[220px]">
               {ownsRibbon && (
                   <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
                       <span className="text-2xl">🎀</span>
@@ -1162,20 +1166,35 @@ export default function App() {
 
       {/* ROGUE / CHAOS FACE */}
       {(isChaosMode || hasRogueLegs) && (
-        <div style={{ transform: `translate(${chaosPos.x}px, ${chaosPos.y}px)`, transition: isTaped ? 'transform 0.1s linear' : 'transform 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)', position: 'fixed', top: '50%', left: '50%', marginTop: '-120px', marginLeft: '-40%', width: '80%', height: '14rem', zIndex: 1000 }} className="bg-[#161622] border-2 border-cyan-500/30 rounded-[50px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto">
+        <div 
+          onClick={handleFaceClick}
+          style={{ 
+            transform: `translate(${chaosPos.x}px, ${chaosPos.y}px)`, 
+            transition: isTaped ? 'transform 0.1s linear' : 'transform 1.4s cubic-bezier(0.34, 1.56, 0.64, 1)', 
+            position: 'fixed', 
+            top: '50%', 
+            left: '50%', 
+            marginTop: '-120px', 
+            marginLeft: '-40%', 
+            width: '80%', 
+            height: '14rem', 
+            zIndex: 1000 
+          }} 
+          className="bg-[#161622] border-2 border-cyan-500/30 rounded-[50px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto cursor-pointer"
+        >
           <div className="absolute -bottom-16 left-0 w-full flex justify-around px-12">
             <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce'}`} />
             <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce delay-150'}`} />
           </div>
-          <div className="w-full h-full flex items-center justify-center">{renderFace()}</div>
+          <div className="w-full h-full flex items-center justify-center pointer-events-none">{renderFace()}</div>
           {isHandBlocking && !isTaped && <div className="absolute -bottom-12 -right-12 z-[200] animate-bounce cursor-not-allowed pointer-events-auto" onClick={handleBlockedClick}><div className="text-[12rem] drop-shadow-2xl hover:scale-105 transition-transform rotate-12 filter grayscale-[0.2]">✋</div></div>}
-          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-125 animate-pulse"><Settings size={24} className="text-cyan-400"/></button>
+          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-125 animate-pulse z-50"><Settings size={24} className="text-cyan-400"/></button>
         </div>
       )}
 
       {/* POPUP FOR DUCT TAPE, ROGUE LEGS, AND SPARKLY RIBBON */}
       {showFacePopup && (
-         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
+         <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
             {ownsRibbon && (
                 <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
                     <span className="text-2xl">🎀</span>
@@ -1268,4 +1287,4 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: `@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }`}} />
     </div>
   );
-}
+      }

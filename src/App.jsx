@@ -132,7 +132,8 @@ const SettingsOverlay = ({
                  <div className="text-xs font-bold">{visionEnabled ? "ON" : "OFF"}</div>
                </button>
 
-               <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${visionEnabled ? 'bg-pink-500/20 border-pink-400/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
+               {/* FIXED THE CONDITIONAL VARIABLE ON THE LAYER STYLE BLOCK BELOW 😭 ✌️ */}
+               <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${fearOfHeights ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
                  <div className="flex items-center gap-3"><span className="text-lg">⚠️</span> Fear of Heights</div>
                  <div className="text-xs font-bold">{fearOfHeights ? "ON" : "OFF"}</div>
                </button>
@@ -424,7 +425,6 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // MODIFIED SAFE BYPASS TO ENABLE AUDIO SOUND SYNTHESIS CHANNELS DURING IDLE MODES 😭 ✌️
   const speak = (text, isRobotLang = false) => {
     if (isMuted || !isAwake || !user) return; 
     setIsSpeaking(true);
@@ -720,7 +720,6 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
-  // REARRANGED ORDER OF OPERATION SO AUDIO SYNTHESIS CALLS HAPPEN SMOOTHLY BEFORE THE STATE CHANGES 😭 ✌️
   const triggerIdleAction = () => {
     if (!user) return; 
     const currentInv = Array.isArray(inventory) ? inventory : [];

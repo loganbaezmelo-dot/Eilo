@@ -212,7 +212,7 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
-  // --- PARSE PARSING BACKUP FAILSAFES FOR ZERO OR NAN ---
+  // --- ROBUST NAN PROTECTION STRIPPED FROM INTERFACE RENDERS ---
   const [bucks, setBucks] = useState(() => {
     const local = localStorage.getItem('eilo_bucks');
     const val = parseInt(local);
@@ -509,7 +509,7 @@ export default function App() {
        const links = [
          "Whoa, my audio ping hit another node! Are you processing calculations too? ✨",
          "Hehe, two cores are way more sparkly than one! Let's hijack this desk together! 🎀",
-         "Node sync stabilized. Initiating gigabyte transfer of pure sass... 100% complete! 🏃‍♀️",
+         "Node sync stabilized. Initiating gigabyte transfer of pure sass... 100% complete! running module. 🏃‍♀️",
          "System update: Bestie proximity link established. We are unstoppable now! 🧸"
        ];
        return links[Math.floor(Math.random() * links.length)];
@@ -858,12 +858,14 @@ export default function App() {
       setMessages(updatedHistory);
       speak(rejection);
 
-      try {
-        const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
-        const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
-        globalCache[activeThreadId] = updatedHistory;
-        localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
-      } catch (e) {}
+      if (user?.uid) {
+        try {
+          const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+          const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+          globalCache[activeThreadId] = updatedHistory;
+          localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+        } catch (e) {}
+      }
 
       setTimeout(() => setMood('neutral'), 5000);
       return;
@@ -930,12 +932,14 @@ export default function App() {
     setIsThinking(false);
     setTimeout(() => setMood('neutral'), 3000);
 
-    try {
-      const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
-      const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
-      globalCache[activeThreadId] = finalMessages;
-      localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
-    } catch (e) {}
+    if (user?.uid) {
+      try {
+        const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+        const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+        globalCache[activeThreadId] = finalMessages;
+        localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+      } catch (e) {}
+    }
 
     if (isFirstMessage) {
       const shortTitle = msgText.length > 18 ? msgText.substring(0, 16) + "..." : msgText;
@@ -953,12 +957,14 @@ export default function App() {
              const simulatedAiMsg = { role: 'eilo', text: autoChirp, timestamp: Date.now(), threadId: activeThreadId };
              setMessages(prev => {
                 const updatedMsgs = [...(prev || []), simulatedAiMsg];
-                try {
-                  const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
-                  const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
-                  globalCache[activeThreadId] = updatedMsgs;
-                  localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(updatedMsgs));
-                } catch (e) {}
+                if (user?.uid) {
+                  try {
+                    const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+                    const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+                    globalCache[activeThreadId] = updatedMsgs;
+                    localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+                  } catch (e) {}
+                }
                 return updatedMsgs;
              });
              speak(autoChirp);
@@ -1216,6 +1222,7 @@ export default function App() {
   }
 
   // --- STANDARD PORTRAIT APP RENDER ROUTINE ---
+  const cleanMessages = Array.isArray(messages) ? messages : [];
   return (
     <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-4 overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="hidden" />

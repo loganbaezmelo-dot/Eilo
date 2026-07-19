@@ -1054,6 +1054,7 @@ export default function App() {
       case 'lapdock': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
       default: 
+        {/* SYNTAX ERROR FIXED BELOW (BRACKET HANDSHAKE SAFELY CLOSED) */}
         return <div className="absolute inset-0 flex items-center justify-center"><div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}>{ribbonOverlay}<div className={`w-20 h-20 ${cyanBase} eye-blink`} /><div className={`w-20 h-20 ${cyanBase} eye-blink`} />{tapeOverlay}</div></div>;
     }
   };
@@ -1264,7 +1265,6 @@ export default function App() {
         >
            {isChaosMode ? (
               <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
-                {/* SAFE DEFENSIVE ARRAY MAP CHECK PREVENTS BLACK RUNTIME ERASURE CRASHES */}
                 {Array.isArray(glitchLines) && glitchLines.map((line, i) => <div key={i} className="mb-0.5">{line} {Math.random().toFixed(2)}</div>)}
                 {isTaped && <div className="mt-4 text-red-500 font-bold animate-pulse text-lg border border-red-500 p-2">CRITICAL: LEGS_DISABLED</div>}
               </div>
@@ -1381,7 +1381,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* COMPONENT OVERLAY MOUNTS */}
       <HistorySidebar 
         isOpen={showHistory} 
         onClose={() => setShowHistory(false)} 

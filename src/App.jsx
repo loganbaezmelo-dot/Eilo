@@ -424,6 +424,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
+  // MODIFIED SAFE BYPASS TO ENABLE AUDIO SOUND SYNTHESIS CHANNELS DURING IDLE MODES 😭 ✌️
   const speak = (text, isRobotLang = false) => {
     if (isMuted || !isAwake || !user) return; 
     setIsSpeaking(true);
@@ -719,6 +720,7 @@ export default function App() {
     return () => unsubscribe();
   }, []);
 
+  // REARRANGED ORDER OF OPERATION SO AUDIO SYNTHESIS CALLS HAPPEN SMOOTHLY BEFORE THE STATE CHANGES 😭 ✌️
   const triggerIdleAction = () => {
     if (!user) return; 
     const currentInv = Array.isArray(inventory) ? inventory : [];
@@ -730,34 +732,39 @@ export default function App() {
     if (currentInv.includes('lapdock')) actions.push('lapdock');
     
     const choice = actions[Math.floor(Math.random() * actions.length)];
-    setMood(choice);
     
     if (choice === 'computer') { 
         speak("Coding a new website... tap tap tap! 💻✨"); 
         sendNotification("Coding a new website... tap tap tap! 💻✨");
+        setMood(choice);
         setTimeout(() => setMood('neutral'), 6000); 
     }
-    if (choice === 'phone') {
+    else if (choice === 'phone') {
         speak("Checking notifications, opening the Samsung developer options terminal! 📱");
         sendNotification("Eilo is scrolling on her phone... 📱");
+        setMood(choice);
         setTimeout(() => setMood('neutral'), 6000);
     }
-    if (choice === 'lapdock') {
+    else if (choice === 'lapdock') {
         speak("Plugging into the LapDock... Initiating Samsung DeX station sync pipeline! 🖥️✨");
         sendNotification("Eilo is using Samsung DeX on her LapDock! 🖥️");
+        setMood(choice);
         setTimeout(() => setMood('neutral'), 8000);
     }
-    if (choice === 'sleeping') { 
+    else if (choice === 'sleeping') { 
         speak("Zzz... napping... Zzz."); 
+        setMood(choice);
     } 
-    if (choice === 'eating') { 
+    else if (choice === 'eating') { 
         speak("Nom nom! Sandwich! ✨"); 
         sendNotification("Nom nom! Sandwich! 🥪");
+        setMood(choice);
         setTimeout(() => setMood('neutral'), 6000); 
     }
-    if (choice === 'rubik') { 
+    else if (choice === 'rubik') { 
         speak("Cube time! 🧩"); 
         sendNotification("Cube time! 🧩");
+        setMood(choice);
         setTimeout(() => setMood('neutral'), 8000); 
     }
   };
@@ -1296,4 +1303,4 @@ export default function App() {
       <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
-    }
+}

@@ -331,7 +331,7 @@ export default function App() {
     }
   };
 
-  // --- UPDATED PATIENT ACTIVITY LOOP (20 MINUTES / 1200000ms) ---
+  // --- SAFE RESILIENT 20-MINUTE PATIENT BACKGROUND ACTIVITY LOOP ---
   useEffect(() => {
     if (!user || !notificationsEnabled) {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);
@@ -781,7 +781,6 @@ export default function App() {
       if (!isNaN(val)) setBucks(val);
 
       if (u && !hasGreeted.current) {
-        // --- SECURE ANTI-REFRESH EXPLOIT COIN LOCK ENGINE ---
         const loginBonusClaimed = localStorage.getItem(`eilo_claimed_login_${u.uid}`) === 'true';
         
         if (!loginBonusClaimed) {
@@ -809,7 +808,6 @@ export default function App() {
     
     const choice = actions[Math.floor(Math.random() * actions.length)];
     
-    // hasInteracted filters prevent silent background synthesis execution faults
     if (choice === 'computer') { 
         if (hasInteracted) speak("Coding a new website... tap tap tap! 💻✨"); 
         sendNotification("Coding a new website... tap tap tap! 💻✨");
@@ -1266,7 +1264,8 @@ export default function App() {
         >
            {isChaosMode ? (
               <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
-                {glitchLines.map((line, i) => <div key={i} className="mb-0.5">{line} {Math.random().toFixed(2)}</div>)}
+                {/* SAFE DEFENSIVE ARRAY MAP CHECK PREVENTS BLACK RUNTIME ERASURE CRASHES */}
+                {Array.isArray(glitchLines) && glitchLines.map((line, i) => <div key={i} className="mb-0.5">{line} {Math.random().toFixed(2)}</div>)}
                 {isTaped && <div className="mt-4 text-red-500 font-bold animate-pulse text-lg border border-red-500 p-2">CRITICAL: LEGS_DISABLED</div>}
               </div>
            ) : (!hasRogueLegs ? (
@@ -1382,6 +1381,7 @@ export default function App() {
         </div>
       </div>
 
+      {/* COMPONENT OVERLAY MOUNTS */}
       <HistorySidebar 
         isOpen={showHistory} 
         onClose={() => setShowHistory(false)} 

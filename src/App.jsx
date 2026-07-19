@@ -132,7 +132,6 @@ const SettingsOverlay = ({
                  <div className="text-xs font-bold">{visionEnabled ? "ON" : "OFF"}</div>
                </button>
 
-               {/* FIXED THE CONDITIONAL VARIABLE ON THE LAYER STYLE BLOCK BELOW 😭 ✌️ */}
                <button onClick={() => setFearOfHeights(!fearOfHeights)} className={`w-full flex items-center justify-between p-4 rounded-2xl border transition-all ${fearOfHeights ? 'bg-cyan-500/20 border-cyan-500/40 text-white' : 'bg-white/5 border-white/10 text-slate-400'}`}>
                  <div className="flex items-center gap-3"><span className="text-lg">⚠️</span> Fear of Heights</div>
                  <div className="text-xs font-bold">{fearOfHeights ? "ON" : "OFF"}</div>
@@ -207,7 +206,6 @@ export default function App() {
 
   const [mood, setMood] = useState('neutral');
   const [isMuted, setIsMuted] = useState(false);
-  const [isAwake, setIsAwake] = useState(true);
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
@@ -426,7 +424,7 @@ export default function App() {
   }, [aiAgentMode, user]);
 
   const speak = (text, isRobotLang = false) => {
-    if (isMuted || !isAwake || !user) return; 
+    if (isMuted || !user) return; 
     setIsSpeaking(true);
     window.speechSynthesis.cancel();
     
@@ -663,7 +661,7 @@ export default function App() {
   };
 
   const handlePet = () => {
-    if (!isAwake || !user) return;
+    if (!user) return;
     const now = Date.now();
     if (now - lastPetTime.current < 2000) return;
     lastPetTime.current = now;
@@ -687,7 +685,7 @@ export default function App() {
 
   useEffect(() => {
     const handleMotion = (event) => {
-        if (!user || !isAwake || isChaosMode) return; 
+        if (!user || isChaosMode) return; 
         const acc = event.accelerationIncludingGravity;
         if (!acc) return;
         if (Math.abs(acc.x) > 35 || Math.abs(acc.y) > 35) {
@@ -699,7 +697,7 @@ export default function App() {
     };
     window.addEventListener('devicemotion', handleMotion);
     return () => window.removeEventListener('devicemotion', handleMotion);
-  }, [isAwake, mood, isChaosMode, user, notificationsEnabled]);
+  }, [mood, isChaosMode, user, notificationsEnabled]);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, async (u) => {
@@ -723,7 +721,7 @@ export default function App() {
   const triggerIdleAction = () => {
     if (!user) return; 
     const currentInv = Array.isArray(inventory) ? inventory : [];
-    if (!isAwake || isThinking || isSpeaking || mood !== 'neutral' || isTaped) return;
+    if (isThinking || isSpeaking || mood !== 'neutral' || isTaped) return;
     
     const actions = ['sleeping', 'eating', 'rubik'];
     if (currentInv.includes('computer')) actions.push('computer');
@@ -771,7 +769,7 @@ export default function App() {
   useEffect(() => {
       if (!user) return; 
       let napTimer;
-      if (mood === 'sleeping' && isAwake) {
+      if (mood === 'sleeping') {
           napTimer = setTimeout(() => {
               setMood('happy');
               const name = getCurrentName();
@@ -780,11 +778,11 @@ export default function App() {
               sendNotification("Yawn! That was a good nap! +10 Bucks! ✨");
               awardBucks(10, 'sleep_bonus', true, true);
           }, 85000);
-      } else if(isAwake && !isChaosMode && !hasRogueLegs && !isTaped) {
+      } else if(!isChaosMode && !hasRogueLegs && !isTaped) {
           idleTimerRef.current = setInterval(triggerIdleAction, 15000);
       }
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
-  }, [isAwake, isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
+  }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
@@ -915,7 +913,6 @@ export default function App() {
 
   const renderFace = () => {
     const cyanBase = "bg-cyan-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_40px_rgba(34,211,238,0.8)]";
-    if (!isAwake) return <div className="absolute inset-0 flex items-center justify-center"><Moon size={isLandscape ? 120 : 64} className="text-cyan-900/20" /></div>;
     
     const tapeOverlay = isTaped ? (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-4 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
@@ -1269,8 +1266,12 @@ export default function App() {
           </div>
         </div>
 
+        {/* GRID ACTIONS BAR - SWAPPED THE USELESS POWER SWITCH WITH INFINITY MIC SHORTCUT 😭 ✌️ */}
         <div className="grid grid-cols-3 gap-3 flex-shrink-0">
-          <button onClick={() => setIsAwake(!isAwake)} className="p-3.5 rounded-[25px] border border-white/5 bg-white/5 flex flex-col items-center gap-1 active:scale-95"><Zap size={16} className={isAwake ? 'text-yellow-400' : ''}/><span className="text-[7px] uppercase font-bold tracking-widest text-slate-500">Power</span></button>
+          <button onClick={toggleMic} className={`p-3.5 rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
+            <Mic size={16} />
+            <span className="text-[7px] uppercase font-bold tracking-widest">Infinity Mic</span>
+          </button>
           <button onClick={handlePet} className="p-3.5 rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
           <button onClick={() => setIsMuted(!isMuted)} className={`p-3.5 rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
         </div>

@@ -347,7 +347,7 @@ export default function App() {
       localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
       return updated;
     });
-    handleSelectThread(newSession.id);
+    handleSelectThread(nextId);
     speak("New timeline initialized! ✨");
   };
 
@@ -660,8 +660,17 @@ export default function App() {
       e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); 
   };
 
+  // --- INTERCEPT PETTING LOGIC IF SLEEPING (v4.7 SCHEME) 😭 ✌️ ---
   const handlePet = () => {
     if (!user) return;
+
+    if (mood === 'sleeping') {
+      setMood('mad');
+      speak("HEY! Stop touching me! I was having a perfect digital dream! 🎈");
+      setTimeout(() => setMood('neutral'), 4000);
+      return;
+    }
+
     const now = Date.now();
     if (now - lastPetTime.current < 2000) return;
     lastPetTime.current = now;
@@ -705,7 +714,6 @@ export default function App() {
       if (!u) { setUser(null); return; }
       setUser(u);
       
-      // FIXED CAMELCASE DECLARATION SPACE ALIGNMENT HERE 😭 ✌️
       const savedBucks = localStorage.getItem(`eilo_bucks_backup_${u.uid}`);
       if (savedBucks) setBucks(parseInt(savedBucks));
 
@@ -785,11 +793,36 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
+  // --- INTERCEPT INCOMING MESSAGE PACKETS IF SLEEPING (v4.7 SCHEME) 😭 ✌️ ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
+
+    // BLOCKED AT GATEWAY MATRIX LEVEL! SASSY REJECTION WITH NO API BILLING CALLS!
+    if (mood === 'sleeping') {
+      setInput('');
+      setMood('mad');
+      const rejection = "UM, HELLO?! 🎈 Do you mind?! You literally woke me up from my deep nap stream! Go away, I am mad at you now!";
+      
+      const newUserMsg = { role: 'user', text: msgText, timestamp: Date.now(), threadId: activeThreadId };
+      const newAiMsg = { role: 'eilo', text: rejection, timestamp: Date.now(), threadId: activeThreadId };
+      
+      const updatedHistory = [...(messages || []), newUserMsg, newAiMsg];
+      setMessages(updatedHistory);
+      speak(rejection);
+
+      try {
+        const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+        const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+        globalCache[activeThreadId] = updatedHistory;
+        localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+      } catch (e) {}
+
+      setTimeout(() => setMood('neutral'), 5000);
+      return;
+    }
 
     const activeMsgCount = messages ? messages.length : 0;
     const isFirstMessage = activeMsgCount === 0;
@@ -1147,7 +1180,8 @@ export default function App() {
         <button onClick={() => setShowHistory(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95">
           <Menu size={16}/>
         </button>
-        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v4.6</div>
+        {/* WELCOME TO THE V4.7 REVOLUTION 😭 ✌️ */}
+        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v4.7</div>
         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}
         </div>

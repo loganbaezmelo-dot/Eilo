@@ -212,7 +212,12 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
-  const [bucks, setBucks] = useState(() => parseInt(localStorage.getItem('eilo_bucks')) || 0);
+  // --- PARSE PARSING BACKUP FAILSAFES FOR ZERO OR NAN ---
+  const [bucks, setBucks] = useState(() => {
+    const local = localStorage.getItem('eilo_bucks');
+    const val = parseInt(local);
+    return isNaN(val) ? 0 : val;
+  });
   const [inventory, setInventory] = useState(() => {
     try {
       const raw = localStorage.getItem('eilo_inventory');
@@ -539,13 +544,15 @@ export default function App() {
     if (!targetUid) return;
     if (!repeatable && sessionClaims[type]) return;
     
-    const newTotal = bucks + amount;
-    setBucks(newTotal);
-    localStorage.setItem('eilo_bucks', newTotal.toString()); 
+    const nextVal = bucks + amount;
+    const finalVal = isNaN(nextVal) ? amount : nextVal;
+    
+    setBucks(finalVal);
+    localStorage.setItem('eilo_bucks', finalVal.toString()); 
     
     if (!repeatable) setSessionClaims(prev => ({ ...prev, [type]: true }));
     
-    localStorage.setItem(`eilo_bucks_backup_${targetUid}`, newTotal.toString());
+    localStorage.setItem(`eilo_bucks_backup_${targetUid}`, finalVal.toString());
     if (!silent) speak(`Cha-ching! +${amount} Bucks! ✨`);
   };
 
@@ -754,7 +761,8 @@ export default function App() {
       setUser(u);
       
       const savedBucks = localStorage.getItem(`eilo_bucks_backup_${u.uid}`);
-      if (savedBucks) setBucks(parseInt(savedBucks));
+      const val = parseInt(savedBucks);
+      if (!isNaN(val)) setBucks(val);
 
       if (u && !hasGreeted.current) {
         awardBucks(10, 'login', false, true, u.uid); 

@@ -381,11 +381,10 @@ export default function App() {
     if (!user || !fearOfHeights) return;
 
     const handleOrientation = (event) => {
-      const beta = event.beta;   // front-to-back tilt [-180, 180]
-      const gamma = event.gamma; // left-to-right tilt [-90, 90]
+      const beta = event.beta;
+      const gamma = event.gamma;
       if (beta === null || gamma === null) return;
 
-      // Detect if phone is pointed completely flat or tipped downwards facing the floor (abyss drop profile)
       const looksDownVertical = beta > 140 || beta < -140 || Math.abs(gamma) > 75;
 
       if (looksDownVertical) {
@@ -972,12 +971,41 @@ export default function App() {
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
     if (!safeInv.includes('ribbon')) system += " Remind the user constantly to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
+    // Optic Brain Vision Protocol Modifications
+    if (visionEnabled) {
+      system += " CRITICAL: Your Selfie Scanner eyes are wide open right now! You are directly experiencing whatever is shown in the attached image data frame inline. You must NEVER describe the image objectively like a robotic tool (DO NOT say 'I see a room' or 'This is a picture of'). Instead, completely internalize the sight as a sudden live reaction and subjective experience! (e.g. comment on the room layout, make a bratty remark about their face, or be extra sassy about what is around your desk). Keep your response to a single, short, snappy sentence so you blend in perfectly with a fast-paced conversation.";
+    }
+
     if (tempApiKey) {
         try {
+            let requestContents = [];
+            
+            // OPTIC HANDSHAKE: Capture real camera snapshot frame if scanner is online
+            if (visionEnabled && videoRef.current && canvasRef.current) {
+              const canvas = canvasRef.current;
+              const video = videoRef.current;
+              canvas.width = 320;
+              canvas.height = 240;
+              const ctx = canvas.getContext('2d');
+              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+              
+              const base64Data = canvas.toDataURL('image/jpeg').split(',')[1];
+              
+              requestContents = [{
+                role: "user",
+                parts: [
+                  { inlineData: { mimeType: "image/jpeg", data: base64Data } },
+                  { text: msgText }
+                ]
+              }];
+            } else {
+              requestContents = [{ role: "user", parts: [{ text: msgText }] }];
+            }
+
             const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
-                contents: [{ role: "user", parts: [{ text: msgText }] }], 
+                contents: requestContents, 
                 systemInstruction: { parts: [{ text: system }] } 
               })
             });
@@ -1219,8 +1247,8 @@ export default function App() {
   if (isLandscape && !isChaosMode && !hasRogueLegs) {
     return (
       <div className="fixed inset-0 bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none">
-        <video ref={videoRef} autoPlay playsInline muted className="hidden" />
-        <canvas ref={canvasRef} className="hidden" />
+        <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
+        <canvas ref={canvasRef} style={{ display: 'none' }} />
 
         <div 
           onClick={handlePet}
@@ -1302,8 +1330,8 @@ export default function App() {
   const cleanMessages = Array.isArray(messages) ? messages : [];
   return (
     <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-4 overflow-hidden">
-      <video ref={videoRef} autoPlay playsInline muted className="hidden" />
-      <canvas ref={canvasRef} className="hidden" />
+      <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
+      <canvas ref={canvasRef} style={{ display: 'none' }} />
 
       {/* TOP ZONE */}
       <div className="w-full max-w-sm px-6 pt-4 flex justify-between items-center z-10 flex-shrink-0">

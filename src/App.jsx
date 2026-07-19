@@ -212,7 +212,9 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
-  // --- ROBUST NAN PROTECTION STRIPPED FROM INTERFACE RENDERS ---
+  // Browser interaction token cache state to fix silent background speech synthesis blocks
+  const [hasInteracted, setHasInteracted] = useState(false);
+
   const [bucks, setBucks] = useState(() => {
     const local = localStorage.getItem('eilo_bucks');
     const val = parseInt(local);
@@ -263,6 +265,17 @@ export default function App() {
   const ownsDuctTape = safeInventory.includes('duct_tape');
   const ownsRibbon = safeInventory.includes('ribbon');
   const hasRogueLegs = ownsRogueLegs && rogueLegsActive;
+
+  // Track initial viewport click to register interactive audio permission handshakes 
+  useEffect(() => {
+    const registerInteraction = () => setHasInteracted(true);
+    window.addEventListener('click', registerInteraction);
+    window.addEventListener('touchstart', registerInteraction);
+    return () => {
+      window.removeEventListener('click', registerInteraction);
+      window.removeEventListener('touchstart', registerInteraction);
+    };
+  }, []);
 
   const sendNotification = (bodyText) => {
     if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
@@ -765,7 +778,14 @@ export default function App() {
       if (!isNaN(val)) setBucks(val);
 
       if (u && !hasGreeted.current) {
-        awardBucks(10, 'login', false, true, u.uid); 
+        // --- SECURE ANTI-REFRESH EXPLOIT PATCH LOOP ---
+        const loginBonusClaimed = localStorage.getItem(`eilo_claimed_login_${u.uid}`) === 'true';
+        
+        if (!loginBonusClaimed) {
+          awardBucks(10, 'login', false, true, u.uid); 
+          localStorage.setItem(`eilo_claimed_login_${u.uid}`, 'true');
+        }
+        
         const msg = `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo's here! 🎈`;
         setTimeout(() => speak(msg), 1500);
         hasGreeted.current = true;
@@ -787,35 +807,35 @@ export default function App() {
     const choice = actions[Math.floor(Math.random() * actions.length)];
     
     if (choice === 'computer') { 
-        speak("Coding a new website... tap tap tap! 💻✨"); 
+        if (hasInteracted) speak("Coding a new website... tap tap tap! 💻✨"); 
         sendNotification("Coding a new website... tap tap tap! 💻✨");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 6000); 
     }
     else if (choice === 'phone') {
-        speak("Checking notifications, opening the Samsung developer options terminal! 📱");
+        if (hasInteracted) speak("Checking notifications, opening the Samsung developer options terminal! 📱");
         sendNotification("Eilo is scrolling on her phone... 📱");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 6000);
     }
     else if (choice === 'lapdock') {
-        speak("Plugging into the LapDock... Initiating Samsung DeX station sync pipeline! 🖥️✨");
+        if (hasInteracted) speak("Plugging into the LapDock... Initiating Samsung DeX station sync pipeline! 🖥️✨");
         sendNotification("Eilo is using Samsung DeX on her LapDock! 🖥️");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 8000);
     }
     else if (choice === 'sleeping') { 
-        speak("Zzz... napping... Zzz."); 
+        if (hasInteracted) speak("Zzz... napping... Zzz."); 
         setMood(choice);
     } 
     else if (choice === 'eating') { 
-        speak("Nom nom! Sandwich! ✨"); 
+        if (hasInteracted) speak("Nom nom! Sandwich! ✨"); 
         sendNotification("Nom nom! Sandwich! 🥪");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 6000); 
     }
     else if (choice === 'rubik') { 
-        speak("Cube time! 🧩"); 
+        if (hasInteracted) speak("Cube time! 🧩"); 
         sendNotification("Cube time! 🧩");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 8000); 
@@ -838,7 +858,7 @@ export default function App() {
           idleTimerRef.current = setInterval(triggerIdleAction, 15000);
       }
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
-  }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
+  }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled, hasInteracted]);
 
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();

@@ -147,7 +147,7 @@ const SettingsOverlay = ({
 
         </div>
         <div className="pt-4 border-t border-white/5 space-y-3">
-            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey); onClose(); }} className="w-full bg-cyan-600 py-4 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-sm">Save & Close</button>
+            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey); localStorage.setItem('eilo_heights', fearOfHeights.toString()); onClose(); }} className="w-full bg-cyan-600 py-4 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-sm">Save & Close</button>
             <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 text-[10px] text-red-500 font-bold uppercase opacity-60 hover:opacity-100 py-2 transition-opacity"><LogOut size={12}/> Disconnect Core</button>
         </div>
       </div>
@@ -255,6 +255,7 @@ export default function App() {
   const backgroundLoopRef = useRef(null);
   const recognitionRef = useRef(null);
   const streamRef = useRef(null);
+  const lastHeightsScreamRef = useRef(0);
 
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
@@ -274,7 +275,6 @@ export default function App() {
     };
   }, []);
 
-  // --- COMPACT INDESTRUCTIBLE SERVICE WORKER ALIGNED BROADCAST DISPATCHER ---
   const sendNotification = (bodyText) => {
     if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
 
@@ -309,7 +309,6 @@ export default function App() {
           localStorage.setItem('eilo_notifications', 'true');
           speak("Notifications enabled! 🎀");
           
-          // CRITICAL FIX: Direct push handshake forced through Service Worker layer explicitly on click
           if (Notification.permission === "granted") {
             try {
               if ('serviceWorker' in navigator) {
@@ -376,6 +375,39 @@ export default function App() {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);
     };
   }, [notificationsEnabled, user, isThinking, isSpeaking]);
+
+  // --- CLIENT SAFE 3D ORIENTATION HEIGHTS RADAR HOOK ---
+  useEffect(() => {
+    if (!user || !fearOfHeights) return;
+
+    const handleOrientation = (event) => {
+      const beta = event.beta;   // front-to-back tilt [-180, 180]
+      const gamma = event.gamma; // left-to-right tilt [-90, 90]
+      if (beta === null || gamma === null) return;
+
+      // Detect if phone is pointed completely flat or tipped downwards facing the floor (abyss drop profile)
+      const looksDownVertical = beta > 140 || beta < -140 || Math.abs(gamma) > 75;
+
+      if (looksDownVertical) {
+        const rightNow = Date.now();
+        if (rightNow - lastHeightsScreamRef.current > 7000) {
+          lastHeightsScreamRef.current = rightNow;
+          setMood('mad');
+
+          const panicChirp = visionEnabled 
+            ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
+            : "WHOA! Too high! We are looking straight down at the abyss! Put me back down! 🎈";
+
+          speak(panicChirp);
+          sendNotification(visionEnabled ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!");
+          setTimeout(() => setMood('neutral'), 4000);
+        }
+      }
+    };
+
+    window.addEventListener('deviceorientation', handleOrientation);
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
+  }, [fearOfHeights, visionEnabled, user]);
 
   useEffect(() => {
     if (!user) return; 

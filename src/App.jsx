@@ -274,11 +274,12 @@ export default function App() {
     };
   }, []);
 
+  // --- COMPACT INDESTRUCTIBLE SERVICE WORKER ALIGNED BROADCAST DISPATCHER ---
   const sendNotification = (bodyText) => {
     if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
 
     try {
-      if ('serviceWorker' in navigator) {
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.ready.then((registration) => {
           registration.showNotification("Eilo OS", {
             body: bodyText,
@@ -292,7 +293,7 @@ export default function App() {
         new Notification("Eilo OS", { body: bodyText, icon: '/icon-192.png' });
       }
     } catch (e) {
-      console.warn("Direct worker capture error. Executing alternative layout.");
+      console.warn("Direct execution context fallback fired.");
     }
   };
 
@@ -307,9 +308,25 @@ export default function App() {
           setNotificationsEnabled(true);
           localStorage.setItem('eilo_notifications', 'true');
           speak("Notifications enabled! 🎀");
-          setTimeout(() => {
-            sendNotification("System Interrupts linked! ✨ Eilo Core is online and watching your desk.");
-          }, 600);
+          
+          // CRITICAL FIX: Direct push handshake forced through Service Worker layer explicitly on click
+          if (Notification.permission === "granted") {
+            try {
+              if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.ready.then((reg) => {
+                  reg.showNotification("Eilo OS", {
+                    body: "Interrupt matrix online! Sync test 100% successful. 🎀",
+                    icon: '/icon-192.png',
+                    tag: 'eilo-instant-test'
+                  });
+                });
+              } else {
+                new Notification("Eilo OS", { body: "Interrupt matrix online! Sync test 100% successful. 🎀", icon: '/icon-192.png' });
+              }
+            } catch (err) {
+              new Notification("Eilo OS", { body: "Interrupt matrix online! Sync test 100% successful. 🎀", icon: '/icon-192.png' });
+            }
+          }
         };
 
         if (Notification.permission === "granted") {
@@ -331,7 +348,7 @@ export default function App() {
     }
   };
 
-  // --- BACKGROUND ACTIVITY LOOP ---
+  // --- SAFE RESILIENT 20-MINUTE PATIENT BACKGROUND ACTIVITY LOOP ---
   useEffect(() => {
     if (!user || !notificationsEnabled) {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);

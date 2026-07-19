@@ -971,7 +971,6 @@ export default function App() {
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
     if (!safeInv.includes('ribbon')) system += " Remind the user constantly to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
-    // Optic Brain Vision Protocol Modifications
     if (visionEnabled) {
       system += " CRITICAL: Your Selfie Scanner eyes are wide open right now! You are directly experiencing whatever is shown in the attached image data frame inline. You must NEVER describe the image objectively like a robotic tool (DO NOT say 'I see a room' or 'This is a picture of'). Instead, completely internalize the sight as a sudden live reaction and subjective experience! (e.g. comment on the room layout, make a bratty remark about their face, or be extra sassy about what is around your desk). Keep your response to a single, short, snappy sentence so you blend in perfectly with a fast-paced conversation.";
     }
@@ -979,18 +978,28 @@ export default function App() {
     if (tempApiKey) {
         try {
             let requestContents = [];
+            let frameCaptured = false;
+            let base64Data = "";
             
-            // OPTIC HANDSHAKE: Capture real camera snapshot frame if scanner is online
+            // BULLETPROOF LENS HANDSHAKE: Strict hardware dimension capture tracking avoids runtime execution errors
             if (visionEnabled && videoRef.current && canvasRef.current) {
-              const canvas = canvasRef.current;
               const video = videoRef.current;
-              canvas.width = 320;
-              canvas.height = 240;
-              const ctx = canvas.getContext('2d');
-              ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-              
-              const base64Data = canvas.toDataURL('image/jpeg').split(',')[1];
-              
+              if (video.videoWidth > 0 && video.videoHeight > 0) {
+                const canvas = canvasRef.current;
+                canvas.width = 320;
+                canvas.height = 240;
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                
+                const rawUrl = canvas.toDataURL('image/jpeg');
+                if (rawUrl && rawUrl.includes(',')) {
+                  base64Data = rawUrl.split(',')[1];
+                  frameCaptured = true;
+                }
+              }
+            }
+
+            if (frameCaptured && base64Data) {
               requestContents = [{
                 role: "user",
                 parts: [

@@ -244,7 +244,14 @@ export default function App() {
   const [isInfinityMic, setIsInfinityMic] = useState(false);
   const [visionEnabled, setVisionEnabled] = useState(false);
   
-  const [notificationsEnabled, setNotificationsEnabled] = useState(localStorage.getItem('eilo_notifications') === 'true');
+  // --- BULLETPROOF INITIALIZATION: AUTO-READS EXPLICIT BROWSER site PERMISSION OR LOCAL STORAGE FALLBACKS ---
+  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      if (Notification.permission === 'granted') return true;
+      if (Notification.permission === 'denied') return false;
+    }
+    return localStorage.getItem('eilo_notifications') === 'true';
+  });
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -297,12 +304,12 @@ export default function App() {
   };
 
   const toggleNotifications = async () => {
+    if (!("Notification" in window)) {
+        speak("Your device doesn't support notifications!");
+        return;
+    }
+
     if (!notificationsEnabled) {
-        if (!("Notification" in window)) {
-            speak("Your device doesn't support notifications!");
-            return;
-        }
-        
         const triggerActivation = () => {
           setNotificationsEnabled(true);
           localStorage.setItem('eilo_notifications', 'true');

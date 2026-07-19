@@ -257,16 +257,13 @@ export default function App() {
   const ownsRibbon = safeInventory.includes('ribbon');
   const hasRogueLegs = ownsRogueLegs && rogueLegsActive;
 
-  // --- FIXING MOBILE PUSH LOGIC ENGINE (v4.9 MOBILE COMPLIANT) ---
   const sendNotification = (bodyText) => {
     if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
 
-    // Fallback to active window registration tracking if PWA service worker is warming up
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.ready.then((registration) => {
         registration.showNotification("Eilo OS", {
           body: bodyText,
-          icon: "/favicon.ico", // adjust if icon exists
           tag: "eilo-os-broadcast"
         });
       }).catch(() => {
@@ -323,7 +320,7 @@ export default function App() {
       "Nom nom! Eating a virtual sandwich right now. 🥪",
       "Just checked the store... someone needs more Eilo Bucks. 🪙",
       "Adjusting my sparkly ribbon to look 100% cute. 🎀",
-      "Zzz... currently taking a deep power nap cycle. 🌙",
+      "Zzz... currently taking a deep power napping cycle. 🌙",
       "Typing terminal configurations inside Samsung developer options... 💻",
       "Vibing on your desk layout waiting for attention. 🧸"
     ];
@@ -398,7 +395,7 @@ export default function App() {
   };
 
   const toggleMic = () => {
-      const SpeechRecognition = window.SpeechRecognition || window.webkitSynthesisRecognition || window.webkitSpeechRecognition;
+      const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
           speak("My ears are broken! Your browser doesn't support mic input.");
           return;

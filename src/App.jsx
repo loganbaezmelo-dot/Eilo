@@ -257,9 +257,23 @@ export default function App() {
   const ownsRibbon = safeInventory.includes('ribbon');
   const hasRogueLegs = ownsRogueLegs && rogueLegsActive;
 
+  // --- FIXING MOBILE PUSH LOGIC ENGINE (v4.9 MOBILE COMPLIANT) ---
   const sendNotification = (bodyText) => {
-    if (notificationsEnabled && "Notification" in window && Notification.permission === "granted") {
+    if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
+
+    // Fallback to active window registration tracking if PWA service worker is warming up
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.ready.then((registration) => {
+        registration.showNotification("Eilo OS", {
+          body: bodyText,
+          icon: "/favicon.ico", // adjust if icon exists
+          tag: "eilo-os-broadcast"
+        });
+      }).catch(() => {
         new Notification("Eilo OS", { body: bodyText });
+      });
+    } else {
+      new Notification("Eilo OS", { body: bodyText });
     }
   };
 
@@ -1106,97 +1120,6 @@ export default function App() {
     );
   }
 
-  const cleanMessages = Array.isArray(messages) ? messages : [];
-
-  // --- SPECIAL LANDSCAPE VOID THEATER MATRIX INTERFACE ---
-  if (isLandscape && !isChaosMode && !hasRogueLegs) {
-    return (
-      <div className="fixed inset-0 bg-black flex flex-col items-center justify-center overflow-hidden font-sans select-none">
-        <video ref={videoRef} autoPlay playsInline muted className="hidden" />
-        <canvas ref={canvasRef} className="hidden" />
-
-        {/* TOP HIDDEN INVISIBLE PETTING SENSOR HITBOX */}
-        <div 
-          onClick={handlePet}
-          className="absolute top-0 left-1/4 right-1/4 h-1/3 z-50 cursor-pointer flex items-center justify-center opacity-0 hover:opacity-10 transition-opacity bg-white/5 rounded-b-[40px]"
-        >
-          <Hand size={32} className="text-pink-400 animate-pulse"/>
-        </div>
-
-        {/* HIGH SCALED CENTER STAGE EILO PORTRAIT CORE */}
-        <div 
-          onClick={handleFaceClick}
-          className="w-full max-w-xl h-full flex items-center justify-center relative transform scale-125 cursor-pointer"
-          style={{ marginTop: `${faceOffset}px` }}
-        >
-          {renderFace()}
-        </div>
-
-        {/* PERSISTENT FLOATING LANDSCAPE CONTROLS CORNER INTERFACES */}
-        <div className="absolute bottom-8 left-8 z-[100] flex items-center gap-3">
-           <button 
-             onClick={toggleMic} 
-             className={`p-5 rounded-full border shadow-2xl active:scale-95 transition-all text-white ${isInfinityMic ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
-           >
-             <Mic size={24} />
-           </button>
-           {isInfinityMic && <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-red-400 animate-pulse bg-red-950/40 px-3 py-1 rounded-full border border-red-900/30">Live Mic Ears Open</span>}
-        </div>
-
-        <button 
-          onClick={() => setShowSettings(true)} 
-          className="absolute bottom-8 right-8 z-[100] p-5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white shadow-2xl active:scale-95 transition-all"
-        >
-          <Settings size={24}/>
-        </button>
-
-        {/* BUDGET MATRIX */}
-        <div className="absolute top-6 left-6 px-4 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-yellow-400 font-mono text-[10px] font-bold">🪙 {bucks} Bucks</div>
-
-        {/* FACE POPUP */}
-        {showFacePopup && (
-           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-[#161622] p-6 rounded-[35px] border border-white/10 shadow-2xl flex flex-col gap-3 min-w-[220px]">
-              {ownsRibbon && (
-                  <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                      <span className="text-2xl">🎀</span>
-                      <span className="text-xs font-bold text-white text-left flex-1">{ribbonApplied ? "Remove Ribbon" : "Apply Ribbon"}</span>
-                  </button>
-              )}
-              {ownsDuctTape && (
-                  <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                      <span className="text-2xl">🩹</span>
-                      <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
-                  </button>
-              )}
-              {ownsRogueLegs && (
-                  <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                      <span className="text-2xl">👻</span>
-                      <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
-                  </button>
-              )}
-              <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
-           </div>
-        )}
-
-        {showSettings && <SettingsOverlay 
-              onClose={() => setShowSettings(false)} 
-              tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
-              aiAgentMode={aiAgentMode} setAiAgentMode={setAiAgentMode}
-              isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
-              visionEnabled={visionEnabled} toggleCamera={toggleCameraScanner}
-              fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
-              isInfinityMic={isInfinityMic} toggleMic={toggleMic}
-              notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
-              bucks={bucks} inventory={inventory} buyItem={buyItem}
-              faceOffset={faceOffset} setFaceOffset={setFaceOffset}
-              speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
-          />}
-        <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }" }} />
-      </div>
-    );
-  }
-
-  // --- STANDARD PORTRAIT APP RENDER ROUTINE ---
   return (
     <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-4 overflow-hidden">
       <video ref={videoRef} autoPlay playsInline muted className="hidden" />
@@ -1265,7 +1188,7 @@ export default function App() {
         </div>
       )}
 
-      {/* POPUP FOR DUCT TAPE, ROGUE LEGS, AND SPARKLY RIBBON */}
+      {/* POPUP FOR UPGRADES */}
       {showFacePopup && (
          <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
             {ownsRibbon && (

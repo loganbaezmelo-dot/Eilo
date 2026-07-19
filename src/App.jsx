@@ -257,6 +257,12 @@ export default function App() {
   const streamRef = useRef(null);
   const lastHeightsScreamRef = useRef(0);
 
+  // Mutable tracking ref so orientation loop reads real-time layout changes smoothly
+  const isTapedRef = useRef(isTaped);
+  useEffect(() => {
+    isTapedRef.current = isTaped;
+  }, [isTaped]);
+
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
   const safeInventory = Array.isArray(inventory) ? inventory : [];
@@ -393,12 +399,16 @@ export default function App() {
           lastHeightsScreamRef.current = rightNow;
           setMood('mad');
 
-          const panicChirp = visionEnabled 
-            ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
-            : "WHOA! Too high! We are looking straight down at the abyss! Put me back down! 🎈";
+          // FIXED: Strictly checks mutable tape ref so she mumbles if pinned down by upgrades
+          const panicChirp = isTapedRef.current 
+            ? "Mmm! Mmm! Hmph!" 
+            : (visionEnabled 
+                ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
+                : "WHOA! Too high! We are looking straight down at the abyss! Put me back down! 🎈"
+              );
 
           speak(panicChirp);
-          sendNotification(visionEnabled ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!");
+          sendNotification(isTapedRef.current ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (visionEnabled ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
           setTimeout(() => setMood('neutral'), 4000);
         }
       }
@@ -981,7 +991,6 @@ export default function App() {
             let frameCaptured = false;
             let base64Data = "";
             
-            // BULLETPROOF LENS HANDSHAKE: Strict hardware dimension capture tracking avoids runtime execution errors
             if (visionEnabled && videoRef.current && canvasRef.current) {
               const video = videoRef.current;
               if (video.videoWidth > 0 && video.videoHeight > 0) {

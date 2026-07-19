@@ -70,7 +70,7 @@ const SettingsOverlay = ({
                   
                   <button onClick={() => buyItem(125, 'face_pos')} disabled={safeInv.includes('face_pos')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('face_pos') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
                      <div className="flex items-center gap-3"><span className="text-lg">↕️</span> <div><p className="text-xs font-bold text-white">Face Mover</p><p className="text-[9px] text-slate-500">Adjust portrait position</p></div></div>
-                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('face_pos') ? 'OWNED' : '125'}</div>
+                     <div className="text-xs font-bold text-purple-400">{safeInv.includes('face_pos') ? 'OWNED' : '125'}</div>
                   </button>
 
                   <button onClick={() => buyItem(150, 'rogue_walk')} disabled={safeInv.includes('rogue_walk')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('rogue_walk') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
@@ -360,9 +360,9 @@ export default function App() {
       const newState = !isInfinityMic;
       setIsInfinityMic(newState);
       if (newState) {
-          speak("Ears open! I'm listening... ✨");
+          speak("Eears open! I'm listening... ✨");
       } else {
-          speak("Ears closed! 🧸");
+          speak("Eears closed! 🧸");
           if (recognitionRef.current) recognitionRef.current.stop();
       }
   };
@@ -705,7 +705,8 @@ export default function App() {
       if (!u) { setUser(null); return; }
       setUser(u);
       
-      const saved bucks = localStorage.getItem(`eilo_bucks_backup_${u.uid}`);
+      // FIXED CAMELCASE DECLARATION SPACE ALIGNMENT HERE 😭 ✌️
+      const savedBucks = localStorage.getItem(`eilo_bucks_backup_${u.uid}`);
       if (savedBucks) setBucks(parseInt(savedBucks));
 
       if (u && !hasGreeted.current) {
@@ -1146,7 +1147,6 @@ export default function App() {
         <button onClick={() => setShowHistory(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95">
           <Menu size={16}/>
         </button>
-        {/* WELCOME TO THE V4.6 MATRIX 😭 ✌️ */}
         <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v4.6</div>
         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}
@@ -1267,7 +1267,6 @@ export default function App() {
           </div>
         </div>
 
-        {/* GRID ACTIONS BAR */}
         <div className="grid grid-cols-3 gap-3 flex-shrink-0">
           <button onClick={toggleMic} className={`p-3.5 rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
             <Mic size={16} />

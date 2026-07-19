@@ -212,7 +212,6 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
-  // --- INVENTORY BOUNDARY REPAIR MATRIX REGISTRATION ---
   const [bucks, setBucks] = useState(() => parseInt(localStorage.getItem('eilo_bucks')) || 0);
   const [inventory, setInventory] = useState(() => {
     try {

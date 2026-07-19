@@ -192,7 +192,6 @@ export default function App() {
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
   
-  // Localized Multi-Thread State
   const [threads, setThreads] = useState(() => {
     try {
       const saved = localStorage.getItem('eilo_threads_list');
@@ -212,7 +211,6 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
-  // Browser interaction token cache state to fix silent background speech synthesis blocks
   const [hasInteracted, setHasInteracted] = useState(false);
 
   const [bucks, setBucks] = useState(() => {
@@ -266,7 +264,6 @@ export default function App() {
   const ownsRibbon = safeInventory.includes('ribbon');
   const hasRogueLegs = ownsRogueLegs && rogueLegsActive;
 
-  // Track initial viewport click to register interactive audio permission handshakes 
   useEffect(() => {
     const registerInteraction = () => setHasInteracted(true);
     window.addEventListener('click', registerInteraction);
@@ -280,17 +277,22 @@ export default function App() {
   const sendNotification = (bodyText) => {
     if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
 
-    if ('serviceWorker' in navigator) {
-      navigator.serviceWorker.ready.then((registration) => {
-        registration.showNotification("Eilo OS", {
-          body: bodyText,
-          tag: "eilo-os-broadcast"
+    try {
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.ready.then((registration) => {
+          registration.showNotification("Eilo OS", {
+            body: bodyText,
+            icon: '/icon-192.png',
+            tag: 'eilo-os-broadcast'
+          });
+        }).catch(() => {
+          new Notification("Eilo OS", { body: bodyText, icon: '/icon-192.png' });
         });
-      }).catch(() => {
-        new Notification("Eilo OS", { body: bodyText });
-      });
-    } else {
-      new Notification("Eilo OS", { body: bodyText });
+      } else {
+        new Notification("Eilo OS", { body: bodyText, icon: '/icon-192.png' });
+      }
+    } catch (e) {
+      console.warn("Direct worker capture error. Executing alternative layout.");
     }
   };
 
@@ -329,6 +331,7 @@ export default function App() {
     }
   };
 
+  // --- UPDATED PATIENT ACTIVITY LOOP (20 MINUTES / 1200000ms) ---
   useEffect(() => {
     if (!user || !notificationsEnabled) {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);
@@ -350,7 +353,7 @@ export default function App() {
         const payload = randomActivities[Math.floor(Math.random() * randomActivities.length)];
         sendNotification(payload);
       }
-    }, 45000);
+    }, 1200000);
 
     return () => {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);
@@ -778,7 +781,7 @@ export default function App() {
       if (!isNaN(val)) setBucks(val);
 
       if (u && !hasGreeted.current) {
-        // --- SECURE ANTI-REFRESH EXPLOIT PATCH LOOP ---
+        // --- SECURE ANTI-REFRESH EXPLOIT COIN LOCK ENGINE ---
         const loginBonusClaimed = localStorage.getItem(`eilo_claimed_login_${u.uid}`) === 'true';
         
         if (!loginBonusClaimed) {
@@ -806,6 +809,7 @@ export default function App() {
     
     const choice = actions[Math.floor(Math.random() * actions.length)];
     
+    // hasInteracted filters prevent silent background synthesis execution faults
     if (choice === 'computer') { 
         if (hasInteracted) speak("Coding a new website... tap tap tap! 💻✨"); 
         sendNotification("Coding a new website... tap tap tap! 💻✨");
@@ -982,7 +986,7 @@ export default function App() {
                     const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
                     const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
                     globalCache[activeThreadId] = updatedMsgs;
-                    localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+                    localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(updatedMsgs));
                   } catch (e) {}
                 }
                 return updatedMsgs;
@@ -1160,7 +1164,6 @@ export default function App() {
         <video ref={videoRef} autoPlay playsInline muted className="hidden" />
         <canvas ref={canvasRef} className="hidden" />
 
-        {/* TOP HIDDEN INVISIBLE PETTING SENSOR HITBOX */}
         <div 
           onClick={handlePet}
           className="absolute top-0 left-1/4 right-1/4 h-1/3 z-50 cursor-pointer flex items-center justify-center opacity-0 hover:opacity-10 transition-opacity bg-white/5 rounded-b-[40px]"
@@ -1168,7 +1171,6 @@ export default function App() {
           <Hand size={32} className="text-pink-400 animate-pulse"/>
         </div>
 
-        {/* HIGH SCALED CENTER STAGE EILO PORTRAIT CORE */}
         <div 
           onClick={handleFaceClick}
           className="w-full max-w-xl h-full flex items-center justify-center relative transform scale-125 cursor-pointer"
@@ -1177,7 +1179,6 @@ export default function App() {
           {renderFace()}
         </div>
 
-        {/* PERSISTENT FLOATING LANDSCAPE CONTROLS CORNER INTERFACES */}
         <div className="absolute bottom-8 left-8 z-[100] flex items-center gap-3">
            <button 
              onClick={toggleMic} 
@@ -1195,10 +1196,8 @@ export default function App() {
           <Settings size={24}/>
         </button>
 
-        {/* BUDGET MATRIX */}
         <div className="absolute top-6 left-6 px-4 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-yellow-400 font-mono text-[10px] font-bold">🪙 {bucks} Bucks</div>
 
-        {/* FACE POPUP */}
         {showFacePopup && (
            <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-[#161622] p-6 rounded-[35px] border border-white/10 shadow-2xl flex flex-col gap-3 min-w-[220px]">
               {ownsRibbon && (
@@ -1383,7 +1382,6 @@ export default function App() {
         </div>
       </div>
 
-      {/* COMPONENT RENDER OVERLAYS */}
       <HistorySidebar 
         isOpen={showHistory} 
         onClose={() => setShowHistory(false)} 

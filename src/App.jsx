@@ -705,7 +705,7 @@ export default function App() {
       if (!u) { setUser(null); return; }
       setUser(u);
       
-      const savedBucks = localStorage.getItem(`eilo_bucks_backup_${u.uid}`);
+      const saved bucks = localStorage.getItem(`eilo_bucks_backup_${u.uid}`);
       if (savedBucks) setBucks(parseInt(savedBucks));
 
       if (u && !hasGreeted.current) {
@@ -1146,7 +1146,8 @@ export default function App() {
         <button onClick={() => setShowHistory(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95">
           <Menu size={16}/>
         </button>
-        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v3.2</div>
+        {/* WELCOME TO THE V4.6 MATRIX 😭 ✌️ */}
+        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v4.6</div>
         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}
         </div>
@@ -1266,7 +1267,7 @@ export default function App() {
           </div>
         </div>
 
-        {/* GRID ACTIONS BAR - SWAPPED THE USELESS POWER SWITCH WITH INFINITY MIC SHORTCUT 😭 ✌️ */}
+        {/* GRID ACTIONS BAR */}
         <div className="grid grid-cols-3 gap-3 flex-shrink-0">
           <button onClick={toggleMic} className={`p-3.5 rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
             <Mic size={16} />

@@ -504,7 +504,7 @@ export default function App() {
     
     if (!repeatable) setSessionClaims(prev => ({ ...prev, [type]: true }));
     
-    localStorage.setItem(`eilo_bucks_backup_${user.uid}`, newTotal.toString());
+    localStorage.setItem(`eilo_bucks_backup_${u.uid}`, newTotal.toString());
     if (!silent) speak(`Cha-ching! +${amount} Bucks! ✨`);
   };
 
@@ -660,7 +660,6 @@ export default function App() {
       e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); 
   };
 
-  // --- INTERCEPT PETTING LOGIC IF SLEEPING (v4.7 SCHEME) 😭 ✌️ ---
   const handlePet = () => {
     if (!user) return;
 
@@ -793,14 +792,12 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- INTERCEPT INCOMING MESSAGE PACKETS IF SLEEPING (v4.7 SCHEME) 😭 ✌️ ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
-    // BLOCKED AT GATEWAY MATRIX LEVEL! SASSY REJECTION WITH NO API BILLING CALLS!
     if (mood === 'sleeping') {
       setInput('');
       setMood('mad');
@@ -947,6 +944,8 @@ export default function App() {
 
   const renderFace = () => {
     const cyanBase = "bg-cyan-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_40px_rgba(34,211,238,0.8)]";
+    // --- NEON LASER RED EYE MATRIX LOGIC IF REJECTING COMPILATION AUDIO CORE PACKETS (v4.8 SCHEME) ---
+    const redMadBase = isSpeaking ? "bg-red-500 rounded-3xl shadow-[0_0_40px_rgba(239,68,68,0.9)] animate-pulse" : "bg-cyan-400 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.8)]";
     
     const tapeOverlay = isTaped ? (
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-4 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
@@ -959,6 +958,8 @@ export default function App() {
     ) : null;
 
     switch (mood) {
+      case 'mad':
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 relative">{ribbonOverlay}<div className={`w-20 h-20 ${redMadBase}`} /><div className={`w-20 h-20 ${redMadBase}`} />{tapeOverlay}</div></div>;
       case 'dizzy': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 animate-spin relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div></div>;
       case 'happy': 
@@ -1180,8 +1181,7 @@ export default function App() {
         <button onClick={() => setShowHistory(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95">
           <Menu size={16}/>
         </button>
-        {/* WELCOME TO THE V4.7 REVOLUTION 😭 ✌️ */}
-        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v4.7</div>
+        <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v4.8</div>
         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}
         </div>

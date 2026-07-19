@@ -244,14 +244,7 @@ export default function App() {
   const [isInfinityMic, setIsInfinityMic] = useState(false);
   const [visionEnabled, setVisionEnabled] = useState(false);
   
-  // --- BULLETPROOF INITIALIZATION: AUTO-READS EXPLICIT BROWSER site PERMISSION OR LOCAL STORAGE FALLBACKS ---
-  const [notificationsEnabled, setNotificationsEnabled] = useState(() => {
-    if (typeof window !== 'undefined' && 'Notification' in window) {
-      if (Notification.permission === 'granted') return true;
-      if (Notification.permission === 'denied') return false;
-    }
-    return localStorage.getItem('eilo_notifications') === 'true';
-  });
+  const [notificationsEnabled, setNotificationsEnabled] = useState(localStorage.getItem('eilo_notifications') === 'true');
   
   const videoRef = useRef(null);
   const canvasRef = useRef(null);
@@ -338,7 +331,7 @@ export default function App() {
     }
   };
 
-  // --- SAFE RESILIENT 20-MINUTE PATIENT BACKGROUND ACTIVITY LOOP ---
+  // --- BACKGROUND ACTIVITY LOOP ---
   useEffect(() => {
     if (!user || !notificationsEnabled) {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);

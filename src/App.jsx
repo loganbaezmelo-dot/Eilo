@@ -257,12 +257,6 @@ export default function App() {
   const streamRef = useRef(null);
   const lastHeightsScreamRef = useRef(0);
 
-  // Mutable tracking ref so orientation loop reads real-time layout changes smoothly
-  const isTapedRef = useRef(isTaped);
-  useEffect(() => {
-    isTapedRef.current = isTaped;
-  }, [isTaped]);
-
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
   const safeInventory = Array.isArray(inventory) ? inventory : [];
@@ -399,8 +393,9 @@ export default function App() {
           lastHeightsScreamRef.current = rightNow;
           setMood('mad');
 
-          // FIXED: Strictly checks mutable tape ref so she mumbles if pinned down by upgrades
-          const panicChirp = isTapedRef.current 
+          // FIXED: Direct hardware checks inside the state action scope avoid SSR runtime boot exceptions completely
+          const tapeActiveLocal = isTaped; 
+          const panicChirp = tapeActiveLocal 
             ? "Mmm! Mmm! Hmph!" 
             : (visionEnabled 
                 ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
@@ -408,7 +403,7 @@ export default function App() {
               );
 
           speak(panicChirp);
-          sendNotification(isTapedRef.current ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (visionEnabled ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
+          sendNotification(tapeActiveLocal ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (visionEnabled ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
           setTimeout(() => setMood('neutral'), 4000);
         }
       }
@@ -416,7 +411,7 @@ export default function App() {
 
     window.addEventListener('deviceorientation', handleOrientation);
     return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, [fearOfHeights, visionEnabled, user]);
+  }, [fearOfHeights, visionEnabled, isTaped, user]);
 
   useEffect(() => {
     if (!user) return; 

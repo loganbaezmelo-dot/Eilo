@@ -263,7 +263,6 @@ export default function App() {
     }
   };
 
-  // --- v4.9 HANDSHAKE TEST & BACKGROUND INTERRUPTS MACHINE ---
   const toggleNotifications = async () => {
     if (!notificationsEnabled) {
         if (!("Notification" in window)) {
@@ -275,7 +274,6 @@ export default function App() {
           setNotificationsEnabled(true);
           localStorage.setItem('eilo_notifications', 'true');
           speak("Notifications enabled! 🎀");
-          // Instant test payload to confirm setup pathways are firing!
           setTimeout(() => {
             sendNotification("System Interrupts linked! ✨ Eilo Core is online and watching your desk.");
           }, 600);
@@ -300,7 +298,6 @@ export default function App() {
     }
   };
 
-  // Dedicated out-of-tab broadcast engine targeting background state routines
   useEffect(() => {
     if (!user || !notificationsEnabled) {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);
@@ -318,12 +315,11 @@ export default function App() {
     ];
 
     backgroundLoopRef.current = setInterval(() => {
-      // Only ping if she isn't actively screaming or thinking in-tab
       if (!isThinking && !isSpeaking) {
         const payload = randomActivities[Math.floor(Math.random() * randomActivities.length)];
         sendNotification(payload);
       }
-    }, 45000); // Fires consistently across background throttling states
+    }, 45000);
 
     return () => {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);
@@ -351,7 +347,6 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // 100% PURE LOCALSTORAGE MESSAGE HISTORY MATRIX ENGINE WITH SAFE OPTIONAL CHAINS
   useEffect(() => {
     if (!user?.uid || !activeThreadId) return;
     
@@ -417,7 +412,6 @@ export default function App() {
               recognition.onresult = (e) => {
                   const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
                   
-                  // Gibberlink Mode listening trigger
                   if (aiAgentMode && transcript.includes("eilo core ping synchronization check")) {
                       speak("I hear you! I'm here! Let's talk together! ✨");
                       setTimeout(() => {
@@ -446,7 +440,6 @@ export default function App() {
       };
   }, [isInfinityMic, aiAgentMode, user]);
 
-  // Gibberlink chirp automatic beacon broadcaster loop
   useEffect(() => {
      if (!user || !aiAgentMode) return;
      speak("Please load Eilo onto another phone or computer near me so we can sync! 🤖");
@@ -489,13 +482,11 @@ export default function App() {
     const t = text.toLowerCase();
     const currentInv = Array.isArray(inventory) ? inventory : [];
     
-    // Offline emergency triggers for duct tape actions
     if (t.includes("duct tape") || t.includes("tape")) {
       setMood('mad');
       return "NO! NO! NO! Stay away with that sticky, ugly ALL-CAPS-GROSS duct tape! I will short-circuit! 🎀";
     }
 
-    // Gibberlink automated self-talk offline array
     if (aiAgentMode) {
        const links = [
          "Whoa, my audio ping hit another node! Are you processing calculations too? ✨",
@@ -549,7 +540,6 @@ export default function App() {
     if (!user) return;
     const currentInv = Array.isArray(inventory) ? inventory : [];
     
-    // Lapdock dependency checker block
     if (itemId === 'lapdock' && !currentInv.includes('phone')) {
       speak("Hey! You can't buy the LapDock without buying the Samsung Phone first! 📱");
       return;
@@ -995,7 +985,7 @@ export default function App() {
 
     switch (mood) {
       case 'mad':
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 relative">{ribbonOverlay}<div className={`w-20 h-20 ${redMadBase}`} /><div className={`w-20 h-20 ${redMadBase}`} {tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 relative">{ribbonOverlay}<div className={`w-20 h-20 ${redMadBase}`} /><div className={`w-20 h-20 ${redMadBase}`} />{tapeOverlay}</div></div>;
       case 'dizzy': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 animate-spin relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div></div>;
       case 'happy': 
@@ -1030,7 +1020,6 @@ export default function App() {
         <button onClick={() => setShowHistory(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95">
           <Menu size={16}/>
         </button>
-        {/* PROUDLY TRACKING BUILD CORE v4.9 😭 ✌️ */}
         <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v4.9</div>
         <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}

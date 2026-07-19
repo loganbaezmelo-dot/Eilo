@@ -488,7 +488,7 @@ export default function App() {
   }, [aiAgentMode, user]);
 
   const speak = (text, isRobotLang = false) => {
-    if (isMuted || !user) return; 
+    if (isMuted || !user || !('speechSynthesis' in window)) return; 
     setIsSpeaking(true);
     window.speechSynthesis.cancel();
     
@@ -616,15 +616,17 @@ export default function App() {
       setIsTaped(newState);
       setShowFacePopup(false);
       
-      window.speechSynthesis.cancel();
-      if (newState) {
-          const u = new SpeechSynthesisUtterance("Mmm. Mmm. Hmph."); 
-          u.pitch = 0.5; u.rate = 0.8;
-          window.speechSynthesis.speak(u);
-      } else {
-          const u = new SpeechSynthesisUtterance("I'm free! Never do that again! 🎀");
-          u.pitch = 1.7; u.rate = 1.1;
-          window.speechSynthesis.speak(u);
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+        if (newState) {
+            const u = new SpeechSynthesisUtterance("Mmm. Mmm. Hmph."); 
+            u.pitch = 0.5; u.rate = 0.8;
+            window.speechSynthesis.speak(u);
+        } else {
+            const u = new SpeechSynthesisUtterance("I'm free! Never do that again! 🎀");
+            u.pitch = 1.7; u.rate = 1.1;
+            window.speechSynthesis.speak(u);
+        }
       }
   };
 
@@ -1054,8 +1056,16 @@ export default function App() {
       case 'lapdock': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
       default: 
-        {/* SYNTAX ERROR FIXED BELOW (BRACKET HANDSHAKE SAFELY CLOSED) */}
-        return <div className="absolute inset-0 flex items-center justify-center"><div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}>{ribbonOverlay}<div className={`w-20 h-20 ${cyanBase} eye-blink`} /><div className={`w-20 h-20 ${cyanBase} eye-blink`} />{tapeOverlay}</div></div>;
+        return (
+          <div className="absolute inset-0 flex items-center justify-center">
+            <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}>
+              {ribbonOverlay}
+              <div className={`w-20 h-20 ${cyanBase} eye-blink`} />
+              <div className={`w-20 h-20 ${cyanBase} eye-blink`} />
+              {tapeOverlay}
+            </div>
+          </div>
+        );
     }
   };
 

@@ -212,12 +212,15 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
-  const initialBucks = parseInt(localStorage.getItem('eilo_bucks')) || 0;
-  const initialInvRaw = localStorage.getItem('eilo_inventory');
-  const initialInv = initialInvRaw ? JSON.parse(initialInvRaw) : [];
+  // --- INVENTORY BOUNDARY REPAIR MATRIX REGISTRATION ---
+  const [bucks, setBucks] = useState(() => parseInt(localStorage.getItem('eilo_bucks')) || 0);
+  const [inventory, setInventory] = useState(() => {
+    try {
+      const raw = localStorage.getItem('eilo_inventory');
+      return raw ? JSON.parse(raw) : [];
+    } catch(e) { return []; }
+  });
   
-  const [bucks, setBucks] = useState(initialBucks);
-  const [inventory, setInventory] = useState(initialInv);
   const [sessionClaims, setSessionClaims] = useState({ login: false, talk: false });
   const [faceOffset, setFaceOffset] = useState(0);
 
@@ -532,7 +535,6 @@ export default function App() {
     return randoms[Math.floor(Math.random() * randoms.length)];
   };
 
-  // --- FIXED PASSING SPECIFIC AUTH UID PARAMETER DIRECTLY TO PREVENT TRANSITION LOCKS ---
   const awardBucks = async (amount, type, repeatable = false, silent = false, explicitUid = null) => {
     const targetUid = explicitUid || user?.uid;
     if (!targetUid) return;
@@ -757,7 +759,6 @@ export default function App() {
       if (savedBucks) setBucks(parseInt(savedBucks));
 
       if (u && !hasGreeted.current) {
-        // EXPLICITLY PASSIVE PARAMETER REGISTER TO AVOID NULL CONTEXT INVERSION CRASHES 😭 ✌️
         awardBucks(10, 'login', false, true, u.uid); 
         const msg = `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo's here! 🎈`;
         setTimeout(() => speak(msg), 1500);
@@ -950,7 +951,7 @@ export default function App() {
                   const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
                   const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
                   globalCache[activeThreadId] = updatedMsgs;
-                  localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+                  localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(updatedMsgs));
                 } catch (e) {}
                 return updatedMsgs;
              });
@@ -1003,7 +1004,7 @@ export default function App() {
       case 'dizzy': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 animate-spin relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div></div>;
       case 'happy': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 relative">{ribbonOverlay}<div className="absolute -top-6 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" />{tapeOverlay}</div></div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 relative">{ribbonOverlay}<div className="absolute -top-6 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div></div>;
       case 'thinking': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div></div>;
       case 'sleeping': 
@@ -1186,6 +1187,31 @@ export default function App() {
           {isHandBlocking && !isTaped && <div className="absolute -bottom-12 -right-12 z-[200] animate-bounce cursor-not-allowed pointer-events-auto" onClick={handleBlockedClick}><div className="text-[12rem] drop-shadow-2xl hover:scale-105 transition-transform rotate-12 filter grayscale-[0.2]">✋</div></div>}
           <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-125 animate-pulse z-50"><Settings size={24} className="text-cyan-400"/></button>
         </div>
+      )}
+
+      {/* POPUP FOR UPGRADES */}
+      {showFacePopup && (
+         <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
+            {ownsRibbon && (
+                <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">🎀</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{ribbonApplied ? "Remove Ribbon" : "Apply Ribbon"}</span>
+                </button>
+            )}
+            {ownsDuctTape && (
+                <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">🩹</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
+                </button>
+            )}
+            {ownsRogueLegs && (
+                <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">👻</span>
+                    <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
+                </button>
+            )}
+            <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
+         </div>
       )}
 
       {/* INTERFACE ZONE */}

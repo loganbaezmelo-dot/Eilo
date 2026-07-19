@@ -983,7 +983,6 @@ export default function App() {
       <div className="absolute -top-6 left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
     ) : null;
 
-    // --- REPAIRED TYPO SYNTAX TREE MATRICES FOR PRODUCTION SAFE BUILDS 😭 ✌️ ---
     switch (mood) {
       case 'mad':
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 relative">{ribbonOverlay}<div className={`w-20 h-20 ${redMadBase}`} /><div className={`w-20 h-20 ${redMadBase}`} />{tapeOverlay}</div></div>;

@@ -258,6 +258,13 @@ export default function App() {
   const lastHeightsScreamRef = useRef(0);
   const ignoreHeightsTimerRef = useRef(0);
 
+  // FIXED: Setup direct reactive mutable tracking blocks that don't trigger layout cascades
+  const isTapedValueRef = useRef(isTaped);
+  const visionEnabledValueRef = useRef(visionEnabled);
+
+  useEffect(() => { isTapedValueRef.current = isTaped; }, [isTaped]);
+  useEffect(() => { visionEnabledValueRef.current = visionEnabled; }, [visionEnabled]);
+
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
   const safeInventory = Array.isArray(inventory) ? inventory : [];
@@ -385,7 +392,6 @@ export default function App() {
       const heightsActive = localStorage.getItem('eilo_heights') !== 'false';
       if (!heightsActive) return;
 
-      // FIXED ANTI-FLIP FIREWALL: Hard intercepts the sensor feed if landscape check or flip is actively processing
       if (Date.now() < ignoreHeightsTimerRef.current) return;
 
       const beta = event.beta;
@@ -399,11 +405,11 @@ export default function App() {
         if (rightNow - lastHeightsScreamRef.current > 7000) {
           lastHeightsScreamRef.current = rightNow;
           
-          // Absolute visual state lock handles red eyes and alerts simultaneously
           setMood('mad');
 
-          const tapeActiveLocal = document.querySelector('.tape-marker') !== null || isTaped;
-          const scannerActiveLocal = visionEnabled;
+          // FIXED SSR: Reads isolated structural reference refs instead of browser DOM query selectors
+          const tapeActiveLocal = isTapedValueRef.current;
+          const scannerActiveLocal = visionEnabledValueRef.current;
 
           const panicChirp = tapeActiveLocal 
             ? "Mmm! Mmm! Hmph!" 
@@ -422,7 +428,7 @@ export default function App() {
 
     window.addEventListener('deviceorientation', handleOrientation);
     return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, [visionEnabled, isTaped, user]);
+  }, [user]);
 
   useEffect(() => {
     if (!user) return; 
@@ -431,7 +437,6 @@ export default function App() {
         if (landscape !== isLandscape) {
             setIsLandscape(landscape);
             
-            // FLIP INTERCEPT ENGINE: Hard locks the gyroscope loop out for 1.5 seconds during a screen flip 
             ignoreHeightsTimerRef.current = Date.now() + 1500;
 
             if (isChaosMode) {
@@ -1130,7 +1135,7 @@ export default function App() {
     const redMadBase = isSpeaking ? "bg-red-500 rounded-3xl shadow-[0_0_40px_rgba(239,68,68,0.9)] animate-pulse" : "bg-cyan-400 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.8)]";
     
     const tapeOverlay = isTaped ? (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-4 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none tape-marker">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-4 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
             <div className="w-full h-full bg-repeating-linear-gradient-45 from-transparent to-black/10" />
         </div>
     ) : null;

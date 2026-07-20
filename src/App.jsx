@@ -256,6 +256,7 @@ export default function App() {
   const recognitionRef = useRef(null);
   const streamRef = useRef(null);
   const lastHeightsScreamRef = useRef(0);
+  const ignoreHeightsTimerRef = useRef(0);
 
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
@@ -376,21 +377,21 @@ export default function App() {
     };
   }, [notificationsEnabled, user, isThinking, isSpeaking]);
 
-  // --- SAFE PORTABLE SENSOR RADAR HOOK ---
+  // --- CLIENT SAFE 3D ORIENTATION HEIGHTS RADAR HOOK ---
   useEffect(() => {
     if (!user) return;
 
     const handleOrientation = (event) => {
-      // READS LOCAL PARAMETERS INLINE TO PREVENT SSR MOUNT COLLISION EXCEPTIONS
       const heightsActive = localStorage.getItem('eilo_heights') !== 'false';
       if (!heightsActive) return;
+
+      // FIXED ANTI-FLIP FIREWALL: Hard intercepts the sensor feed if landscape check or flip is actively processing
+      if (Date.now() < ignoreHeightsTimerRef.current) return;
 
       const beta = event.beta;
       const gamma = event.gamma;
       if (beta === null || gamma === null) return;
 
-      // CALIBRATION MARGIN FIXED: Reconfigured boundary angles so normal texting angles never fire panic events.
-      // Requires phone to be tilted completely flat down facing floor profile.
       const looksDownVertical = Math.abs(beta) > 165 || Math.abs(gamma) > 82;
 
       if (looksDownVertical) {
@@ -398,9 +399,9 @@ export default function App() {
         if (rightNow - lastHeightsScreamRef.current > 7000) {
           lastHeightsScreamRef.current = rightNow;
           
+          // Absolute visual state lock handles red eyes and alerts simultaneously
           setMood('mad');
 
-          // READ DIRECT PORTRAIT FLAGS SAFELY
           const tapeActiveLocal = document.querySelector('.tape-marker') !== null || isTaped;
           const scannerActiveLocal = visionEnabled;
 
@@ -429,6 +430,10 @@ export default function App() {
         const landscape = window.innerWidth > window.innerHeight;
         if (landscape !== isLandscape) {
             setIsLandscape(landscape);
+            
+            // FLIP INTERCEPT ENGINE: Hard locks the gyroscope loop out for 1.5 seconds during a screen flip 
+            ignoreHeightsTimerRef.current = Date.now() + 1500;
+
             if (isChaosMode) {
                 setIsConfused(true);
                 speak("Whoa! World flip! Where's the button?!");

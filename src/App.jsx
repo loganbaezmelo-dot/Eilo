@@ -376,17 +376,21 @@ export default function App() {
     };
   }, [notificationsEnabled, user, isThinking, isSpeaking]);
 
-  // --- CLIENT SAFE 3D ORIENTATION HEIGHTS RADAR HOOK ---
+  // --- SAFE PORTABLE SENSOR RADAR HOOK ---
   useEffect(() => {
-    if (!user || !fearOfHeights) return;
+    if (!user) return;
 
     const handleOrientation = (event) => {
+      // READS LOCAL PARAMETERS INLINE TO PREVENT SSR MOUNT COLLISION EXCEPTIONS
+      const heightsActive = localStorage.getItem('eilo_heights') !== 'false';
+      if (!heightsActive) return;
+
       const beta = event.beta;
       const gamma = event.gamma;
       if (beta === null || gamma === null) return;
 
-      // FIXED DETECTOR thresholds altered to match standard texting postures.
-      // Phone must be completely flipped over flat facing the ground down (beta directly towards 180 or -180 without the lazy left hand tilt bleeding).
+      // CALIBRATION MARGIN FIXED: Reconfigured boundary angles so normal texting angles never fire panic events.
+      // Requires phone to be tilted completely flat down facing floor profile.
       const looksDownVertical = Math.abs(beta) > 165 || Math.abs(gamma) > 82;
 
       if (looksDownVertical) {
@@ -394,21 +398,22 @@ export default function App() {
         if (rightNow - lastHeightsScreamRef.current > 7000) {
           lastHeightsScreamRef.current = rightNow;
           
-          // FIXED: Forces eye matrix state to persist stably during event execution
           setMood('mad');
 
-          const tapeActiveLocal = isTaped; 
+          // READ DIRECT PORTRAIT FLAGS SAFELY
+          const tapeActiveLocal = document.querySelector('.tape-marker') !== null || isTaped;
+          const scannerActiveLocal = visionEnabled;
+
           const panicChirp = tapeActiveLocal 
             ? "Mmm! Mmm! Hmph!" 
-            : (visionEnabled 
+            : (scannerActiveLocal 
                 ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
                 : "WHOA! Too high! We are looking straight down at the abyss! Put me back down! 🎈"
               );
 
           speak(panicChirp);
-          sendNotification(tapeActiveLocal ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (visionEnabled ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
+          sendNotification(tapeActiveLocal ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (scannerActiveLocal ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
           
-          // Holds the face visual locked solid for 4 full seconds so frame rates don't drop the eyes
           setTimeout(() => setMood('neutral'), 4000);
         }
       }
@@ -416,7 +421,7 @@ export default function App() {
 
     window.addEventListener('deviceorientation', handleOrientation);
     return () => window.removeEventListener('deviceorientation', handleOrientation);
-  }, [fearOfHeights, visionEnabled, isTaped, user]);
+  }, [visionEnabled, isTaped, user]);
 
   useEffect(() => {
     if (!user) return; 
@@ -1120,7 +1125,7 @@ export default function App() {
     const redMadBase = isSpeaking ? "bg-red-500 rounded-3xl shadow-[0_0_40px_rgba(239,68,68,0.9)] animate-pulse" : "bg-cyan-400 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.8)]";
     
     const tapeOverlay = isTaped ? (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-4 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-4 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none tape-marker">
             <div className="w-full h-full bg-repeating-linear-gradient-45 from-transparent to-black/10" />
         </div>
     ) : null;

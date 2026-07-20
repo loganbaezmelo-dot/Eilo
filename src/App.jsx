@@ -258,7 +258,6 @@ export default function App() {
   const lastHeightsScreamRef = useRef(0);
   const ignoreHeightsTimerRef = useRef(0);
 
-  // Direct reactive memory blocks isolate hardware parameters cleanly from server compiling steps
   const isTapedValueRef = useRef(isTaped);
   const visionEnabledValueRef = useRef(visionEnabled);
 
@@ -1282,14 +1281,13 @@ export default function App() {
         <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-        {/* FIXED TACTILE FRICTION LENS: Fully visible panel with active touch movement tracking hooks */}
-        <div 
-          onMouseMove={handlePet}
-          onTouchMove={handlePet}
-          className="absolute top-4 left-1/2 -translate-x-1/2 w-48 h-12 rounded-full border border-pink-500/20 bg-pink-500/5 backdrop-blur-md z-[100] cursor-pointer flex items-center justify-center gap-2 text-pink-400/60 font-mono text-[9px] uppercase font-bold tracking-widest hover:bg-pink-500/10 hover:text-pink-400 transition-all shadow-lg"
+        {/* FIXED STABLE PET PANEL: Regulated click loop stops infinite frame paint rendering exceptions dead */}
+        <button 
+          onClick={handlePet}
+          className="absolute top-4 left-1/2 -translate-x-1/2 w-48 h-12 rounded-full border border-pink-500/20 bg-pink-500/5 backdrop-blur-md z-[100] cursor-pointer flex items-center justify-center gap-2 text-pink-400/60 font-mono text-[9px] uppercase font-bold tracking-widest hover:bg-pink-500/10 hover:text-pink-400 active:scale-95 transition-all shadow-lg outline-none"
         >
-          <Hand size={12} className="animate-bounce" /> Rub To Pet Eilo Core
-        </div>
+          <Hand size={12} className="animate-bounce" /> Tap To Pet Eilo Core
+        </button>
 
         <div 
           onClick={handleFaceClick}

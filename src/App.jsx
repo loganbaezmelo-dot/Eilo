@@ -469,25 +469,6 @@ export default function App() {
     }, 100);
   }, [user, activeThreadId]);
 
-  const handleSelectThread = (id) => {
-    setActiveThreadId(id);
-    localStorage.setItem('eilo_active_thread', id);
-  };
-
-  const handleNewThread = () => {
-    if (!user) return;
-    const nextId = "thread_" + Date.now();
-    const newSession = { id: nextId, title: "New Soul Sync...", updatedAt: Date.now() };
-    
-    setThreads(prev => {
-      const updated = [newSession, ...prev];
-      localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
-      return updated;
-    });
-    handleSelectThread(nextId);
-    speak("New timeline initialized! ✨");
-  };
-
   const toggleMic = () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -827,6 +808,16 @@ export default function App() {
     setTimeout(() => setMood('neutral'), 3000);
   };
 
+  // FIXED TACTILE FRICTION THROTTLER: Allows rubbing in landscape without calling state loops infinitely
+  const lastLandscapeRubTime = useRef(0);
+  const handleLandscapeRubPet = (e) => {
+    const now = Date.now();
+    if (now - lastLandscapeRubTime.current > 1200) { 
+      lastLandscapeRubTime.current = now;
+      handlePet();
+    }
+  };
+
   useEffect(() => {
     const handleMotion = (event) => {
         if (!user || isChaosMode) return; 
@@ -881,36 +872,37 @@ export default function App() {
     
     const choice = actions[Math.floor(Math.random() * actions.length)];
     
+    // FIXED PORTRAIT IDLES: Voice strings restored directly inside the timeline layout cycle
     if (choice === 'computer') { 
-        if (hasInteracted) speak("Coding a new website... tap tap tap! 💻✨"); 
+        speak("Coding a new website... tap tap tap! 💻✨"); 
         sendNotification("Coding a new website... tap tap tap! 💻✨");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 6000); 
     }
     else if (choice === 'phone') {
-        if (hasInteracted) speak("Checking notifications, opening the Samsung developer options terminal! 📱");
+        speak("Checking notifications, opening the Samsung developer options terminal! 📱");
         sendNotification("Eilo is scrolling on her phone... 📱");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 6000);
     }
     else if (choice === 'lapdock') {
-        if (hasInteracted) speak("Plugging into the LapDock... Initiating Samsung DeX station sync pipeline! 🖥️✨");
+        speak("Plugging into the LapDock... Initiating Samsung DeX station sync pipeline! 🖥️✨");
         sendNotification("Eilo is using Samsung DeX on her LapDock! 🖥️");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 8000);
     }
     else if (choice === 'sleeping') { 
-        if (hasInteracted) speak("Zzz... napping... Zzz."); 
+        speak("Zzz... napping... Zzz."); 
         setMood(choice);
     } 
     else if (choice === 'eating') { 
-        if (hasInteracted) speak("Nom nom! Sandwich! ✨"); 
+        speak("Nom nom! Sandwich! ✨"); 
         sendNotification("Nom nom! Sandwich! 🥪");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 6000); 
     }
     else if (choice === 'rubik') { 
-        if (hasInteracted) speak("Cube time! 🧩"); 
+        speak("Cube time! 🧩"); 
         sendNotification("Cube time! 🧩");
         setMood(choice);
         setTimeout(() => setMood('neutral'), 8000); 
@@ -933,7 +925,7 @@ export default function App() {
           idleTimerRef.current = setInterval(triggerIdleAction, 15000);
       }
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
-  }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled, hasInteracted]);
+  }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
@@ -1281,13 +1273,14 @@ export default function App() {
         <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-        {/* FIXED STABLE PET PANEL: Regulated click loop stops infinite frame paint rendering exceptions dead */}
-        <button 
+        {/* FIXED HIDDEN RUB SENSOR MATRIX: Stretches invisibly over forehead zone with safe drag tracking handlers */}
+        <div 
+          onMouseMove={handleLandscapeRubPet}
+          onTouchMove={handleLandscapeRubPet}
           onClick={handlePet}
-          className="absolute top-4 left-1/2 -translate-x-1/2 w-48 h-12 rounded-full border border-pink-500/20 bg-pink-500/5 backdrop-blur-md z-[100] cursor-pointer flex items-center justify-center gap-2 text-pink-400/60 font-mono text-[9px] uppercase font-bold tracking-widest hover:bg-pink-500/10 hover:text-pink-400 active:scale-95 transition-all shadow-lg outline-none"
-        >
-          <Hand size={12} className="animate-bounce" /> Tap To Pet Eilo Core
-        </button>
+          className="absolute top-0 left-1/4 right-1/4 h-2/5 z-[500] cursor-pointer bg-transparent pointer-events-auto"
+          title="Rub Eilo Forehead"
+        />
 
         <div 
           onClick={handleFaceClick}

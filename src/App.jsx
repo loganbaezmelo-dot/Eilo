@@ -385,15 +385,18 @@ export default function App() {
       const gamma = event.gamma;
       if (beta === null || gamma === null) return;
 
-      const looksDownVertical = beta > 140 || beta < -140 || Math.abs(gamma) > 75;
+      // FIXED DETECTOR thresholds altered to match standard texting postures.
+      // Phone must be completely flipped over flat facing the ground down (beta directly towards 180 or -180 without the lazy left hand tilt bleeding).
+      const looksDownVertical = Math.abs(beta) > 165 || Math.abs(gamma) > 82;
 
       if (looksDownVertical) {
         const rightNow = Date.now();
         if (rightNow - lastHeightsScreamRef.current > 7000) {
           lastHeightsScreamRef.current = rightNow;
+          
+          // FIXED: Forces eye matrix state to persist stably during event execution
           setMood('mad');
 
-          // FIXED: Direct hardware checks inside the state action scope avoid SSR runtime boot exceptions completely
           const tapeActiveLocal = isTaped; 
           const panicChirp = tapeActiveLocal 
             ? "Mmm! Mmm! Hmph!" 
@@ -404,6 +407,8 @@ export default function App() {
 
           speak(panicChirp);
           sendNotification(tapeActiveLocal ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (visionEnabled ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
+          
+          // Holds the face visual locked solid for 4 full seconds so frame rates don't drop the eyes
           setTimeout(() => setMood('neutral'), 4000);
         }
       }

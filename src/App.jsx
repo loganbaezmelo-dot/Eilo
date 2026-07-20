@@ -257,6 +257,7 @@ export default function App() {
   const streamRef = useRef(null);
   const lastHeightsScreamRef = useRef(0);
   const ignoreHeightsTimerRef = useRef(0);
+  const lastLandscapeRubTime = useRef(0);
 
   const isTapedValueRef = useRef(isTaped);
   const visionEnabledValueRef = useRef(visionEnabled);
@@ -469,7 +470,74 @@ export default function App() {
     }, 100);
   }, [user, activeThreadId]);
 
-  const toggleMic = () => {
+  const handleSelectThread = (id) => {
+    setActiveThreadId(id);
+    localStorage.setItem('eilo_active_thread', id);
+  };
+
+  const handleNewThread = () => {
+    if (!user) return;
+    const nextId = "thread_" + Date.now();
+    const newSession = { id: nextId, title: "New Soul Sync...", updatedAt: Date.now() };
+    
+    setThreads(prev => {
+      const updated = [newSession, ...prev];
+      localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
+      return updated;
+    });
+    handleSelectThread(nextId);
+    speak("New timeline initialized! ✨");
+  };
+
+  const toggleMoodToHappy = () => {
+    const now = Date.now();
+    if (now - lastLandscapeRubTime.current > 1200) { 
+      lastLandscapeRubTime.current = now;
+      handlePet();
+    }
+  };
+
+  useEffect(() => {
+    localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
+  }, [threads]);
+
+  useEffect(() => {
+    if (!user?.uid || !activeThreadId) return;
+    
+    try {
+      const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+      const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+      const threadMessages = globalCache[activeThreadId] || [];
+      setMessages(threadMessages);
+    } catch (e) {
+      setMessages([]);
+    }
+
+    setTimeout(() => {
+        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    }, 100);
+  }, [user, activeThreadId]);
+
+  const handleSelectThreadAndSave = (id) => {
+    setActiveThreadId(id);
+    localStorage.setItem('eilo_active_thread', id);
+  };
+
+  const handleCreateNewThread = () => {
+    if (!user) return;
+    const nextId = "thread_" + Date.now();
+    const newSession = { id: nextId, title: "New Soul Sync...", updatedAt: Date.now() };
+    
+    setThreads(prev => {
+      const updated = [newSession, ...prev];
+      localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
+      return updated;
+    });
+    handleSelectThreadAndSave(nextId);
+    speak("New timeline initialized! ✨");
+  };
+
+  const toggleMicInputDevice = () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
           speak("My ears are broken! Your browser doesn't support mic input.");
@@ -808,16 +876,6 @@ export default function App() {
     setTimeout(() => setMood('neutral'), 3000);
   };
 
-  // FIXED TACTILE FRICTION THROTTLER: Allows rubbing in landscape without calling state loops infinitely
-  const lastLandscapeRubTime = useRef(0);
-  const handleLandscapeRubPet = (e) => {
-    const now = Date.now();
-    if (now - lastLandscapeRubTime.current > 1200) { 
-      lastLandscapeRubTime.current = now;
-      handlePet();
-    }
-  };
-
   useEffect(() => {
     const handleMotion = (event) => {
         if (!user || isChaosMode) return; 
@@ -872,7 +930,6 @@ export default function App() {
     
     const choice = actions[Math.floor(Math.random() * actions.length)];
     
-    // FIXED PORTRAIT IDLES: Voice strings restored directly inside the timeline layout cycle
     if (choice === 'computer') { 
         speak("Coding a new website... tap tap tap! 💻✨"); 
         sendNotification("Coding a new website... tap tap tap! 💻✨");
@@ -1273,13 +1330,13 @@ export default function App() {
         <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-        {/* FIXED HIDDEN RUB SENSOR MATRIX: Stretches invisibly over forehead zone with safe drag tracking handlers */}
+        {/* INSULATED TOUCH SURFACE MATRIX: Clean, invisible overlay responds safely to friction drag movements without loops */}
         <div 
-          onMouseMove={handleLandscapeRubPet}
-          onTouchMove={handleLandscapeRubPet}
+          onMouseMove={toggleMoodToHappy}
+          onTouchMove={toggleMoodToHappy}
           onClick={handlePet}
           className="absolute top-0 left-1/4 right-1/4 h-2/5 z-[500] cursor-pointer bg-transparent pointer-events-auto"
-          title="Rub Eilo Forehead"
+          title="Rub Eilo Forehead Matrix"
         />
 
         <div 
@@ -1292,7 +1349,7 @@ export default function App() {
 
         <div className="absolute bottom-8 left-8 z-[100] flex items-center gap-3">
            <button 
-             onClick={toggleMic} 
+             onClick={toggleMicInputDevice} 
              className={`p-5 rounded-full border shadow-2xl active:scale-95 transition-all text-white ${isInfinityMic ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
            >
              <Mic size={24} />
@@ -1340,7 +1397,7 @@ export default function App() {
               isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
               visionEnabled={visionEnabled} toggleCamera={toggleCameraScanner}
               fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
-              isInfinityMic={isInfinityMic} toggleMic={toggleMic}
+              isInfinityMic={isInfinityMic} toggleMic={toggleMicInputDevice}
               notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
               bucks={bucks} inventory={inventory} buyItem={buyItem}
               faceOffset={faceOffset} setFaceOffset={setFaceOffset}
@@ -1484,7 +1541,7 @@ export default function App() {
         </div>
 
         <div className="grid grid-cols-3 gap-3 flex-shrink-0">
-          <button onClick={toggleMic} className={`p-3.5 rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
+          <button onClick={toggleMicInputDevice} className={`p-3.5 rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
             <Mic size={16} />
             <span className="text-[7px] uppercase font-bold tracking-widest">Infinity Mic</span>
           </button>
@@ -1498,8 +1555,8 @@ export default function App() {
         onClose={() => setShowHistory(false)} 
         threads={threads} 
         activeThreadId={activeThreadId} 
-        onSelectThread={handleSelectThread} 
-        onNewThread={handleNewThread} 
+        onSelectThread={handleSelectThreadAndSave} 
+        onNewThread={handleCreateNewThread} 
       />
 
       {showSettings && <SettingsOverlay 
@@ -1509,7 +1566,7 @@ export default function App() {
             isChaosMode={isChaosMode} setIsChaosMode={setIsChaosMode}
             visionEnabled={visionEnabled} toggleCamera={toggleCameraScanner}
             fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
-            isInfinityMic={isInfinityMic} toggleMic={toggleMic}
+            isInfinityMic={isInfinityMic} toggleMic={toggleMicInputDevice}
             notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
             bucks={bucks} inventory={inventory} buyItem={buyItem}
             faceOffset={faceOffset} setFaceOffset={setFaceOffset}

@@ -258,7 +258,7 @@ export default function App() {
   const lastHeightsScreamRef = useRef(0);
   const ignoreHeightsTimerRef = useRef(0);
 
-  // FIXED: Setup direct reactive mutable tracking blocks that don't trigger layout cascades
+  // Direct reactive memory blocks isolate hardware parameters cleanly from server compiling steps
   const isTapedValueRef = useRef(isTaped);
   const visionEnabledValueRef = useRef(visionEnabled);
 
@@ -407,7 +407,6 @@ export default function App() {
           
           setMood('mad');
 
-          // FIXED SSR: Reads isolated structural reference refs instead of browser DOM query selectors
           const tapeActiveLocal = isTapedValueRef.current;
           const scannerActiveLocal = visionEnabledValueRef.current;
 
@@ -1283,11 +1282,13 @@ export default function App() {
         <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
+        {/* FIXED TACTILE FRICTION LENS: Fully visible panel with active touch movement tracking hooks */}
         <div 
-          onClick={handlePet}
-          className="absolute top-0 left-1/4 right-1/4 h-1/3 z-50 cursor-pointer flex items-center justify-center opacity-0 hover:opacity-10 transition-opacity bg-white/5 rounded-b-[40px]"
+          onMouseMove={handlePet}
+          onTouchMove={handlePet}
+          className="absolute top-4 left-1/2 -translate-x-1/2 w-48 h-12 rounded-full border border-pink-500/20 bg-pink-500/5 backdrop-blur-md z-[100] cursor-pointer flex items-center justify-center gap-2 text-pink-400/60 font-mono text-[9px] uppercase font-bold tracking-widest hover:bg-pink-500/10 hover:text-pink-400 transition-all shadow-lg"
         >
-          <Hand size={32} className="text-pink-400 animate-pulse"/>
+          <Hand size={12} className="animate-bounce" /> Rub To Pet Eilo Core
         </div>
 
         <div 

@@ -5,17 +5,20 @@
   "description": "High-performance virtual entity infrastructure for a seamless mobile experience.",
   "icons": [
     {
-      "src": "icon-192.png",
+      "src": "/icon-192.png",
       "type": "image/png",
-      "sizes": "192x192"
+      "sizes": "192x192",
+      "purpose": "any maskable"
     },
     {
-      "src": "icon-512.png",
+      "src": "/icon-512.png",
       "type": "image/png",
-      "sizes": "512x512"
+      "sizes": "512x512",
+      "purpose": "any maskable"
     }
   ],
   "start_url": "/",
+  "id": "/",
   "display": "standalone",
   "theme_color": "#0c0c14",
   "background_color": "#0c0c14",

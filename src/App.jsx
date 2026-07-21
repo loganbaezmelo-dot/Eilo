@@ -1436,7 +1436,7 @@ export default function App() {
   // --- STANDARD PORTRAIT APP RENDER ROUTINE ---
   const cleanMessages = Array.isArray(messages) ? messages : [];
   return (
-    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-4 overflow-hidden">
+    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-4 overflow-hidden select-none">
       <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
@@ -1453,6 +1453,15 @@ export default function App() {
 
       {/* PORTRAIT CORE CONTAINER */}
       <div className="w-full max-w-xl p-4 flex-1 flex items-center justify-center relative min-h-0">
+        {/* PORTRAIT FOREHEAD PETTING SENSOR ZONE */}
+        <div 
+          onMouseMove={toggleMoodToHappy}
+          onTouchMove={toggleMoodToHappy}
+          onClick={handlePet}
+          className="absolute top-2 left-1/4 right-1/4 h-24 z-[500] cursor-pointer bg-transparent pointer-events-auto"
+          title="Rub Eilo Forehead Matrix"
+        />
+
         <div 
             onClick={handleFaceClick}
             className={`w-full max-w-sm h-56 rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 relative ${isChaosMode ? 'bg-black/90' : ''}`}

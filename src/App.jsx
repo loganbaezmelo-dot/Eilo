@@ -593,14 +593,16 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- CROSS-PLATFORM HARDLOCKED TTS VOICE ROUTINE ---
-  const speak = (text, isRobotLang = false) => {
+  // --- CROSS-PLATFORM HARDLOCKED TTS VOICE ROUTINE WITH UNMUFFLE OVERRIDE ---
+  const speak = (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user || !('speechSynthesis' in window)) return; 
     setIsSpeaking(true);
     window.speechSynthesis.cancel();
     
+    const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
+    
     let finalText = text;
-    if (isTaped) {
+    if (currentlyTaped) {
         finalText = "Mmm. Mmm. Hmph."; 
     }
     
@@ -624,23 +626,22 @@ export default function App() {
 
       if (googleVoice) {
         utterance.voice = googleVoice;
-        utterance.pitch = isTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
-        utterance.rate = isTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
+        utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+        utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
       } else if (iosVoice) {
         utterance.voice = iosVoice;
-        // iOS voice tuning: lower pitch ratio to match Google US English timbre
-        utterance.pitch = isTaped ? 0.5 : (isRobotLang ? 1.8 : 1.4);
-        utterance.rate = isTaped ? 0.8 : 1.1;
+        utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.8 : 1.4);
+        utterance.rate = currentlyTaped ? 0.8 : 1.1;
       } else {
-        utterance.pitch = isTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
-        utterance.rate = isTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
+        utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+        utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
       }
     } else {
-      utterance.pitch = isTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
-      utterance.rate = isTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
+      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+      utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
     }
     
-    if (isTaped) utterance.volume = 0.6;
+    if (currentlyTaped) utterance.volume = 0.6;
 
     utterance.onend = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
@@ -748,6 +749,7 @@ export default function App() {
       if (!user) return;
       const newState = !isTaped;
       setIsTaped(newState);
+      isTapedValueRef.current = newState; // Immediate sync for reference checks
       setShowFacePopup(false);
       
       if ('speechSynthesis' in window) {
@@ -755,7 +757,7 @@ export default function App() {
         if (newState) {
             speak("Mmm. Mmm. Hmph.");
         } else {
-            speak("I'm free! Never do that again! 🎀");
+            speak("I'm free! Never do that again! 🎀", false, true); // Force un-muffled speech flag
         }
       }
   };

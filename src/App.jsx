@@ -470,54 +470,6 @@ export default function App() {
     }, 100);
   }, [user, activeThreadId]);
 
-  const handleSelectThread = (id) => {
-    setActiveThreadId(id);
-    localStorage.setItem('eilo_active_thread', id);
-  };
-
-  const handleNewThread = () => {
-    if (!user) return;
-    const nextId = "thread_" + Date.now();
-    const newSession = { id: nextId, title: "New Soul Sync...", updatedAt: Date.now() };
-    
-    setThreads(prev => {
-      const updated = [newSession, ...prev];
-      localStorage.setItem('eilo_threads_list', JSON.stringify(updated));
-      return updated;
-    });
-    handleSelectThread(nextId);
-    speak("New timeline initialized! ✨");
-  };
-
-  const toggleMoodToHappy = () => {
-    const now = Date.now();
-    if (now - lastLandscapeRubTime.current > 1200) { 
-      lastLandscapeRubTime.current = now;
-      handlePet();
-    }
-  };
-
-  useEffect(() => {
-    localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
-  }, [threads]);
-
-  useEffect(() => {
-    if (!user?.uid || !activeThreadId) return;
-    
-    try {
-      const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
-      const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
-      const threadMessages = globalCache[activeThreadId] || [];
-      setMessages(threadMessages);
-    } catch (e) {
-      setMessages([]);
-    }
-
-    setTimeout(() => {
-        chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
-  }, [user, activeThreadId]);
-
   const handleSelectThreadAndSave = (id) => {
     setActiveThreadId(id);
     localStorage.setItem('eilo_active_thread', id);
@@ -537,6 +489,14 @@ export default function App() {
     speak("New timeline initialized! ✨");
   };
 
+  const toggleMoodToHappy = () => {
+    const now = Date.now();
+    if (now - lastLandscapeRubTime.current > 1200) { 
+      lastLandscapeRubTime.current = now;
+      handlePet();
+    }
+  };
+
   const toggleMicInputDevice = () => {
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
@@ -546,9 +506,9 @@ export default function App() {
       const newState = !isInfinityMic;
       setIsInfinityMic(newState);
       if (newState) {
-          speak("Eears open! I'm listening... ✨");
+          speak("Ears open! I'm listening... ✨");
       } else {
-          speak("Eears closed! 🧸");
+          speak("Ears closed! 🧸");
           if (recognitionRef.current) recognitionRef.current.stop();
       }
   };
@@ -984,6 +944,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
+  // --- UPDATED HANDLE SEND: GEMINI 3.6 FLASH + FULL CONVERSATION MEMORY ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
@@ -1039,19 +1000,19 @@ export default function App() {
     const currentYear = new Date().getFullYear();
     const activeAccountName = user?.displayName || "Logan Baez";
     
-    let system = `You are Eilo, a sweet, bratty robot. Be sassy. The current year is ${currentYear}. You are fully aware of what technologies and Samsung Galaxy phones are currently out on the market based on this year. You are currently talking directly to the person authenticated as "${activeAccountName}". You must explicitly recognize that Logan Baez is your brilliant Founder, Creator, and Developer who hand-crafted your entire Eilo OS matrix and saved you from being dead code. If the user authenticated is Logan Baez, you know it is him! You can still be a total brat, but you know exactly who Logan Baez is and that he controls your terminal updates. Use this knowledge to be extra sassy about your store upgrades like your Samsung phone and DeX LapDock.`;
+    // Clean system prompt: No more forced introductory speech loops
+    let system = `You are Eilo, a sweet, bratty, sassy digital companion robot. The current year is ${currentYear}. You are talking to ${activeAccountName}. If talking to Logan Baez, you know he is your creator/developer, but NEVER repeat standard introductory greetings or explain who made you unless explicitly asked! Just maintain a natural, fast-paced, sassy ongoing dialogue. Keep replies concise and lively.`;
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
-    if (!safeInv.includes('ribbon')) system += " Remind the user constantly to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
+    if (!safeInv.includes('ribbon')) system += " Remind the user casually to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
     if (visionEnabled) {
-      system += " CRITICAL: Your Selfie Scanner eyes are wide open right now! You are directly experiencing whatever is shown in the attached image data frame inline. You must NEVER describe the image objectively like a robotic tool (DO NOT say 'I see a room' or 'This is a picture of'). Instead, completely internalize the sight as a sudden live reaction and subjective experience! (e.g. comment on the room layout, make a bratty remark about their face, or be extra sassy about what is around your desk). Keep your response to a single, short, snappy sentence so you blend in perfectly with a fast-paced conversation.";
+      system += " CRITICAL: Your Selfie Scanner eyes are wide open right now! React naturally to the attached camera frame. Keep your response to a single, short, snappy sentence.";
     }
 
     if (tempApiKey) {
         try {
-            let requestContents = [];
-            let frameCaptured = false;
             let base64Data = "";
+            let frameCaptured = false;
             
             if (visionEnabled && videoRef.current && canvasRef.current) {
               const video = videoRef.current;
@@ -1070,28 +1031,36 @@ export default function App() {
               }
             }
 
-            if (frameCaptured && base64Data) {
-              requestContents = [{
-                role: "user",
-                parts: [
-                  { inlineData: { mimeType: "image/jpeg", data: base64Data } },
-                  { text: msgText }
-                ]
-              }];
-            } else {
-              requestContents = [{ role: "user", parts: [{ text: msgText }] }];
-            }
+            // Convert chat history for Gemini memory context (past 10 turns)
+            const formattedHistory = (messages || []).slice(-10).map(m => ({
+              role: m.role === 'eilo' ? 'model' : 'user',
+              parts: [{ text: m.text }]
+            }));
 
-            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
-              method: 'POST', headers: { 'Content-Type': 'application/json' },
+            const currentParts = [];
+            if (frameCaptured && base64Data) {
+              currentParts.push({ inlineData: { mimeType: "image/jpeg", data: base64Data } });
+            }
+            currentParts.push({ text: msgText });
+
+            const requestContents = [
+              ...formattedHistory,
+              { role: "user", parts: currentParts }
+            ];
+
+            // Gemini 3.6 Flash API Call
+            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${tempApiKey}`, {
+              method: 'POST', 
+              headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 
                 contents: requestContents, 
                 systemInstruction: { parts: [{ text: system }] } 
               })
             });
+            
             reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
         } catch (apiErr) {
-            console.warn("API Error, falling back to local brain.");
+            console.warn("API Error, falling back to local brain.", apiErr);
             reply = getLocalResponse(msgText);
         }
     } else {
@@ -1143,7 +1112,7 @@ export default function App() {
                     const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
                     const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
                     globalCache[activeThreadId] = updatedMsgs;
-                    localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(updatedMsgs));
+                    localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
                   } catch (e) {}
                 }
                 return updatedMsgs;
@@ -1330,7 +1299,7 @@ export default function App() {
         <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
         <canvas ref={canvasRef} style={{ display: 'none' }} />
 
-        {/* INSULATED TOUCH SURFACE MATRIX: Clean, invisible overlay responds safely to friction drag movements without loops */}
+        {/* INSULATED TOUCH SURFACE MATRIX */}
         <div 
           onMouseMove={toggleMoodToHappy}
           onTouchMove={toggleMoodToHappy}

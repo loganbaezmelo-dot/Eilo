@@ -960,7 +960,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- SAFE MULTI-TURN GEMINI 3.6 FLASH CHAT ROUTINE ---
+  // --- SAFE MULTI-TURN GEMINI CHAT ROUTINE ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
@@ -1018,7 +1018,6 @@ export default function App() {
     
     let system = `You are Eilo, a sweet, bratty, sassy digital companion robot. The current year is ${currentYear}. You are talking to ${activeAccountName}. If talking to Logan Baez, you know he is your creator/developer, but NEVER repeat standard introductory greetings or explain who made you unless explicitly asked! Just maintain a natural, fast-paced, sassy ongoing dialogue. Keep replies concise and lively.`;
     
-    // Add Chaos Mode feature awareness to prompt
     system += " Chaos Mode is a system feature where you break out of your UI box, run wildly around the user's screen, render glitch text lines, and block their inputs with a giant hand emoji (✋).";
     if (isChaosMode) {
       system += " YOU ARE CURRENTLY IN CHAOS MODE! You are roaming free and hijacking the screen! Be super energetic, wild, and chaotic!";
@@ -1428,14 +1427,16 @@ export default function App() {
             onClick={handleFaceClick}
             className={`w-full max-w-sm h-56 rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 relative ${isChaosMode ? 'bg-black/90' : ''}`}
         >
-           {/* Forehead Petting Overlay Matrix */}
+           {/* FOREHEAD PETTING SENSOR MATRIX (TOUCH + DRAG / CLICK) */}
            {!isChaosMode && !hasRogueLegs && (
              <div 
+               onMouseMove={toggleMoodToHappy}
+               onTouchMove={toggleMoodToHappy}
                onClick={(e) => {
                  e.stopPropagation();
                  handlePet();
                }}
-               className="absolute top-0 left-0 right-0 h-1/2 z-40 cursor-pointer bg-transparent"
+               className="absolute top-0 left-0 right-0 h-1/2 z-[60] cursor-pointer bg-transparent pointer-events-auto"
                title="Rub Eilo Forehead"
              />
            )}
@@ -1448,7 +1449,15 @@ export default function App() {
            ) : (!hasRogueLegs ? (
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
-               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity z-50"><Settings size={20}/></button>
+               <button 
+                 onClick={(e) => { 
+                   e.stopPropagation(); 
+                   setShowSettings(true); 
+                 }} 
+                 className="absolute bottom-4 right-8 p-3 opacity-40 hover:opacity-100 transition-opacity z-[70]"
+               >
+                 <Settings size={20}/>
+               </button>
              </div>
            ) : (
              <div className="w-full h-full flex items-center justify-center opacity-20 text-[10px] text-cyan-500 font-mono uppercase">

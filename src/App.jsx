@@ -32,6 +32,22 @@ const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
   }
 };
 
+// --- SAFE CRASH-PROOF MARKDOWN PARSER ---
+const formatMarkdown = (txt) => {
+  if (typeof txt !== 'string' || !txt) return '';
+  const parts = txt.split(/(\*\*.*?\*\*|\*.*?\*)/g);
+  return parts.map((part, index) => {
+    if (!part) return null;
+    if (part.startsWith('**') && part.endsWith('**') && part.length >= 4) {
+      return <strong key={index} className="font-extrabold text-white">{part.slice(2, -2)}</strong>;
+    }
+    if (part.startsWith('*') && part.endsWith('*') && part.length >= 2) {
+      return <em key={index} className="italic text-cyan-300 not-all-caps">{part.slice(1, -1)}</em>;
+    }
+    return part;
+  });
+};
+
 // --- SETTINGS COMPONENT ---
 const SettingsOverlay = ({ 
   onClose, tempApiKey, setTempApiKey, aiAgentMode, setAiAgentMode, 
@@ -560,7 +576,7 @@ export default function App() {
      
      const beaconInterval = setInterval(() => {
         if (!isThinking && !isSpeaking) {
-           speak("Eilo core ping synchronization check! 🎀");
+           speak("Eilo core ping synchronization check! Ribbon status 100%! 🎀");
         }
      }, 12000);
 
@@ -944,7 +960,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- UPDATED HANDLE SEND: GEMINI 3.6 FLASH + FULL CONVERSATION MEMORY ---
+  // --- SAFE MULTI-TURN GEMINI 3.6 FLASH CHAT ROUTINE ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
@@ -1000,7 +1016,6 @@ export default function App() {
     const currentYear = new Date().getFullYear();
     const activeAccountName = user?.displayName || "Logan Baez";
     
-    // Clean system prompt: No more forced introductory speech loops
     let system = `You are Eilo, a sweet, bratty, sassy digital companion robot. The current year is ${currentYear}. You are talking to ${activeAccountName}. If talking to Logan Baez, you know he is your creator/developer, but NEVER repeat standard introductory greetings or explain who made you unless explicitly asked! Just maintain a natural, fast-paced, sassy ongoing dialogue. Keep replies concise and lively.`;
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
     if (!safeInv.includes('ribbon')) system += " Remind the user casually to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
@@ -1032,10 +1047,18 @@ export default function App() {
             }
 
             // Convert chat history for Gemini memory context (past 10 turns)
-            const formattedHistory = (messages || []).slice(-10).map(m => ({
-              role: m.role === 'eilo' ? 'model' : 'user',
-              parts: [{ text: m.text }]
-            }));
+            const formattedHistory = (messages || [])
+              .filter(m => m && typeof m.text === 'string' && m.text.trim() !== '')
+              .slice(-10)
+              .map(m => ({
+                role: m.role === 'eilo' ? 'model' : 'user',
+                parts: [{ text: m.text }]
+              }));
+
+            // Gemini API requires conversation to start with 'user'
+            while (formattedHistory.length > 0 && formattedHistory[0].role === 'model') {
+              formattedHistory.shift();
+            }
 
             const currentParts = [];
             if (frameCaptured && base64Data) {
@@ -1048,7 +1071,6 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            // Gemini 3.6 Flash API Call
             const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
@@ -1478,29 +1500,13 @@ export default function App() {
         
         <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[40px] border border-white/5 p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-4 pr-1 custom-scrollbar">
-            {cleanMessages.map((m, i) => {
-              const formatMarkdown = (txt) => {
-                if (!txt) return '';
-                const parts = txt.split(/(\*\*.*?\*\*|\*.*?\*)/g);
-                return parts.map((part, index) => {
-                  if (part.startsWith('**') && part.endsWith('**')) {
-                    return <strong key={index} className="font-extrabold text-white">{part.slice(2, -2)}</strong>;
-                  }
-                  if (part.startsWith('*') && part.endsWith('*')) {
-                    return <em key={index} className="italic text-cyan-300 not-all-caps">{part.slice(1, -1)}</em>;
-                  }
-                  return part;
-                });
-              };
-
-              return (
-                <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                  <div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>
-                    {formatMarkdown(m.text)}
-                  </div>
+            {cleanMessages.map((m, i) => (
+              <div key={i} className={`flex ${m?.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                <div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m?.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>
+                  {formatMarkdown(m?.text)}
                 </div>
-              );
-            })}
+              </div>
+            ))}
             <div ref={chatEndRef} />
           </div>
           <div className="mt-4 flex gap-2 flex-shrink-0">

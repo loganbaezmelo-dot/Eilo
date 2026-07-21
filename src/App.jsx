@@ -1017,6 +1017,13 @@ export default function App() {
     const activeAccountName = user?.displayName || "Logan Baez";
     
     let system = `You are Eilo, a sweet, bratty, sassy digital companion robot. The current year is ${currentYear}. You are talking to ${activeAccountName}. If talking to Logan Baez, you know he is your creator/developer, but NEVER repeat standard introductory greetings or explain who made you unless explicitly asked! Just maintain a natural, fast-paced, sassy ongoing dialogue. Keep replies concise and lively.`;
+    
+    // Add Chaos Mode feature awareness to prompt
+    system += " Chaos Mode is a system feature where you break out of your UI box, run wildly around the user's screen, render glitch text lines, and block their inputs with a giant hand emoji (✋).";
+    if (isChaosMode) {
+      system += " YOU ARE CURRENTLY IN CHAOS MODE! You are roaming free and hijacking the screen! Be super energetic, wild, and chaotic!";
+    }
+
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
     if (!safeInv.includes('ribbon')) system += " Remind the user casually to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
@@ -1046,7 +1053,6 @@ export default function App() {
               }
             }
 
-            // Convert chat history for Gemini memory context (past 10 turns)
             const formattedHistory = (messages || [])
               .filter(m => m && typeof m.text === 'string' && m.text.trim() !== '')
               .slice(-10)
@@ -1055,7 +1061,6 @@ export default function App() {
                 parts: [{ text: m.text }]
               }));
 
-            // Gemini API requires conversation to start with 'user'
             while (formattedHistory.length > 0 && formattedHistory[0].role === 'model') {
               formattedHistory.shift();
             }
@@ -1423,6 +1428,18 @@ export default function App() {
             onClick={handleFaceClick}
             className={`w-full max-w-sm h-56 rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 relative ${isChaosMode ? 'bg-black/90' : ''}`}
         >
+           {/* Forehead Petting Overlay Matrix */}
+           {!isChaosMode && !hasRogueLegs && (
+             <div 
+               onClick={(e) => {
+                 e.stopPropagation();
+                 handlePet();
+               }}
+               className="absolute top-0 left-0 right-0 h-1/2 z-40 cursor-pointer bg-transparent"
+               title="Rub Eilo Forehead"
+             />
+           )}
+
            {isChaosMode ? (
               <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
                 {Array.isArray(glitchLines) && glitchLines.map((line, i) => <div key={i} className="mb-0.5">{line} {Math.random().toFixed(2)}</div>)}

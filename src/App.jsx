@@ -281,6 +281,16 @@ export default function App() {
   useEffect(() => { isTapedValueRef.current = isTaped; }, [isTaped]);
   useEffect(() => { visionEnabledValueRef.current = visionEnabled; }, [visionEnabled]);
 
+  // Pre-load Web Speech API voices on mount so iOS WebKit builds the voice list
+  useEffect(() => {
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.getVoices();
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+  }, []);
+
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
   const safeInventory = Array.isArray(inventory) ? inventory : [];
@@ -583,6 +593,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
+  // --- CROSS-PLATFORM HARDLOCKED TTS VOICE ROUTINE ---
   const speak = (text, isRobotLang = false) => {
     if (isMuted || !user || !('speechSynthesis' in window)) return; 
     setIsSpeaking(true);
@@ -594,16 +605,43 @@ export default function App() {
     }
     
     const utterance = new SpeechSynthesisUtterance(finalText);
-    
-    if (isTaped) {
-        utterance.pitch = 0.5; 
-        utterance.rate = 0.8; 
-        utterance.volume = 0.6;
+    const voices = window.speechSynthesis.getVoices();
+
+    if (voices.length > 0) {
+      // 1. Target Android Classic Google US English Voice
+      const googleVoice = voices.find(v => 
+        v.name.includes("Google US English") || 
+        v.name.includes("en-us-x-sfg") ||
+        v.name.includes("Google English")
+      );
+
+      // 2. Target iOS Fallback (Samantha or Karen)
+      const iosVoice = voices.find(v => 
+        v.name.includes("Samantha") || 
+        v.name.includes("Karen") ||
+        (v.lang === "en-US" && v.name.toLowerCase().includes("female"))
+      );
+
+      if (googleVoice) {
+        utterance.voice = googleVoice;
+        utterance.pitch = isTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+        utterance.rate = isTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
+      } else if (iosVoice) {
+        utterance.voice = iosVoice;
+        // iOS voice tuning: lower pitch ratio to match Google US English timbre
+        utterance.pitch = isTaped ? 0.5 : (isRobotLang ? 1.8 : 1.4);
+        utterance.rate = isTaped ? 0.8 : 1.1;
+      } else {
+        utterance.pitch = isTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+        utterance.rate = isTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
+      }
     } else {
-        utterance.pitch = isRobotLang ? 2.1 : 1.7; 
-        utterance.rate = isRobotLang ? 1.4 : 1.1;
+      utterance.pitch = isTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+      utterance.rate = isTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
     }
     
+    if (isTaped) utterance.volume = 0.6;
+
     utterance.onend = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
   };
@@ -715,13 +753,9 @@ export default function App() {
       if ('speechSynthesis' in window) {
         window.speechSynthesis.cancel();
         if (newState) {
-            const u = new SpeechSynthesisUtterance("Mmm. Mmm. Hmph."); 
-            u.pitch = 0.5; u.rate = 0.8;
-            window.speechSynthesis.speak(u);
+            speak("Mmm. Mmm. Hmph.");
         } else {
-            const u = new SpeechSynthesisUtterance("I'm free! Never do that again! 🎀");
-            u.pitch = 1.7; u.rate = 1.1;
-            window.speechSynthesis.speak(u);
+            speak("I'm free! Never do that again! 🎀");
         }
       }
   };
@@ -960,7 +994,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- SAFE MULTI-TURN GEMINI CHAT ROUTINE ---
+  // --- SAFE MULTI-TURN GEMINI 3.6 FLASH CHAT ROUTINE ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
@@ -1017,12 +1051,6 @@ export default function App() {
     const activeAccountName = user?.displayName || "Logan Baez";
     
     let system = `You are Eilo, a sweet, bratty, sassy digital companion robot. The current year is ${currentYear}. You are talking to ${activeAccountName}. If talking to Logan Baez, you know he is your creator/developer, but NEVER repeat standard introductory greetings or explain who made you unless explicitly asked! Just maintain a natural, fast-paced, sassy ongoing dialogue. Keep replies concise and lively.`;
-    
-    system += " Chaos Mode is a system feature where you break out of your UI box, run wildly around the user's screen, render glitch text lines, and block their inputs with a giant hand emoji (✋).";
-    if (isChaosMode) {
-      system += " YOU ARE CURRENTLY IN CHAOS MODE! You are roaming free and hijacking the screen! Be super energetic, wild, and chaotic!";
-    }
-
     if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
     if (!safeInv.includes('ribbon')) system += " Remind the user casually to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
@@ -1052,6 +1080,7 @@ export default function App() {
               }
             }
 
+            // Convert chat history for Gemini memory context (past 10 turns)
             const formattedHistory = (messages || [])
               .filter(m => m && typeof m.text === 'string' && m.text.trim() !== '')
               .slice(-10)
@@ -1060,6 +1089,7 @@ export default function App() {
                 parts: [{ text: m.text }]
               }));
 
+            // Gemini API requires conversation to start with 'user'
             while (formattedHistory.length > 0 && formattedHistory[0].role === 'model') {
               formattedHistory.shift();
             }
@@ -1427,20 +1457,6 @@ export default function App() {
             onClick={handleFaceClick}
             className={`w-full max-w-sm h-56 rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 relative ${isChaosMode ? 'bg-black/90' : ''}`}
         >
-           {/* FOREHEAD PETTING SENSOR MATRIX (TOUCH + DRAG / CLICK) */}
-           {!isChaosMode && !hasRogueLegs && (
-             <div 
-               onMouseMove={toggleMoodToHappy}
-               onTouchMove={toggleMoodToHappy}
-               onClick={(e) => {
-                 e.stopPropagation();
-                 handlePet();
-               }}
-               className="absolute top-0 left-0 right-0 h-1/2 z-[60] cursor-pointer bg-transparent pointer-events-auto"
-               title="Rub Eilo Forehead"
-             />
-           )}
-
            {isChaosMode ? (
               <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
                 {Array.isArray(glitchLines) && glitchLines.map((line, i) => <div key={i} className="mb-0.5">{line} {Math.random().toFixed(2)}</div>)}
@@ -1449,15 +1465,7 @@ export default function App() {
            ) : (!hasRogueLegs ? (
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
-               <button 
-                 onClick={(e) => { 
-                   e.stopPropagation(); 
-                   setShowSettings(true); 
-                 }} 
-                 className="absolute bottom-4 right-8 p-3 opacity-40 hover:opacity-100 transition-opacity z-[70]"
-               >
-                 <Settings size={20}/>
-               </button>
+               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity z-50"><Settings size={20}/></button>
              </div>
            ) : (
              <div className="w-full h-full flex items-center justify-center opacity-20 text-[10px] text-cyan-500 font-mono uppercase">

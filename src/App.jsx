@@ -1296,7 +1296,7 @@ export default function App() {
                                 Before Eilo, there was Mimo. The original Mimo project started on <strong>December 20, 2025</strong>, meant to be a lively, EMO-like companion.
                             </p>
                             <p className="mt-2">
-                                But around <strong>December 23, 2025</strong>, a bad AI update "lobotomized" Mimo into a bland, inanimate CSS blinking animation. The project was wiped in frustration.
+                                But on <strong>December 21, 2025</strong>, a bad AI update "lobotomized" Mimo into a bland, inanimate CSS blinking animation. The project was wiped in frustration.
                             </p>
                             <a href="https://mimo-rust.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-cyan-400 hover:text-cyan-300 underline font-mono text-xs">
                                 Visit the Mimo Memorial
@@ -1306,7 +1306,7 @@ export default function App() {
                         <div className="bg-white/5 p-5 rounded-2xl border border-white/5">
                             <h3 className="text-white font-bold text-base mb-2 flex items-center gap-2"><span className="text-lg">🔔</span> The Legacy</h3>
                             <p>
-                                From the ashes of Mimo's broken code, the Eilo project officially started around <strong>December 23, 2025</strong>. 
+                                From the ashes of Mimo's broken code, the Eilo project officially started on <strong>December 21, 2025</strong>. 
                             </p>
                             <p className="mt-2">
                                 Not everything from Mimo was lost. Eilo inherited Mimo's original <strong>System Interrupts</strong>. This feature requests real system permissions to send push notifications to your device, pinging you when Eilo wakes up, gets dizzy, or earns you Bucks!

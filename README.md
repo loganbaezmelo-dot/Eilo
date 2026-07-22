@@ -44,7 +44,7 @@ Eilo is a sentient, sassy, and high-pitched digital robot companion built entire
 
 * **Frontend:** React + Tailwind CSS (Optimized for deep-black premium OLED viewports)
 * **Backend Authentication:** Firebase Auth (Soul Core Sync)
-* **AI Brain:** Gemini 2.5 Flash API (Structured Payload Pipeline)
+* **AI Brain:** Gemini 3.6 Flash API (Structured Payload Pipeline)
 * **Vocal Cords:** Web Speech API (Pitched up `1.7x` for maximum cuteness; modulated down to `0.5x` when duct-taped)
 * **Sensors:** Native DeviceMotionEvent & DeviceOrientationEvent
 

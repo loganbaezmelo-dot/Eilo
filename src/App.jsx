@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { getFirestore, doc, setDoc, getDoc } from 'firebase/firestore';
 import { 
   Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, Eye, Sparkles, Ghost, Cpu, ShieldCheck, LogOut, Menu, Plus, MessageSquare, ShoppingBag
 } from 'lucide-react';
 
-// --- FIREBASE CONFIG (ONLY FOR AUTH) ---
+// --- FIREBASE CONFIG (WITH FIRESTORE) ---
 const firebaseConfig = {
   apiKey: "AIzaSyA4Vc5-bDqsMim6a74GPJk46Yk0caNockE",
   authDomain: "eilo-e5534.firebaseapp.com",
@@ -18,6 +19,7 @@ const firebaseConfig = {
 
 const app = getApps().length === 0 ? initializeApp(firebaseConfig) : getApps()[0];
 const auth = getAuth(app);
+const db = getFirestore(app);
 const googleProvider = new GoogleAuthProvider();
 
 const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
@@ -29,6 +31,20 @@ const fetchWithRetry = async (url, options, retries = 2, backoff = 500) => {
     if (retries <= 0) throw err;
     await new Promise(r => setTimeout(r, backoff));
     return fetchWithRetry(url, options, retries - 1, backoff * 1.5);
+  }
+};
+
+// --- FIRESTORE SESSION SYNC HELPER ---
+const syncSessionToFirestore = async (uid, threadId, chatHistory) => {
+  if (!uid || !threadId) return;
+  try {
+    const sessionDocRef = doc(db, 'users', uid, 'sessions', threadId);
+    await setDoc(sessionDocRef, {
+      updatedAt: Date.now(),
+      messages: chatHistory || []
+    }, { merge: true });
+  } catch (err) {
+    console.warn("Firestore Sync Failed:", err);
   }
 };
 
@@ -495,21 +511,39 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
+  // LOAD SESSION (HYBRID: LOCAL STORAGE FIRST, FIRESTORE DOCUMENT FALLBACK)
   useEffect(() => {
     if (!user?.uid || !activeThreadId) return;
     
-    try {
-      const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
-      const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
-      const threadMessages = globalCache[activeThreadId] || [];
-      setMessages(threadMessages);
-    } catch (e) {
-      setMessages([]);
-    }
-
-    setTimeout(() => {
+    const loadSession = async () => {
+      try {
+        const globalCacheRaw = localStorage.getItem(`eilo_chat_history_${user.uid}`);
+        const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
+        
+        if (globalCache[activeThreadId] && globalCache[activeThreadId].length > 0) {
+          setMessages(globalCache[activeThreadId]);
+        } else {
+          // Firestore Document Fallback
+          const sessionDocRef = doc(db, 'users', user.uid, 'sessions', activeThreadId);
+          const docSnap = await getDoc(sessionDocRef);
+          if (docSnap.exists() && Array.isArray(docSnap.data().messages)) {
+            const firestoreMessages = docSnap.data().messages;
+            setMessages(firestoreMessages);
+            globalCache[activeThreadId] = firestoreMessages;
+            localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+          } else {
+            setMessages([]);
+          }
+        }
+      } catch (e) {
+        setMessages([]);
+      }
+      setTimeout(() => {
         chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }, 100);
+      }, 100);
+    };
+
+    loadSession();
   }, [user, activeThreadId]);
 
   const handleSelectThreadAndSave = (id) => {
@@ -1037,6 +1071,7 @@ export default function App() {
           const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
           globalCache[activeThreadId] = updatedHistory;
           localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+          syncSessionToFirestore(user.uid, activeThreadId, updatedHistory);
         } catch (e) {}
       }
 
@@ -1162,6 +1197,7 @@ export default function App() {
         const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
         globalCache[activeThreadId] = finalMessages;
         localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+        syncSessionToFirestore(user.uid, activeThreadId, finalMessages);
       } catch (e) {}
     }
 
@@ -1187,6 +1223,7 @@ export default function App() {
                     const globalCache = globalCacheRaw ? JSON.parse(globalCacheRaw) : {};
                     globalCache[activeThreadId] = updatedMsgs;
                     localStorage.setItem(`eilo_chat_history_${user.uid}`, JSON.stringify(globalCache));
+                    syncSessionToFirestore(user.uid, activeThreadId, updatedMsgs);
                   } catch (e) {}
                 }
                 return updatedMsgs;

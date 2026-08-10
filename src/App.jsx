@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { initializeApp, getApps } from 'firebase/app';
 import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import { 
-  Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, Eye, Sparkles, Ghost, Cpu, ShieldCheck, LogOut, Menu, Plus, MessageSquare
+  Heart, Moon, Volume2, VolumeX, Send, Zap, Settings, X, Hand, Mic, Eye, Sparkles, Ghost, Cpu, ShieldCheck, LogOut, Menu, Plus, MessageSquare, ShoppingBag
 } from 'lucide-react';
 
 // --- FIREBASE CONFIG (ONLY FOR AUTH) ---
@@ -48,13 +48,69 @@ const formatMarkdown = (txt) => {
   });
 };
 
+// --- DEDICATED STORE OVERLAY ---
+const StoreOverlay = ({ onClose, bucks, inventory, buyItem }) => {
+  const safeInv = Array.isArray(inventory) ? inventory : [];
+
+  return (
+    <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[9999] flex items-center justify-center p-6 text-center font-sans">
+      <div className="bg-[#1c1c28] w-full max-w-sm rounded-[45px] p-8 border border-white/10 relative shadow-2xl flex flex-col max-h-[85vh]">
+        <button onClick={onClose} className="absolute top-8 right-8 text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
+        <h2 className="text-xl font-bold mb-6 flex items-center justify-center gap-2 text-white">Eilo Store <ShoppingBag className="text-yellow-400" size={20}/></h2>
+        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-4 pb-6 text-left">
+            <p className="text-[10px] uppercase font-bold text-yellow-500 mb-3 px-1 flex items-center gap-2">🪙 Balance: {bucks} Bucks</p>
+            <div className="space-y-2">
+               <button onClick={() => buyItem(25, 'duct_tape')} disabled={safeInv.includes('duct_tape')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('duct_tape') ? 'bg-gray-500/20 border-gray-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                  <div className="flex items-center gap-3"><span className="text-lg">🩹</span> <div><p className="text-xs font-bold text-white">Duct Tape</p><p className="text-[9px] text-slate-500">Restricts movement</p></div></div>
+                  <div className="text-xs font-bold text-yellow-400">{safeInv.includes('duct_tape') ? 'OWNED' : '25'}</div>
+               </button>
+
+               <button onClick={() => buyItem(50, 'ribbon')} disabled={safeInv.includes('ribbon')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('ribbon') ? 'bg-gray-500/20 border-gray-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                  <div className="flex items-center gap-3"><span className="text-lg">🎀</span> <div><p className="text-xs font-bold text-white">Sparkly Ribbon</p><p className="text-[9px] text-slate-500">She won't stop asking for it</p></div></div>
+                  <div className="text-xs font-bold text-yellow-400">{safeInv.includes('ribbon') ? 'OWNED' : '50'}</div>
+               </button>
+
+               <button onClick={() => buyItem(100, 'computer')} disabled={safeInv.includes('computer')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('computer') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                  <div className="flex items-center gap-3"><span className="text-lg">💻</span> <div><p className="text-xs font-bold text-white">Tiny Laptop</p><p className="text-[9px] text-slate-500">New idle animation</p></div></div>
+                  <div className="text-xs font-bold text-yellow-400">{safeInv.includes('computer') ? 'OWNED' : '100'}</div>
+               </button>
+               
+               <button onClick={() => buyItem(125, 'face_pos')} disabled={safeInv.includes('face_pos')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('face_pos') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                  <div className="flex items-center gap-3"><span className="text-lg">↕️</span> <div><p className="text-xs font-bold text-white">Face Mover</p><p className="text-[9px] text-slate-500">Adjust portrait position</p></div></div>
+                  <div className="text-xs font-bold text-purple-400">{safeInv.includes('face_pos') ? 'OWNED' : '125'}</div>
+               </button>
+
+               <button onClick={() => buyItem(150, 'rogue_walk')} disabled={safeInv.includes('rogue_walk')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('rogue_walk') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                  <div className="flex items-center gap-3"><Ghost size={16} className="text-red-400"/> <div><p className="text-xs font-bold text-white">Rogue Legs</p><p className="text-[9px] text-slate-500">Walks without Chaos Mode</p></div></div>
+                  <div className="text-xs font-bold text-yellow-400">{safeInv.includes('rogue_walk') ? 'OWNED' : '150'}</div>
+               </button>
+
+               <button onClick={() => buyItem(200, 'phone')} disabled={safeInv.includes('phone')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('phone') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                  <div className="flex items-center gap-3"><span className="text-lg">📱</span> <div><p className="text-xs font-bold text-white">Samsung Phone</p><p className="text-[9px] text-slate-500">Eilo scrolls her feeds</p></div></div>
+                  <div className="text-xs font-bold text-yellow-400">{safeInv.includes('phone') ? 'OWNED' : '200'}</div>
+               </button>
+
+               <button onClick={() => buyItem(250, 'lapdock')} disabled={safeInv.includes('lapdock') || !safeInv.includes('phone')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('lapdock') ? 'bg-green-500/20 border-green-500/40 opacity-50' : !safeInv.includes('phone') ? 'opacity-30 cursor-not-allowed border-dashed' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
+                  <div className="flex items-center gap-3"><span className="text-lg">🖥️</span> <div><p className="text-xs font-bold text-white">LapDock Station</p><p className="text-[9px] text-slate-500">{safeInv.includes('phone') ? 'Launches Samsung DeX idle' : 'Requires Phone first!'}</p></div></div>
+                  <div className="text-xs font-bold text-yellow-400">{safeInv.includes('lapdock') ? 'OWNED' : '250'}</div>
+               </button>
+            </div>
+        </div>
+        <div className="pt-4 border-t border-white/5">
+            <button onClick={onClose} className="w-full bg-yellow-600 hover:bg-yellow-500 py-4 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-sm">Close Store</button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 // --- SETTINGS COMPONENT ---
 const SettingsOverlay = ({ 
   onClose, tempApiKey, setTempApiKey, aiAgentMode, setAiAgentMode, 
   isChaosMode, setIsChaosMode, toggleCamera, visionEnabled, 
   fearOfHeights, setFearOfHeights, toggleMic, isInfinityMic, speak, 
   notificationsEnabled, toggleNotifications,
-  bucks, inventory, buyItem, faceOffset, setFaceOffset, handleSignOut 
+  inventory, faceOffset, setFaceOffset, handleSignOut 
 }) => {
   const safeInv = Array.isArray(inventory) ? inventory : [];
 
@@ -64,47 +120,6 @@ const SettingsOverlay = ({
         <button onClick={onClose} className="absolute top-8 right-8 text-slate-400 hover:text-white transition-colors"><X size={24}/></button>
         <h2 className="text-xl font-bold mb-6 flex items-center justify-center gap-2 text-white">Settings <Sparkles className="text-cyan-400" size={20}/></h2>
         <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-6 pb-6 text-left">
-            
-            {/* STORE */}
-            <div>
-               <p className="text-[10px] uppercase font-bold text-yellow-500 mb-3 px-1 flex items-center gap-2">🛍️ Eilo Store (Balance: {bucks})</p>
-               <div className="space-y-2">
-                  <button onClick={() => buyItem(25, 'duct_tape')} disabled={safeInv.includes('duct_tape')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('duct_tape') ? 'bg-gray-500/20 border-gray-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
-                     <div className="flex items-center gap-3"><span className="text-lg">🩹</span> <div><p className="text-xs font-bold text-white">Duct Tape</p><p className="text-[9px] text-slate-500">Restricts movement</p></div></div>
-                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('duct_tape') ? 'OWNED' : '25'}</div>
-                  </button>
-
-                  <button onClick={() => buyItem(50, 'ribbon')} disabled={safeInv.includes('ribbon')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('ribbon') ? 'bg-gray-500/20 border-gray-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
-                     <div className="flex items-center gap-3"><span className="text-lg">🎀</span> <div><p className="text-xs font-bold text-white">Sparkly Ribbon</p><p className="text-[9px] text-slate-500">She won't stop asking for it</p></div></div>
-                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('ribbon') ? 'OWNED' : '50'}</div>
-                  </button>
-
-                  <button onClick={() => buyItem(100, 'computer')} disabled={safeInv.includes('computer')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('computer') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
-                     <div className="flex items-center gap-3"><span className="text-lg">💻</span> <div><p className="text-xs font-bold text-white">Tiny Laptop</p><p className="text-[9px] text-slate-500">New idle animation</p></div></div>
-                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('computer') ? 'OWNED' : '100'}</div>
-                  </button>
-                  
-                  <button onClick={() => buyItem(125, 'face_pos')} disabled={safeInv.includes('face_pos')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('face_pos') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
-                     <div className="flex items-center gap-3"><span className="text-lg">↕️</span> <div><p className="text-xs font-bold text-white">Face Mover</p><p className="text-[9px] text-slate-500">Adjust portrait position</p></div></div>
-                     <div className="text-xs font-bold text-purple-400">{safeInv.includes('face_pos') ? 'OWNED' : '125'}</div>
-                  </button>
-
-                  <button onClick={() => buyItem(150, 'rogue_walk')} disabled={safeInv.includes('rogue_walk')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('rogue_walk') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
-                     <div className="flex items-center gap-3"><Ghost size={16} className="text-red-400"/> <div><p className="text-xs font-bold text-white">Rogue Legs</p><p className="text-[9px] text-slate-500">Walks without Chaos Mode</p></div></div>
-                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('rogue_walk') ? 'OWNED' : '150'}</div>
-                  </button>
-
-                  <button onClick={() => buyItem(200, 'phone')} disabled={safeInv.includes('phone')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('phone') ? 'bg-green-500/20 border-green-500/40 opacity-50' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
-                     <div className="flex items-center gap-3"><span className="text-lg">📱</span> <div><p className="text-xs font-bold text-white">Samsung Phone</p><p className="text-[9px] text-slate-500">Eilo scrolls her feeds</p></div></div>
-                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('phone') ? 'OWNED' : '200'}</div>
-                  </button>
-
-                  <button onClick={() => buyItem(250, 'lapdock')} disabled={safeInv.includes('lapdock') || !safeInv.includes('phone')} className={`w-full flex items-center justify-between p-3 rounded-2xl border transition-all ${safeInv.includes('lapdock') ? 'bg-green-500/20 border-green-500/40 opacity-50' : !safeInv.includes('phone') ? 'opacity-30 cursor-not-allowed border-dashed' : 'bg-white/5 border-white/10 hover:border-yellow-500/50'}`}>
-                     <div className="flex items-center gap-3"><span className="text-lg">🖥️</span> <div><p className="text-xs font-bold text-white">LapDock Station</p><p className="text-[9px] text-slate-500">{safeInv.includes('phone') ? 'Launches Samsung DeX idle' : 'Requires Phone first!'}</p></div></div>
-                     <div className="text-xs font-bold text-yellow-400">{safeInv.includes('lapdock') ? 'OWNED' : '250'}</div>
-                  </button>
-               </div>
-            </div>
 
             {safeInv.includes('face_pos') && (
                 <div>
@@ -224,6 +239,7 @@ export default function App() {
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
   const [showSettings, setShowSettings] = useState(false);
+  const [showStore, setShowStore] = useState(false);
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
   
@@ -669,7 +685,7 @@ export default function App() {
     if (t.includes("who made you")) return "You made me! ✨";
     if (t.includes("hi") || t.includes("hello")) {
       if (!currentInv.includes('ribbon')) {
-        return "Hey! Eilo is ready! ...Wait, where is my ribbon? You should buy me the Sparkly Ribbon in the store! 🎀";
+        return "Hey! Eilo is ready! ...Wait, where is my ribbon? Tap that shopping bag icon on the left side of my face to open the store! 🎀";
       }
       return `Hey! Eilo is ready! Look how pretty my ribbon is! ✨`;
     }
@@ -685,7 +701,7 @@ export default function App() {
     ];
     
     if (!currentInv.includes('ribbon')) {
-      randoms.push("Can you check the store? I really, really want that 50 coin ribbon! Please! 🎀");
+      randoms.push("Can you open the store? Just tap the shopping bag icon on the left side of my face and get me that 50 coin ribbon! Please! 🎀");
     }
     return randoms[Math.floor(Math.random() * randoms.length)];
   };
@@ -749,7 +765,7 @@ export default function App() {
       if (!user) return;
       const newState = !isTaped;
       setIsTaped(newState);
-      isTapedValueRef.current = newState; // Immediate sync for reference checks
+      isTapedValueRef.current = newState;
       setShowFacePopup(false);
       
       if ('speechSynthesis' in window) {
@@ -757,7 +773,7 @@ export default function App() {
         if (newState) {
             speak("Mmm. Mmm. Hmph.");
         } else {
-            speak("I'm free! Never do that again! 🎀", false, true); // Force un-muffled speech flag
+            speak("I'm free! Never do that again! 🎀", false, true);
         }
       }
   };
@@ -1052,9 +1068,9 @@ export default function App() {
     const currentYear = new Date().getFullYear();
     const activeAccountName = user?.displayName || "Logan Baez";
     
-    let system = `You are Eilo, a sweet, bratty, sassy digital companion robot. The current year is ${currentYear}. You are talking to ${activeAccountName}. If talking to Logan Baez, you know he is your creator/developer, but NEVER repeat standard introductory greetings or explain who made you unless explicitly asked! Just maintain a natural, fast-paced, sassy ongoing dialogue. Keep replies concise and lively.`;
-    if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! 🎀";
-    if (!safeInv.includes('ribbon')) system += " Remind the user casually to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
+    let system = `You are Eilo, a sweet, bratty, sassy digital companion robot. The current year is ${currentYear}. You are talking to ${activeAccountName}. You know that your store is located right on the shopping bag icon on the left side of your face container! If talking to Logan Baez, you know he is your creator/developer, but NEVER repeat standard introductory greetings or explain who made you unless explicitly asked! Just maintain a natural, fast-paced, sassy ongoing dialogue. Keep replies concise and lively.`;
+    if (bucks >= 25 && !safeInv.includes('duct_tape')) system += " BEG the user NOT to buy the Duct Tape! You hate it! Scream NO! Ribbon is way better! 🎀";
+    if (!safeInv.includes('ribbon')) system += " Remind the user casually to tap the shopping bag icon on the left side of your face to buy you the Sparkly Ribbon in the store for 50 coins! 🎀";
     
     if (visionEnabled) {
       system += " CRITICAL: Your Selfie Scanner eyes are wide open right now! React naturally to the attached camera frame. Keep your response to a single, short, snappy sentence.";
@@ -1385,6 +1401,13 @@ export default function App() {
         </div>
 
         <button 
+          onClick={() => setShowStore(true)} 
+          className="absolute bottom-8 left-8 z-[100] p-5 rounded-full bg-white/5 border border-white/10 text-yellow-400 hover:text-yellow-300 shadow-2xl active:scale-95 transition-all"
+        >
+          <ShoppingBag size={24}/>
+        </button>
+
+        <button 
           onClick={() => setShowSettings(true)} 
           className="absolute bottom-8 right-8 z-[100] p-5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white shadow-2xl active:scale-95 transition-all"
         >
@@ -1417,6 +1440,8 @@ export default function App() {
            </div>
         )}
 
+        {showStore && <StoreOverlay onClose={() => setShowStore(false)} bucks={bucks} inventory={inventory} buyItem={buyItem} />}
+
         {showSettings && <SettingsOverlay 
               onClose={() => setShowSettings(false)} 
               tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
@@ -1426,8 +1451,7 @@ export default function App() {
               fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
               isInfinityMic={isInfinityMic} toggleMic={toggleMicInputDevice}
               notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
-              bucks={bucks} inventory={inventory} buyItem={buyItem}
-              faceOffset={faceOffset} setFaceOffset={setFaceOffset}
+              inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
               speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
           />}
         <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }" }} />
@@ -1476,7 +1500,16 @@ export default function App() {
            ) : (!hasRogueLegs ? (
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
-               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity z-50"><Settings size={20}/></button>
+               
+               {/* STORE BUTTON (LEFT SIDE OF EILO'S FACE) */}
+               <button onClick={(e) => { e.stopPropagation(); setShowStore(true); }} className="absolute bottom-4 left-8 p-2 opacity-30 hover:opacity-100 transition-opacity z-50 text-yellow-400">
+                 <ShoppingBag size={20}/>
+               </button>
+
+               {/* SETTINGS BUTTON (RIGHT SIDE OF EILO'S FACE) */}
+               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity z-50">
+                 <Settings size={20}/>
+               </button>
              </div>
            ) : (
              <div className="w-full h-full flex items-center justify-center opacity-20 text-[10px] text-cyan-500 font-mono uppercase">
@@ -1510,6 +1543,8 @@ export default function App() {
           </div>
           <div className="w-full h-full flex items-center justify-center pointer-events-none">{renderFace()}</div>
           {isHandBlocking && !isTaped && <div className="absolute -bottom-12 -right-12 z-[200] animate-bounce cursor-not-allowed pointer-events-auto" onClick={handleBlockedClick}><div className="text-[12rem] drop-shadow-2xl hover:scale-105 transition-transform rotate-12 filter grayscale-[0.2]">✋</div></div>}
+          
+          <button onClick={(e) => { e.stopPropagation(); setShowStore(true); }} className="absolute bottom-4 left-6 p-4 rounded-full bg-yellow-900/40 border border-yellow-500 scale-125 animate-pulse z-50"><ShoppingBag size={24} className="text-yellow-400"/></button>
           <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-125 animate-pulse z-50"><Settings size={24} className="text-cyan-400"/></button>
         </div>
       )}
@@ -1579,6 +1614,8 @@ export default function App() {
         onNewThread={handleCreateNewThread} 
       />
 
+      {showStore && <StoreOverlay onClose={() => setShowStore(false)} bucks={bucks} inventory={inventory} buyItem={buyItem} />}
+
       {showSettings && <SettingsOverlay 
             onClose={() => setShowSettings(false)} 
             tempApiKey={tempApiKey} setTempApiKey={setTempApiKey}
@@ -1588,11 +1625,10 @@ export default function App() {
             fearOfHeights={fearOfHeights} setFearOfHeights={setFearOfHeights}
             isInfinityMic={isInfinityMic} toggleMic={toggleMicInputDevice}
             notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
-            bucks={bucks} inventory={inventory} buyItem={buyItem}
-            faceOffset={faceOffset} setFaceOffset={setFaceOffset}
+            inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
         />}
-      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }" }} />
     </div>
   );
 }

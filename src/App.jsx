@@ -1427,23 +1427,26 @@ export default function App() {
           {renderFace()}
         </div>
 
-        <div className="absolute bottom-8 left-8 z-[100] flex items-center gap-3">
+        {/* LANDSCAPE BOTTOM LEFT CONTROL GROUP (MIC + STORE) */}
+        <div className="absolute bottom-8 left-8 z-[100] flex items-center gap-4">
            <button 
              onClick={toggleMicInputDevice} 
              className={`p-5 rounded-full border shadow-2xl active:scale-95 transition-all text-white ${isInfinityMic ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
            >
              <Mic size={24} />
            </button>
+           
+           <button 
+             onClick={() => setShowStore(true)} 
+             className="p-5 rounded-full bg-white/5 border border-white/10 text-yellow-400 hover:text-yellow-300 shadow-2xl active:scale-95 transition-all"
+           >
+             <ShoppingBag size={24}/>
+           </button>
+
            {isInfinityMic && <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-red-400 animate-pulse bg-red-950/40 px-3 py-1 rounded-full border border-red-900/30">Live Mic Ears Open</span>}
         </div>
 
-        <button 
-          onClick={() => setShowStore(true)} 
-          className="absolute bottom-8 left-8 z-[100] p-5 rounded-full bg-white/5 border border-white/10 text-yellow-400 hover:text-yellow-300 shadow-2xl active:scale-95 transition-all"
-        >
-          <ShoppingBag size={24}/>
-        </button>
-
+        {/* LANDSCAPE BOTTOM RIGHT SETTINGS BUTTON */}
         <button 
           onClick={() => setShowSettings(true)} 
           className="absolute bottom-8 right-8 z-[100] p-5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white shadow-2xl active:scale-95 transition-all"

@@ -1046,7 +1046,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- SAFE MULTI-TURN GEMINI 3.6 FLASH CHAT ROUTINE ---
+  // --- SAFE MULTI-TURN GEMINI 3.7 FLASH CHAT ROUTINE ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
@@ -1158,7 +1158,8 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${tempApiKey}`, {
+            // --- UPGRADED TO GEMINI 3.7 FLASH ---
+            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({ 

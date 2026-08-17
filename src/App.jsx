@@ -1259,47 +1259,47 @@ export default function App() {
   };
 
   const renderFace = () => {
-    const cyanBase = "bg-cyan-400 rounded-2xl sm:rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_30px_rgba(34,211,238,0.8)]";
-    const redMadBase = isSpeaking ? "bg-red-500 rounded-2xl sm:rounded-3xl shadow-[0_0_30px_rgba(239,68,68,0.9)] animate-pulse" : "bg-cyan-400 rounded-2xl sm:rounded-3xl shadow-[0_0_30px_rgba(34,211,238,0.8)]";
+    const cyanBase = "bg-cyan-400 rounded-3xl animate-[blink_4s_infinite] shadow-[0_0_40px_rgba(34,211,238,0.8)]";
+    const redMadBase = isSpeaking ? "bg-red-500 rounded-3xl shadow-[0_0_40px_rgba(239,68,68,0.9)] animate-pulse" : "bg-cyan-400 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.8)]";
     
     const tapeOverlay = isTaped ? (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-3 w-24 sm:w-32 h-9 sm:h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-3 sm:translate-y-4 w-28 sm:w-32 h-10 sm:h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
             <div className="w-full h-full bg-repeating-linear-gradient-45 from-transparent to-black/10" />
         </div>
     ) : null;
 
     const ribbonOverlay = safeInventory.includes('ribbon') && ribbonApplied ? (
-      <div className="absolute -top-5 left-2 sm:left-4 text-xl sm:text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
+      <div className="absolute -top-6 left-3 sm:left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
     ) : null;
 
     switch (mood) {
       case 'mad':
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-6 sm:gap-10 relative">{ribbonOverlay}<div className={`w-14 h-14 sm:w-20 sm:h-20 ${redMadBase}`} /><div className={`w-14 h-14 sm:w-20 sm:h-20 ${redMadBase}`} />{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-8 sm:gap-10 relative">{ribbonOverlay}<div className={`w-16 h-16 sm:w-20 sm:h-20 ${redMadBase}`} /><div className={`w-16 h-16 sm:w-20 sm:h-20 ${redMadBase}`} />{tapeOverlay}</div></div>;
       case 'dizzy': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-8 sm:gap-12 animate-spin relative">{ribbonOverlay}<div className="w-12 h-12 sm:w-16 sm:h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-12 h-12 sm:w-16 sm:h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 sm:gap-12 animate-spin relative">{ribbonOverlay}<div className="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div></div>;
       case 'happy': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-8 sm:gap-12 relative">{ribbonOverlay}<div className="absolute -top-5 left-1/2 -translate-x-1/2"><Heart size={22} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-16 sm:w-20 h-11 sm:h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-5 h-5 bg-white/30 rounded-full" /></div><div className="w-16 sm:w-20 h-11 sm:h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-5 h-5 bg-white/30 rounded-full" /></div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 sm:gap-12 relative">{ribbonOverlay}<div className="absolute -top-6 left-1/2 -translate-x-1/2"><Heart size={26} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-18 sm:w-20 h-12 sm:h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-5 sm:w-6 h-5 sm:h-6 bg-white/30 rounded-full" /></div><div className="w-18 sm:w-20 h-12 sm:h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-5 sm:w-6 h-5 sm:h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div></div>;
       case 'thinking': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-8 sm:gap-12 relative">{ribbonOverlay}<div className="w-12 h-12 sm:w-16 sm:h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-12 h-12 sm:w-16 sm:h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 sm:gap-12 relative">{ribbonOverlay}<div className="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div></div>;
       case 'sleeping': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex items-center justify-center gap-8 sm:gap-12 relative">{ribbonOverlay}<div className="w-16 sm:w-20 h-2.5 sm:h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-16 sm:w-20 h-2.5 sm:h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-0 right-0 text-cyan-400 text-2xl sm:text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex items-center justify-center gap-10 sm:gap-12 relative">{ribbonOverlay}<div className="w-18 sm:w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-18 sm:w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-0 right-0 text-cyan-400 text-2xl sm:text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div></div>;
       case 'eating': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-8 sm:gap-12"><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-3xl sm:text-4xl animate-bounce">🥪</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-4xl sm:text-5xl animate-bounce">🥪</div>{tapeOverlay}</div></div>;
       case 'rubik': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-8 sm:gap-12"><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-3xl sm:text-4xl animate-spin">🎨</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-4xl sm:text-5xl animate-spin">🎨</div>{tapeOverlay}</div></div>;
       case 'computer': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-8 sm:gap-12"><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-3xl sm:text-4xl animate-bounce">💻</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-4xl sm:text-5xl animate-bounce">💻</div>{tapeOverlay}</div></div>;
       case 'phone': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-8 sm:gap-12"><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-3xl sm:text-4xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-4xl sm:text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
       case 'lapdock': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2 relative">{ribbonOverlay}<div className="flex gap-8 sm:gap-12"><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-12 h-12 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-2xl sm:text-3xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-3xl sm:text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
       default: 
         return (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className={`flex ${isLandscape ? 'gap-24 sm:gap-32 scale-125 sm:scale-150' : 'gap-6 sm:gap-10'} relative`}>
+            <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-8 sm:gap-10'} relative`}>
               {ribbonOverlay}
-              <div className={`w-14 h-14 sm:w-20 sm:h-20 ${cyanBase} eye-blink`} />
-              <div className={`w-14 h-14 sm:w-20 sm:h-20 ${cyanBase} eye-blink`} />
+              <div className={`w-16 h-16 sm:w-20 sm:h-20 ${cyanBase} eye-blink`} />
+              <div className={`w-16 h-16 sm:w-20 sm:h-20 ${cyanBase} eye-blink`} />
               {tapeOverlay}
             </div>
           </div>
@@ -1422,62 +1422,62 @@ export default function App() {
 
         <div 
           onClick={handleFaceClick}
-          className="w-full max-w-xl h-full flex items-center justify-center relative transform scale-110 sm:scale-125 cursor-pointer"
+          className="w-full max-w-xl h-full flex items-center justify-center relative transform scale-125 cursor-pointer"
           style={{ marginTop: `${faceOffset}px` }}
         >
           {renderFace()}
         </div>
 
         {/* LANDSCAPE BOTTOM LEFT CONTROL GROUP (MIC + STORE) */}
-        <div className="absolute bottom-6 sm:bottom-8 left-6 sm:left-8 z-[100] flex items-center gap-3">
+        <div className="absolute bottom-8 left-8 z-[100] flex items-center gap-4">
            <button 
              onClick={toggleMicInputDevice} 
-             className={`p-4 sm:p-5 rounded-full border shadow-2xl active:scale-95 transition-all text-white ${isInfinityMic ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
+             className={`p-5 rounded-full border shadow-2xl active:scale-95 transition-all text-white ${isInfinityMic ? 'bg-red-600 border-red-500 animate-pulse' : 'bg-white/5 border-white/10 hover:bg-white/10'}`}
            >
-             <Mic size={20} />
+             <Mic size={24} />
            </button>
            
            <button 
              onClick={() => setShowStore(true)} 
-             className="p-4 sm:p-5 rounded-full bg-white/5 border border-white/10 text-yellow-400 hover:text-yellow-300 shadow-2xl active:scale-95 transition-all"
+             className="p-5 rounded-full bg-white/5 border border-white/10 text-yellow-400 hover:text-yellow-300 shadow-2xl active:scale-95 transition-all"
            >
-             <ShoppingBag size={20}/>
+             <ShoppingBag size={24}/>
            </button>
 
-           {isInfinityMic && <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-red-400 animate-pulse bg-red-950/40 px-3 py-1 rounded-full border border-red-900/30">Live Mic Open</span>}
+           {isInfinityMic && <span className="text-[9px] font-mono font-bold uppercase tracking-widest text-red-400 animate-pulse bg-red-950/40 px-3 py-1 rounded-full border border-red-900/30">Live Mic Ears Open</span>}
         </div>
 
         {/* LANDSCAPE BOTTOM RIGHT SETTINGS BUTTON */}
         <button 
           onClick={() => setShowSettings(true)} 
-          className="absolute bottom-6 sm:bottom-8 right-6 sm:right-8 z-[100] p-4 sm:p-5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white shadow-2xl active:scale-95 transition-all"
+          className="absolute bottom-8 right-8 z-[100] p-5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white shadow-2xl active:scale-95 transition-all"
         >
-          <Settings size={20}/>
+          <Settings size={24}/>
         </button>
 
-        <div className="absolute top-4 sm:top-6 left-4 sm:left-6 px-3.5 py-1 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-yellow-400 font-mono text-[10px] font-bold">🪙 {bucks} Bucks</div>
+        <div className="absolute top-6 left-6 px-4 py-1.5 bg-yellow-500/10 border border-yellow-500/20 rounded-full text-yellow-400 font-mono text-[10px] font-bold">🪙 {bucks} Bucks</div>
 
         {showFacePopup && (
-           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-[#161622] p-5 sm:p-6 rounded-[30px] sm:rounded-[35px] border border-white/10 shadow-2xl flex flex-col gap-2.5 min-w-[200px]">
+           <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-[#161622] p-6 rounded-[35px] border border-white/10 shadow-2xl flex flex-col gap-3 min-w-[220px]">
               {ownsRibbon && (
                   <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                      <span className="text-xl sm:text-2xl">🎀</span>
+                      <span className="text-2xl">🎀</span>
                       <span className="text-xs font-bold text-white text-left flex-1">{ribbonApplied ? "Remove Ribbon" : "Apply Ribbon"}</span>
                   </button>
               )}
               {ownsDuctTape && (
                   <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                      <span className="text-xl sm:text-2xl">🩹</span>
+                      <span className="text-2xl">🩹</span>
                       <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
                   </button>
               )}
               {ownsRogueLegs && (
                   <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                      <span className="text-xl sm:text-2xl">👻</span>
+                      <span className="text-2xl">👻</span>
                       <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
                   </button>
               )}
-              <button onClick={() => setShowFacePopup(false)} className="mt-1 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
+              <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
            </div>
         )}
 
@@ -1500,64 +1500,64 @@ export default function App() {
     );
   }
 
-  // --- STANDARD PORTRAIT APP RENDER ROUTINE (FLEXIBLE ADAPTIVE LAYOUT) ---
+  // --- STANDARD PORTRAIT APP RENDER ROUTINE ---
   const cleanMessages = Array.isArray(messages) ? messages : [];
   return (
-    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between p-3 sm:pb-4 overflow-hidden select-none">
+    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-3 sm:pb-4 overflow-hidden select-none">
       <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
       {/* TOP ZONE */}
-      <div className="w-full max-w-sm px-3 pt-1 flex justify-between items-center z-10 flex-shrink-0">
+      <div className="w-full max-w-sm px-6 pt-3 sm:pt-4 flex justify-between items-center z-10 flex-shrink-0">
         <button onClick={() => setShowHistory(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95">
           <Menu size={16}/>
         </button>
         <div className="text-[10px] text-slate-500 font-bold tracking-widest">EILO v4.9</div>
-        <div className="flex items-center gap-1.5 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
+        <div className="flex items-center gap-2 px-3 py-1 bg-yellow-500/10 border border-yellow-500/30 rounded-full text-yellow-400 font-bold font-mono text-xs">
             🪙 {bucks}
         </div>
       </div>
 
-      {/* PORTRAIT CORE CONTAINER (AUTO-SCALING FOR FOLDABLES & TALL SCREENS) */}
-      <div className="w-full max-w-sm px-2 py-1 flex-1 flex items-center justify-center relative min-h-0">
+      {/* PORTRAIT CORE CONTAINER */}
+      <div className="w-full max-w-sm px-4 flex-1 flex items-center justify-center relative min-h-0 py-2">
         {/* PORTRAIT FOREHEAD PETTING SENSOR ZONE */}
         <div 
           onMouseMove={toggleMoodToHappy}
           onTouchMove={toggleMoodToHappy}
           onClick={handlePet}
-          className="absolute top-0 left-1/4 right-1/4 h-16 sm:h-24 z-[500] cursor-pointer bg-transparent pointer-events-auto"
+          className="absolute top-2 left-1/4 right-1/4 h-24 z-[500] cursor-pointer bg-transparent pointer-events-auto"
           title="Rub Eilo Forehead Matrix"
         />
 
         <div 
             onClick={handleFaceClick}
-            className={`w-full h-[24vh] min-h-[140px] max-h-[210px] rounded-[36px] sm:rounded-[45px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-300 relative ${isChaosMode ? 'bg-black/90' : ''}`}
+            className={`w-full aspect-[4/3] max-h-56 min-h-[160px] rounded-[45px] sm:rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 relative shadow-xl ${isChaosMode ? 'bg-black/90' : ''}`}
         >
            {isChaosMode ? (
-              <div className="w-full h-full p-4 font-mono text-[10px] text-cyan-500/40 opacity-70">
+              <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
                 {Array.isArray(glitchLines) && glitchLines.map((line, i) => <div key={i} className="mb-0.5">{line} {Math.random().toFixed(2)}</div>)}
-                {isTaped && <div className="mt-2 text-red-500 font-bold animate-pulse text-sm border border-red-500 p-1">CRITICAL: LEGS_DISABLED</div>}
+                {isTaped && <div className="mt-4 text-red-500 font-bold animate-pulse text-lg border border-red-500 p-2">CRITICAL: LEGS_DISABLED</div>}
               </div>
            ) : (!hasRogueLegs ? (
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
                
-               {/* STORE BUTTON (CONTAINED BOTTOM LEFT) */}
+               {/* STORE BUTTON (LEFT SIDE OF EILO'S FACE) */}
                <button 
                  onClick={(e) => { e.stopPropagation(); setShowStore(true); }} 
-                 className="absolute bottom-3 left-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-yellow-500/20 text-yellow-400 transition-all active:scale-95 z-50 shadow-sm"
-                 title="Open Store"
+                 className="absolute bottom-4 left-6 p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-yellow-500/20 text-yellow-400 transition-all active:scale-95 z-50 shadow-md"
+                 title="Open Eilo Store"
                >
-                 <ShoppingBag size={16}/>
+                 <ShoppingBag size={18}/>
                </button>
 
-               {/* SETTINGS BUTTON (CONTAINED BOTTOM RIGHT) */}
+               {/* SETTINGS BUTTON (RIGHT SIDE OF EILO'S FACE) */}
                <button 
                  onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} 
-                 className="absolute bottom-3 right-4 p-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95 z-50 shadow-sm"
-                 title="Settings"
+                 className="absolute bottom-4 right-6 p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95 z-50 shadow-md"
+                 title="Open Settings"
                >
-                 <Settings size={16}/>
+                 <Settings size={18}/>
                </button>
              </div>
            ) : (
@@ -1578,80 +1578,79 @@ export default function App() {
             position: 'fixed', 
             top: '50%', 
             left: '50%', 
-            marginTop: '-100px', 
+            marginTop: '-120px', 
             marginLeft: '-40%', 
             width: '80%', 
-            height: '12rem', 
+            height: '14rem', 
             zIndex: 1000 
           }} 
-          className="bg-[#161622] border-2 border-cyan-500/30 rounded-[40px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto cursor-pointer overflow-hidden"
+          className="bg-[#161622] border-2 border-cyan-500/30 rounded-[50px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto cursor-pointer overflow-hidden"
         >
-          <div className="absolute -bottom-14 left-0 w-full flex justify-around px-10">
-            <div className={`w-5 h-14 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce'}`} />
-            <div className={`w-5 h-14 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce delay-150'}`} />
+          <div className="absolute -bottom-16 left-0 w-full flex justify-around px-12">
+            <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce'}`} />
+            <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce delay-150'}`} />
           </div>
           <div className="w-full h-full flex items-center justify-center pointer-events-none">{renderFace()}</div>
-          {isHandBlocking && !isTaped && <div className="absolute -bottom-10 -right-10 z-[200] animate-bounce cursor-not-allowed pointer-events-auto" onClick={handleBlockedClick}><div className="text-[10rem] drop-shadow-2xl hover:scale-105 transition-transform rotate-12 filter grayscale-[0.2]">✋</div></div>}
+          {isHandBlocking && !isTaped && <div className="absolute -bottom-12 -right-12 z-[200] animate-bounce cursor-not-allowed pointer-events-auto" onClick={handleBlockedClick}><div className="text-[12rem] drop-shadow-2xl hover:scale-105 transition-transform rotate-12 filter grayscale-[0.2]">✋</div></div>}
           
-          <button onClick={(e) => { e.stopPropagation(); setShowStore(true); }} className="absolute bottom-3 left-4 p-3 rounded-full bg-yellow-900/40 border border-yellow-500 scale-110 animate-pulse z-50"><ShoppingBag size={18} className="text-yellow-400"/></button>
-          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-3 right-4 p-3 rounded-full bg-cyan-900/40 border border-cyan-500 scale-110 animate-pulse z-50"><Settings size={18} className="text-cyan-400"/></button>
+          <button onClick={(e) => { e.stopPropagation(); setShowStore(true); }} className="absolute bottom-4 left-6 p-4 rounded-full bg-yellow-900/40 border border-yellow-500 scale-125 animate-pulse z-50"><ShoppingBag size={24} className="text-yellow-400"/></button>
+          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-125 animate-pulse z-50"><Settings size={24} className="text-cyan-400"/></button>
         </div>
       )}
 
       {/* POPUP FOR UPGRADES */}
       {showFacePopup && (
-         <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-4 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-2.5 min-w-[190px]">
+         <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-[2000] bg-black/90 p-5 rounded-3xl border border-white/20 shadow-2xl flex flex-col gap-3 min-w-[200px]">
             {ownsRibbon && (
-                <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                    <span className="text-xl">🎀</span>
+                <button onClick={toggleRibbonDecoration} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">🎀</span>
                     <span className="text-xs font-bold text-white text-left flex-1">{ribbonApplied ? "Remove Ribbon" : "Apply Ribbon"}</span>
                 </button>
             )}
             {ownsDuctTape && (
-                <button onClick={applyDuctTape} className="flex items-center gap-3 p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                    <span className="text-xl">🩹</span>
+                <button onClick={applyDuctTape} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">🩹</span>
                     <span className="text-xs font-bold text-white text-left flex-1">{isTaped ? "Remove Tape" : "Apply Duct Tape"}</span>
                 </button>
             )}
             {ownsRogueLegs && (
-                <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-2.5 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
-                    <span className="text-xl">👻</span>
+                <button onClick={toggleRogueLegs} className="flex items-center gap-3 p-3 bg-white/5 hover:bg-white/10 rounded-xl transition-all border border-white/5">
+                    <span className="text-2xl">👻</span>
                     <span className="text-xs font-bold text-white text-left flex-1">{rogueLegsActive ? "Disable Legs" : "Enable Rogue Legs"}</span>
                 </button>
             )}
-            <button onClick={() => setShowFacePopup(false)} className="mt-1 text-[10px] text-slate-500 w-full hover:text-white pt-1.5 border-t border-white/10">Cancel</button>
+            <button onClick={() => setShowFacePopup(false)} className="mt-2 text-[10px] text-slate-500 w-full hover:text-white pt-2 border-t border-white/10">Cancel</button>
          </div>
       )}
 
-      {/* CHAT INTERFACE ZONE (FLEX-1 AUTO FILL WITH NO FIXED VH LOCK) */}
-      <div className={`w-full max-w-sm px-2 flex-1 min-h-0 flex flex-col gap-2 sm:gap-3 transition-all duration-700 relative z-10 ${isChaosMode ? 'skew-x-3 rotate-1 blur-[1px] scale-95 opacity-80 brightness-75' : ''}`}>
-        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /></div>}
+      {/* INTERFACE ZONE */}
+      <div className={`w-full max-w-sm px-4 h-[48vh] max-h-[500px] min-h-[260px] flex flex-col gap-3 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
+        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
-        <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[30px] sm:rounded-[36px] border border-white/5 p-3.5 sm:p-4 flex flex-col overflow-hidden shadow-2xl relative">
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+        <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] sm:rounded-[40px] border border-white/5 p-4 sm:p-5 flex flex-col overflow-hidden shadow-2xl relative">
+          <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar">
             {cleanMessages.map((m, i) => (
               <div key={i} className={`flex ${m?.role === 'user' ? 'justify-end' : 'justify-start'}`}>
-                <div className={`px-3.5 py-2 rounded-2xl text-xs max-w-[85%] ${m?.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>
+                <div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m?.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>
                   {formatMarkdown(m?.text)}
                 </div>
               </div>
             ))}
             <div ref={chatEndRef} />
           </div>
-          <div className="mt-2.5 flex gap-2 flex-shrink-0">
-            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Message Eilo..." className="flex-1 bg-white/5 border border-white/10 rounded-xl py-2.5 px-3.5 text-xs outline-none focus:border-cyan-500/30 text-white" />
-            <button onClick={() => handleSend()} className="p-2.5 bg-cyan-600 rounded-xl active:scale-95 text-white flex items-center justify-center"><Send size={15}/></button>
+          <div className="mt-3 flex gap-2 flex-shrink-0">
+            <input value={input} onChange={e => setInput(e.target.value)} onKeyDown={e => e.key === 'Enter' && handleSend()} placeholder="Message Eilo..." className="flex-1 bg-white/5 border border-white/10 rounded-xl py-3 px-4 text-xs outline-none focus:border-cyan-500/30 text-white" />
+            <button onClick={() => handleSend()} className="p-3 bg-cyan-600 rounded-xl active:scale-95 text-white flex items-center justify-center"><Send size={16}/></button>
           </div>
         </div>
 
-        {/* BOTTOM QUICK BUTTONS */}
-        <div className="grid grid-cols-3 gap-2 flex-shrink-0">
-          <button onClick={toggleMicInputDevice} className={`p-2.5 rounded-[20px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
-            <Mic size={15} />
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 flex-shrink-0">
+          <button onClick={toggleMicInputDevice} className={`p-3 rounded-[22px] sm:rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
+            <Mic size={16} />
             <span className="text-[7px] uppercase font-bold tracking-widest">Infinity Mic</span>
           </button>
-          <button onClick={handlePet} className="p-2.5 rounded-[20px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={15}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
-          <button onClick={() => setIsMuted(!isMuted)} className={`p-2.5 rounded-[20px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={15}/> : <Volume2 size={15}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
+          <button onClick={handlePet} className="p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
+          <button onClick={() => setIsMuted(!isMuted)} className={`p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
         </div>
       </div>
 
@@ -1678,7 +1677,7 @@ export default function App() {
             inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
         />}
-      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 4px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
 }

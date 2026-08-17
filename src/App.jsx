@@ -1542,14 +1542,22 @@ export default function App() {
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
                
-               {/* STORE BUTTON (LEFT SIDE OF EILO'S FACE) */}
-               <button onClick={(e) => { e.stopPropagation(); setShowStore(true); }} className="absolute bottom-4 left-8 p-2 opacity-30 hover:opacity-100 transition-opacity z-50 text-yellow-400">
-                 <ShoppingBag size={20}/>
+               {/* STORE BUTTON (LEFT SIDE OF EILO'S FACE - FIXED POSITION & PADDING) */}
+               <button 
+                 onClick={(e) => { e.stopPropagation(); setShowStore(true); }} 
+                 className="absolute bottom-5 left-6 p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-yellow-500/20 text-yellow-400 transition-all active:scale-95 z-50 shadow-lg"
+                 title="Open Eilo Store"
+               >
+                 <ShoppingBag size={18}/>
                </button>
 
-               {/* SETTINGS BUTTON (RIGHT SIDE OF EILO'S FACE) */}
-               <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-8 p-2 opacity-20 hover:opacity-100 transition-opacity z-50">
-                 <Settings size={20}/>
+               {/* SETTINGS BUTTON (RIGHT SIDE OF EILO'S FACE - FIXED POSITION & PADDING) */}
+               <button 
+                 onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} 
+                 className="absolute bottom-5 right-6 p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95 z-50 shadow-lg"
+                 title="Open Settings"
+               >
+                 <Settings size={18}/>
                </button>
              </div>
            ) : (
@@ -1669,7 +1677,7 @@ export default function App() {
             inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
         />}
-      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }" }} />
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
 }

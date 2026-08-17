@@ -70,9 +70,9 @@ const StoreOverlay = ({ onClose, bucks, inventory, buyItem }) => {
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[9999] flex items-center justify-center p-4 text-center font-sans">
-      <div className="bg-[#1c1c28] w-full max-w-sm rounded-[36px] sm:rounded-[45px] p-6 sm:p-8 border border-white/10 relative shadow-2xl flex flex-col max-h-[85vh]">
+      <div className="bg-[#1c1c28] w-full max-w-sm rounded-[36px] p-6 border border-white/10 relative shadow-2xl flex flex-col max-h-[85vh]">
         <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors"><X size={20}/></button>
-        <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center justify-center gap-2 text-white">Eilo Store <ShoppingBag className="text-yellow-400" size={18}/></h2>
+        <h2 className="text-lg font-bold mb-4 flex items-center justify-center gap-2 text-white">Eilo Store <ShoppingBag className="text-yellow-400" size={18}/></h2>
         <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-3 pb-4 text-left">
             <p className="text-[10px] uppercase font-bold text-yellow-500 mb-2 px-1 flex items-center gap-2">🪙 Balance: {bucks} Bucks</p>
             <div className="space-y-2">
@@ -132,10 +132,10 @@ const SettingsOverlay = ({
 
   return (
     <div className="fixed inset-0 bg-black/95 backdrop-blur-xl z-[9999] flex items-center justify-center p-4 text-center font-sans">
-      <div className="bg-[#1c1c28] w-full max-w-sm rounded-[36px] sm:rounded-[45px] p-6 sm:p-8 border border-white/10 relative shadow-2xl flex flex-col max-h-[85vh]">
+      <div className="bg-[#1c1c28] w-full max-w-sm rounded-[36px] p-6 border border-white/10 relative shadow-2xl flex flex-col max-h-[85vh]">
         <button onClick={onClose} className="absolute top-6 right-6 text-slate-400 hover:text-white transition-colors"><X size={20}/></button>
-        <h2 className="text-lg sm:text-xl font-bold mb-4 sm:mb-6 flex items-center justify-center gap-2 text-white">Settings <Sparkles className="text-cyan-400" size={18}/></h2>
-        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-4 sm:space-y-6 pb-4 text-left">
+        <h2 className="text-lg font-bold mb-4 flex items-center justify-center gap-2 text-white">Settings <Sparkles className="text-cyan-400" size={18}/></h2>
+        <div className="flex-1 overflow-y-auto pr-1 custom-scrollbar space-y-4 pb-4 text-left">
 
             {safeInv.includes('face_pos') && (
                 <div>
@@ -167,7 +167,7 @@ const SettingsOverlay = ({
             <div className="space-y-2">
               <div className="px-1">
                 <p className="text-[10px] uppercase font-bold text-slate-400">🔑 AI Key (Brain)</p>
-                <p className="text-[10px] text-slate-500 mt-1">An API key connects Eilo to the Gemini AI network.</p>
+                <p className="text-[10px] text-slate-500 mt-1">An API key connects Eilo to Gemini.</p>
                 <a href="https://aistudio.google.com/app/apikey" target="_blank" rel="noopener noreferrer" className="text-[10px] text-cyan-400 hover:text-cyan-300 underline mt-1 inline-block">Get a free API key here</a>
               </div>
               <input type="password" value={tempApiKey} onChange={e => setTempApiKey(e.target.value)} placeholder="Paste Gemini Key..." className="w-full bg-black/40 border border-white/10 rounded-2xl py-3 px-4 text-xs outline-none text-white focus:border-cyan-500/50 mt-1" />
@@ -1158,7 +1158,7 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            // --- UPGRADED TO GEMINI 3.7 FLASH ---
+            // --- GEMINI 3.7 FLASH ENDPOINT ---
             const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
@@ -1263,43 +1263,43 @@ export default function App() {
     const redMadBase = isSpeaking ? "bg-red-500 rounded-3xl shadow-[0_0_40px_rgba(239,68,68,0.9)] animate-pulse" : "bg-cyan-400 rounded-3xl shadow-[0_0_40px_rgba(34,211,238,0.8)]";
     
     const tapeOverlay = isTaped ? (
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-3 sm:translate-y-4 w-28 sm:w-32 h-10 sm:h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 translate-y-4 w-32 h-12 bg-gray-400 border-2 border-gray-500 rotate-2 opacity-90 shadow-xl flex items-center justify-center z-50 pointer-events-none">
             <div className="w-full h-full bg-repeating-linear-gradient-45 from-transparent to-black/10" />
         </div>
     ) : null;
 
     const ribbonOverlay = safeInventory.includes('ribbon') && ribbonApplied ? (
-      <div className="absolute -top-6 left-3 sm:left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
+      <div className="absolute -top-6 left-4 text-2xl rotate-[15deg] z-40 animate-pulse">🎀</div>
     ) : null;
 
     switch (mood) {
       case 'mad':
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-8 sm:gap-10 relative">{ribbonOverlay}<div className={`w-16 h-16 sm:w-20 sm:h-20 ${redMadBase}`} /><div className={`w-16 h-16 sm:w-20 sm:h-20 ${redMadBase}`} />{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 relative">{ribbonOverlay}<div className={`w-20 h-20 ${redMadBase}`} /><div className={`w-20 h-20 ${redMadBase}`} />{tapeOverlay}</div></div>;
       case 'dizzy': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 sm:gap-12 animate-spin relative">{ribbonOverlay}<div className="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 animate-spin relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" /><div className="w-16 h-16 bg-cyan-400 rounded-full animate-pulse shadow-[0_0_20px_rgba(34,211,238,0.5)]" />{tapeOverlay}</div></div>;
       case 'happy': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 sm:gap-12 relative">{ribbonOverlay}<div className="absolute -top-6 left-1/2 -translate-x-1/2"><Heart size={26} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-18 sm:w-20 h-12 sm:h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-5 sm:w-6 h-5 sm:h-6 bg-white/30 rounded-full" /></div><div className="w-18 sm:w-20 h-12 sm:h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-5 sm:w-6 h-5 sm:h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 relative">{ribbonOverlay}<div className="absolute -top-6 left-1/2 -translate-x-1/2"><Heart size={28} className="text-pink-400 animate-bounce fill-pink-400" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div><div className="w-20 h-14 bg-cyan-400 rounded-full animate-bounce flex items-center justify-center shadow-lg"><div className="w-6 h-6 bg-white/30 rounded-full" /></div>{tapeOverlay}</div></div>;
       case 'thinking': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-10 sm:gap-12 relative">{ribbonOverlay}<div className="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-14 h-14 sm:w-16 sm:h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12 relative">{ribbonOverlay}<div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" /><div className="w-16 h-16 bg-cyan-300 rounded-full animate-pulse" />{tapeOverlay}</div></div>;
       case 'sleeping': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex items-center justify-center gap-10 sm:gap-12 relative">{ribbonOverlay}<div className="w-18 sm:w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-18 sm:w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-0 right-0 text-cyan-400 text-2xl sm:text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex items-center justify-center gap-12 relative">{ribbonOverlay}<div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="w-20 h-3 bg-cyan-600 rounded-full shadow-lg" /><div className="absolute top-0 right-0 text-cyan-400 text-3xl animate-pulse font-mono font-bold">Zzz...</div>{tapeOverlay}</div></div>;
       case 'eating': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-4xl sm:text-5xl animate-bounce">🥪</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">🥪</div>{tapeOverlay}</div></div>;
       case 'rubik': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-4xl sm:text-5xl animate-spin">🎨</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-spin">🎨</div>{tapeOverlay}</div></div>;
       case 'computer': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-4xl sm:text-5xl animate-bounce">💻</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">💻</div>{tapeOverlay}</div></div>;
       case 'phone': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-4xl sm:text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
       case 'lapdock': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-2.5 relative">{ribbonOverlay}<div className="flex gap-10 sm:gap-12"><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /><div className={`w-14 h-14 sm:w-16 sm:h-16 ${cyanBase}`} /></div><div className="text-3xl sm:text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
       default: 
         return (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-8 sm:gap-10'} relative`}>
+            <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}>
               {ribbonOverlay}
-              <div className={`w-16 h-16 sm:w-20 sm:h-20 ${cyanBase} eye-blink`} />
-              <div className={`w-16 h-16 sm:w-20 sm:h-20 ${cyanBase} eye-blink`} />
+              <div className={`w-20 h-20 ${cyanBase} eye-blink`} />
+              <div className={`w-20 h-20 ${cyanBase} eye-blink`} />
               {tapeOverlay}
             </div>
           </div>
@@ -1503,12 +1503,12 @@ export default function App() {
   // --- STANDARD PORTRAIT APP RENDER ROUTINE ---
   const cleanMessages = Array.isArray(messages) ? messages : [];
   return (
-    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between pb-3 sm:pb-4 overflow-hidden select-none">
+    <div className="fixed inset-0 bg-[#0c0c14] text-white font-sans flex flex-col items-center justify-between p-4 overflow-hidden select-none">
       <video ref={videoRef} autoPlay playsInline muted style={{ display: 'none' }} />
       <canvas ref={canvasRef} style={{ display: 'none' }} />
 
       {/* TOP ZONE */}
-      <div className="w-full max-w-sm px-6 pt-3 sm:pt-4 flex justify-between items-center z-10 flex-shrink-0">
+      <div className="w-full max-w-sm px-2 pt-2 pb-1 flex justify-between items-center z-10 flex-shrink-0">
         <button onClick={() => setShowHistory(true)} className="p-2 bg-white/5 rounded-xl border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95">
           <Menu size={16}/>
         </button>
@@ -1518,20 +1518,20 @@ export default function App() {
         </div>
       </div>
 
-      {/* PORTRAIT CORE CONTAINER */}
-      <div className="w-full max-w-sm px-4 flex-1 flex items-center justify-center relative min-h-0 py-2">
+      {/* PORTRAIT CORE CONTAINER - CLEAN FIXED PROPORTIONS */}
+      <div className="w-full max-w-sm px-2 flex-shrink-0 flex items-center justify-center relative my-1">
         {/* PORTRAIT FOREHEAD PETTING SENSOR ZONE */}
         <div 
           onMouseMove={toggleMoodToHappy}
           onTouchMove={toggleMoodToHappy}
           onClick={handlePet}
-          className="absolute top-2 left-1/4 right-1/4 h-24 z-[500] cursor-pointer bg-transparent pointer-events-auto"
+          className="absolute -top-3 left-1/4 right-1/4 h-24 z-[500] cursor-pointer bg-transparent pointer-events-auto"
           title="Rub Eilo Forehead Matrix"
         />
 
         <div 
             onClick={handleFaceClick}
-            className={`w-full aspect-[4/3] max-h-56 min-h-[160px] rounded-[45px] sm:rounded-[50px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 relative shadow-xl ${isChaosMode ? 'bg-black/90' : ''}`}
+            className={`w-full h-48 sm:h-52 rounded-[45px] bg-[#161622] border-2 border-white/5 flex flex-col items-center justify-center overflow-hidden transition-all duration-500 relative shadow-2xl ${isChaosMode ? 'bg-black/90' : ''}`}
         >
            {isChaosMode ? (
               <div className="w-full h-full p-6 font-mono text-[10px] text-cyan-500/40 opacity-70">
@@ -1542,20 +1542,20 @@ export default function App() {
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
                
-               {/* STORE BUTTON (LEFT SIDE OF EILO'S FACE) */}
+               {/* STORE BUTTON (CONTAINED LOWER LEFT) */}
                <button 
                  onClick={(e) => { e.stopPropagation(); setShowStore(true); }} 
-                 className="absolute bottom-4 left-6 p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-yellow-500/20 text-yellow-400 transition-all active:scale-95 z-50 shadow-md"
-                 title="Open Eilo Store"
+                 className="absolute bottom-3 left-6 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-yellow-500/20 text-yellow-400 transition-all active:scale-95 z-50 shadow-md"
+                 title="Open Store"
                >
                  <ShoppingBag size={18}/>
                </button>
 
-               {/* SETTINGS BUTTON (RIGHT SIDE OF EILO'S FACE) */}
+               {/* SETTINGS BUTTON (CONTAINED LOWER RIGHT) */}
                <button 
                  onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} 
-                 className="absolute bottom-4 right-6 p-2.5 rounded-full bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95 z-50 shadow-md"
-                 title="Open Settings"
+                 className="absolute bottom-3 right-6 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95 z-50 shadow-md"
+                 title="Settings"
                >
                  <Settings size={18}/>
                </button>
@@ -1581,10 +1581,10 @@ export default function App() {
             marginTop: '-120px', 
             marginLeft: '-40%', 
             width: '80%', 
-            height: '14rem', 
+            height: '13rem', 
             zIndex: 1000 
           }} 
-          className="bg-[#161622] border-2 border-cyan-500/30 rounded-[50px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto cursor-pointer overflow-hidden"
+          className="bg-[#161622] border-2 border-cyan-500/30 rounded-[45px] flex flex-col items-center justify-center shadow-2xl pointer-events-auto cursor-pointer overflow-hidden"
         >
           <div className="absolute -bottom-16 left-0 w-full flex justify-around px-12">
             <div className={`w-6 h-16 bg-cyan-600 rounded-full shadow-lg border border-cyan-400/30 ${isTaped ? 'animate-pulse' : 'animate-bounce'}`} />
@@ -1593,8 +1593,8 @@ export default function App() {
           <div className="w-full h-full flex items-center justify-center pointer-events-none">{renderFace()}</div>
           {isHandBlocking && !isTaped && <div className="absolute -bottom-12 -right-12 z-[200] animate-bounce cursor-not-allowed pointer-events-auto" onClick={handleBlockedClick}><div className="text-[12rem] drop-shadow-2xl hover:scale-105 transition-transform rotate-12 filter grayscale-[0.2]">✋</div></div>}
           
-          <button onClick={(e) => { e.stopPropagation(); setShowStore(true); }} className="absolute bottom-4 left-6 p-4 rounded-full bg-yellow-900/40 border border-yellow-500 scale-125 animate-pulse z-50"><ShoppingBag size={24} className="text-yellow-400"/></button>
-          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-125 animate-pulse z-50"><Settings size={24} className="text-cyan-400"/></button>
+          <button onClick={(e) => { e.stopPropagation(); setShowStore(true); }} className="absolute bottom-4 left-6 p-4 rounded-full bg-yellow-900/40 border border-yellow-500 scale-110 animate-pulse z-50"><ShoppingBag size={20} className="text-yellow-400"/></button>
+          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-110 animate-pulse z-50"><Settings size={20} className="text-cyan-400"/></button>
         </div>
       )}
 
@@ -1623,12 +1623,12 @@ export default function App() {
          </div>
       )}
 
-      {/* INTERFACE ZONE */}
-      <div className={`w-full max-w-sm px-4 h-[48vh] max-h-[500px] min-h-[260px] flex flex-col gap-3 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
+      {/* CHAT INTERFACE ZONE - FLUID DYNAMIC RESIZE */}
+      <div className={`w-full max-w-sm px-2 flex-1 min-h-0 flex flex-col gap-3 transition-all duration-700 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
-        <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] sm:rounded-[40px] border border-white/5 p-4 sm:p-5 flex flex-col overflow-hidden shadow-2xl relative">
-          <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar">
+        <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] border border-white/5 p-4 flex flex-col overflow-hidden shadow-2xl relative">
+          <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
             {cleanMessages.map((m, i) => (
               <div key={i} className={`flex ${m?.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m?.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>
@@ -1644,13 +1644,14 @@ export default function App() {
           </div>
         </div>
 
-        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 flex-shrink-0">
-          <button onClick={toggleMicInputDevice} className={`p-3 rounded-[22px] sm:rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
+        {/* BOTTOM QUICK BUTTONS */}
+        <div className="grid grid-cols-3 gap-3 flex-shrink-0">
+          <button onClick={toggleMicInputDevice} className={`p-3.5 rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
             <Mic size={16} />
             <span className="text-[7px] uppercase font-bold tracking-widest">Infinity Mic</span>
           </button>
-          <button onClick={handlePet} className="p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
-          <button onClick={() => setIsMuted(!isMuted)} className={`p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
+          <button onClick={handlePet} className="p-3.5 rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
+          <button onClick={() => setIsMuted(!isMuted)} className={`p-3.5 rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
         </div>
       </div>
 

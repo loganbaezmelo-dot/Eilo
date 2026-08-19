@@ -251,7 +251,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
 
   const [mood, setMood] = useState('neutral');
-  const [eyePos, setEyePos] = useState({ x: 0, y: 0 }); // Autonomous Pupil Wandering Offset
+  const [eyePos, setEyePos] = useState({ x: 0, y: 0 });
   const [isMuted, setIsMuted] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -511,7 +511,6 @@ export default function App() {
     const handleResize = () => {
         const landscape = window.innerWidth > window.innerHeight;
         if (landscape !== isLandscape) {
-            // ROTATION RAGE: If flipped from Landscape back to Portrait
             if (!landscape && isLandscape && !isChaosMode && mood !== 'sleeping') {
               setMood('mad');
               speak("Rotate me back! I was busy! 🎈");
@@ -548,7 +547,6 @@ export default function App() {
         if (globalCache[activeThreadId] && globalCache[activeThreadId].length > 0) {
           setMessages(globalCache[activeThreadId]);
         } else {
-          // Firestore Document Fallback
           const sessionDocRef = doc(db, 'users', user.uid, 'sessions', activeThreadId);
           const docSnap = await getDoc(sessionDocRef);
           if (docSnap.exists() && Array.isArray(docSnap.data().messages)) {
@@ -627,8 +625,6 @@ export default function App() {
 
               recognition.onresult = (e) => {
                   const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
-                  
-                  // MIMO PHONETIC VARIATION TRIGGERS MATRIX
                   const triggers = ["eilo", "eyelo", "aylo", "elo", "hey eilo", "hi eilo", "hey elo"];
 
                   if (aiAgentMode && transcript.includes("eilo core ping synchronization check")) {
@@ -699,14 +695,12 @@ export default function App() {
     const voices = window.speechSynthesis.getVoices();
 
     if (voices.length > 0) {
-      // 1. Target Android Classic Google US English Voice
       const googleVoice = voices.find(v => 
         v.name.includes("Google US English") || 
         v.name.includes("en-us-x-sfg") ||
         v.name.includes("Google English")
       );
 
-      // 2. Target iOS Fallback (Samantha or Karen)
       const iosVoice = voices.find(v => 
         v.name.includes("Samantha") || 
         v.name.includes("Karen") ||
@@ -1183,7 +1177,6 @@ export default function App() {
               }
             }
 
-            // Convert chat history for Gemini memory context (past 10 turns)
             const formattedHistory = (messages || [])
               .filter(m => m && typeof m.text === 'string' && m.text.trim() !== '')
               .slice(-10)
@@ -1192,7 +1185,6 @@ export default function App() {
                 parts: [{ text: m.text }]
               }));
 
-            // Gemini API requires conversation to start with 'user'
             while (formattedHistory.length > 0 && formattedHistory[0].role === 'model') {
               formattedHistory.shift();
             }
@@ -1208,7 +1200,6 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            // --- GEMINI 3.7 FLASH ENDPOINT ---
             const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
@@ -1346,7 +1337,6 @@ export default function App() {
       default: 
         return (
           <div className="absolute inset-0 flex items-center justify-center">
-            {/* AUTONOMOUS EYE WANDERING POSITIONING */}
             <div 
               style={{ transform: `translate(${eyePos.x}px, ${eyePos.y}px)` }}
               className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative transition-transform duration-700 ease-out`}
@@ -1572,7 +1562,7 @@ export default function App() {
         </div>
       </div>
 
-      {/* PORTRAIT CORE CONTAINER - CLEAN FIXED PROPORTIONS */}
+      {/* PORTRAIT CORE CONTAINER */}
       <div className="w-full max-w-sm px-2 flex-shrink-0 flex items-center justify-center relative my-1">
         {/* PORTRAIT FOREHEAD PETTING SENSOR ZONE */}
         <div 
@@ -1596,7 +1586,7 @@ export default function App() {
              <div className="w-full h-full flex flex-col items-center justify-center relative cursor-pointer" style={{ marginTop: `${faceOffset}px` }}>
                {renderFace()}
                
-               {/* STORE BUTTON (CONTAINED LOWER LEFT) */}
+               {/* STORE BUTTON */}
                <button 
                  onClick={(e) => { e.stopPropagation(); setShowStore(true); }} 
                  className="absolute bottom-3 left-6 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-yellow-500/20 text-yellow-400 transition-all active:scale-95 z-50 shadow-md"
@@ -1605,7 +1595,7 @@ export default function App() {
                  <ShoppingBag size={18}/>
                </button>
 
-               {/* SETTINGS BUTTON (CONTAINED LOWER RIGHT - TRIGGERS MIMO SCREAM) */}
+               {/* SETTINGS BUTTON */}
                <button 
                  onClick={handleOpenSettings} 
                  className="absolute bottom-3 right-6 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95 z-50 shadow-md"
@@ -1704,7 +1694,10 @@ export default function App() {
             <span className="text-[7px] uppercase font-bold tracking-widest">Infinity Mic</span>
           </button>
           <button onClick={handlePet} className="p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
-          <button onClick={() => setIsMuted(!isMuted)} className={`p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
+          <button onClick={() => setIsMuted(!isMuted)} className={`p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>
+            {isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}
+            <span className="text-[7px] uppercase font-bold tracking-widest">Audio</span>
+          </button>
         </div>
       </div>
 

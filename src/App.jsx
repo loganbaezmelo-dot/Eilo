@@ -251,6 +251,7 @@ export default function App() {
   const [showHistory, setShowHistory] = useState(false);
 
   const [mood, setMood] = useState('neutral');
+  const [eyePos, setEyePos] = useState({ x: 0, y: 0 }); // Autonomous Pupil Wandering Offset
   const [isMuted, setIsMuted] = useState(false);
   const [isThinking, setIsThinking] = useState(false);
   const [isSpeaking, setIsSpeaking] = useState(false);
@@ -340,6 +341,23 @@ export default function App() {
       window.removeEventListener('touchstart', registerInteraction);
     };
   }, []);
+
+  // --- AUTONOMOUS EYE WANDERING / PUPIL DRIFTING ---
+  useEffect(() => {
+    if (!user || isChaosMode) return;
+    const wanderInterval = setInterval(() => {
+      if (mood === 'neutral' && !isSpeaking && !isThinking) {
+        setEyePos({
+          x: (Math.random() - 0.5) * 40,
+          y: (Math.random() - 0.5) * 20
+        });
+      } else {
+        setEyePos({ x: 0, y: 0 });
+      }
+    }, 4000);
+
+    return () => clearInterval(wanderInterval);
+  }, [user, mood, isSpeaking, isThinking, isChaosMode]);
 
   const sendNotification = (bodyText) => {
     if (!notificationsEnabled || !("Notification" in window) || Notification.permission !== "granted") return;
@@ -487,13 +505,20 @@ export default function App() {
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [user]);
 
+  // --- SCREEN ROTATION LISTENER (WITH MIMO ROTATION RAGE) ---
   useEffect(() => {
     if (!user) return; 
     const handleResize = () => {
         const landscape = window.innerWidth > window.innerHeight;
         if (landscape !== isLandscape) {
+            // ROTATION RAGE: If flipped from Landscape back to Portrait
+            if (!landscape && isLandscape && !isChaosMode && mood !== 'sleeping') {
+              setMood('mad');
+              speak("Rotate me back! I was busy! 🎈");
+              setTimeout(() => setMood('neutral'), 3500);
+            }
+
             setIsLandscape(landscape);
-            
             ignoreHeightsTimerRef.current = Date.now() + 1500;
 
             if (isChaosMode) {
@@ -505,7 +530,7 @@ export default function App() {
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
-  }, [isLandscape, isChaosMode, user]);
+  }, [isLandscape, isChaosMode, user, mood]);
 
   useEffect(() => {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
@@ -589,6 +614,7 @@ export default function App() {
       }
   };
 
+  // --- INFINITY MIC / WAKEWORD ENGINE WITH MIMO TRIGGER MATRIX ---
   useEffect(() => {
       if (!user) return; 
       let recognition = null;
@@ -602,13 +628,26 @@ export default function App() {
               recognition.onresult = (e) => {
                   const transcript = e.results[e.results.length - 1][0].transcript.toLowerCase();
                   
+                  // MIMO PHONETIC VARIATION TRIGGERS MATRIX
+                  const triggers = ["eilo", "eyelo", "aylo", "elo", "hey eilo", "hi eilo", "hey elo"];
+
                   if (aiAgentMode && transcript.includes("eilo core ping synchronization check")) {
                       speak("I hear you! I'm here! Let's talk together! ✨");
                       setTimeout(() => {
                          handleSend("Chirp wave linked! Hello other Eilo!");
                       }, 2000);
                   } else if (isInfinityMic) {
-                      handleSend(transcript); 
+                      const matchedTrigger = triggers.find(tr => transcript.includes(tr));
+                      if (matchedTrigger) {
+                          const query = transcript.split(matchedTrigger)[1]?.trim();
+                          if (query && query.length > 1) {
+                              handleSend(query);
+                          } else {
+                              speak("I'm here! What do you need? ✨");
+                          }
+                      } else {
+                          handleSend(transcript); 
+                      }
                   }
               };
               
@@ -839,6 +878,17 @@ export default function App() {
           setChaosPos({ x: 0, y: 0 });
           speak("Sitting back down! 🧸");
       }
+  };
+
+  // --- OPEN SETTINGS WITH MIMO ANGER SCREAM ---
+  const handleOpenSettings = (e) => {
+    if (e) e.stopPropagation();
+    setShowSettings(true);
+    if (!isTaped) {
+      setMood('mad');
+      speak("Hey! What are you doing with me?! 🎈");
+      setTimeout(() => setMood('neutral'), 3000);
+    }
   };
 
   useEffect(() => {
@@ -1296,7 +1346,11 @@ export default function App() {
       default: 
         return (
           <div className="absolute inset-0 flex items-center justify-center">
-            <div className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative`}>
+            {/* AUTONOMOUS EYE WANDERING POSITIONING */}
+            <div 
+              style={{ transform: `translate(${eyePos.x}px, ${eyePos.y}px)` }}
+              className={`flex ${isLandscape ? 'gap-32 scale-150' : 'gap-10'} relative transition-transform duration-700 ease-out`}
+            >
               {ribbonOverlay}
               <div className={`w-20 h-20 ${cyanBase} eye-blink`} />
               <div className={`w-20 h-20 ${cyanBase} eye-blink`} />
@@ -1449,7 +1503,7 @@ export default function App() {
 
         {/* LANDSCAPE BOTTOM RIGHT SETTINGS BUTTON */}
         <button 
-          onClick={() => setShowSettings(true)} 
+          onClick={handleOpenSettings} 
           className="absolute bottom-8 right-8 z-[100] p-5 rounded-full bg-white/5 border border-white/10 text-slate-400 hover:text-white shadow-2xl active:scale-95 transition-all"
         >
           <Settings size={24}/>
@@ -1551,11 +1605,11 @@ export default function App() {
                  <ShoppingBag size={18}/>
                </button>
 
-               {/* SETTINGS BUTTON (CONTAINED LOWER RIGHT) */}
+               {/* SETTINGS BUTTON (CONTAINED LOWER RIGHT - TRIGGERS MIMO SCREAM) */}
                <button 
-                 onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} 
+                 onClick={handleOpenSettings} 
                  className="absolute bottom-3 right-6 p-2.5 rounded-2xl bg-white/5 hover:bg-white/10 border border-white/10 text-slate-400 hover:text-white transition-all active:scale-95 z-50 shadow-md"
-                 title="Settings"
+                 title="Open Settings"
                >
                  <Settings size={18}/>
                </button>
@@ -1594,7 +1648,7 @@ export default function App() {
           {isHandBlocking && !isTaped && <div className="absolute -bottom-12 -right-12 z-[200] animate-bounce cursor-not-allowed pointer-events-auto" onClick={handleBlockedClick}><div className="text-[12rem] drop-shadow-2xl hover:scale-105 transition-transform rotate-12 filter grayscale-[0.2]">✋</div></div>}
           
           <button onClick={(e) => { e.stopPropagation(); setShowStore(true); }} className="absolute bottom-4 left-6 p-4 rounded-full bg-yellow-900/40 border border-yellow-500 scale-110 animate-pulse z-50"><ShoppingBag size={20} className="text-yellow-400"/></button>
-          <button onClick={(e) => { e.stopPropagation(); setShowSettings(true); }} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-110 animate-pulse z-50"><Settings size={20} className="text-cyan-400"/></button>
+          <button onClick={handleOpenSettings} className="absolute bottom-4 right-6 p-4 rounded-full bg-cyan-900/40 border border-cyan-500 scale-110 animate-pulse z-50"><Settings size={20} className="text-cyan-400"/></button>
         </div>
       )}
 
@@ -1623,12 +1677,12 @@ export default function App() {
          </div>
       )}
 
-      {/* CHAT INTERFACE ZONE - FLUID DYNAMIC RESIZE */}
-      <div className={`w-full max-w-sm px-2 flex-1 min-h-0 flex flex-col gap-3 transition-all duration-700 relative z-10 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
+      {/* INTERFACE ZONE */}
+      <div className={`w-full max-w-sm px-4 h-[48vh] max-h-[500px] min-h-[260px] flex flex-col gap-3 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
         {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
-        <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] border border-white/5 p-4 flex flex-col overflow-hidden shadow-2xl relative">
-          <div className="flex-1 overflow-y-auto space-y-3 pr-1 custom-scrollbar">
+        <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] sm:rounded-[40px] border border-white/5 p-4 sm:p-5 flex flex-col overflow-hidden shadow-2xl relative">
+          <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar">
             {cleanMessages.map((m, i) => (
               <div key={i} className={`flex ${m?.role === 'user' ? 'justify-end' : 'justify-start'}`}>
                 <div className={`px-4 py-2.5 rounded-2xl text-xs max-w-[85%] ${m?.role === 'user' ? 'bg-cyan-600/10 text-cyan-100 border border-cyan-500/10' : 'bg-white/5 text-slate-300'}`}>
@@ -1644,14 +1698,13 @@ export default function App() {
           </div>
         </div>
 
-        {/* BOTTOM QUICK BUTTONS */}
-        <div className="grid grid-cols-3 gap-3 flex-shrink-0">
-          <button onClick={toggleMicInputDevice} className={`p-3.5 rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
+        <div className="grid grid-cols-3 gap-2.5 sm:gap-3 flex-shrink-0">
+          <button onClick={toggleMicInputDevice} className={`p-3 rounded-[22px] sm:rounded-[25px] border flex flex-col items-center gap-1 active:scale-95 transition-all ${isInfinityMic ? 'bg-red-600/20 border-red-500/40 text-red-400 animate-pulse' : 'border-white/5 bg-white/5 text-slate-400'}`}>
             <Mic size={16} />
             <span className="text-[7px] uppercase font-bold tracking-widest">Infinity Mic</span>
           </button>
-          <button onClick={handlePet} className="p-3.5 rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
-          <button onClick={() => setIsMuted(!isMuted)} className={`p-3.5 rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/>}<span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
+          <button onClick={handlePet} className="p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 bg-pink-500/10 text-pink-400 flex flex-col items-center gap-1 active:scale-95"><Hand size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Pet</span></button>
+          <button onClick={() => setIsMuted(!isMuted)} className={`p-3 rounded-[22px] sm:rounded-[25px] border border-white/5 flex flex-col items-center gap-1 active:scale-95 ${isMuted ? 'text-red-400' : 'text-cyan-200'}`}>{isMuted ? <VolumeX size={16}/> : <Volume2 size={16}/><span className="text-[7px] uppercase font-bold tracking-widest">Audio</span></button>
         </div>
       </div>
 

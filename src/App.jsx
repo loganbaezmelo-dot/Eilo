@@ -1200,6 +1200,7 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
+            // --- GEMINI 3.7 FLASH ENDPOINT ---
             const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
@@ -1394,7 +1395,7 @@ export default function App() {
                                 Before Eilo, there was Mimo. The original Mimo project started on <strong>December 20, 2025</strong>, meant to be a lively, EMO-like companion.
                             </p>
                             <p className="mt-2">
-                                But on <strong>December 21, 2025</strong>, a bad AI update "lobotomized" Mimo into a bland, inanimate CSS blinking animation. The project was wiped in frustration.
+                                But on <strong>December 21, 2025</strong>, a catastrophic AI update "lobotomized" Mimo, stripping away his procedural audio and living eyes to leave a generic settings form with a static 🤖 emoji and alert popups. The project was wiped in frustration.
                             </p>
                             <a href="https://mimo-rust.vercel.app/" target="_blank" rel="noopener noreferrer" className="inline-block mt-3 text-cyan-400 hover:text-cyan-300 underline font-mono text-xs">
                                 Visit the Mimo Memorial

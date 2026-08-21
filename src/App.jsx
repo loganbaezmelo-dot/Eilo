@@ -53,10 +53,18 @@ const pcmToWav = (pcm, rate = 24000) => {
   const buf = new ArrayBuffer(44 + pcm.length * 2);
   const view = new DataView(buf);
   const s = (o, str) => { for (let i = 0; i < str.length; i++) view.setUint8(o + i, str.charCodeAt(i)); };
-  s(0, 'RIFF'); view.setUint32(4, 36 + pcm.length * 2, true); s(8, 'WAVE'); s(12, 'fmt ');
-  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
-  view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true);
-  view.setUint16(32, 2, true); view.setUint16(34, 16, true); s(36, 'data');
+  s(0, 'RIFF'); 
+  view.setUint32(4, 36 + pcm.length * 2, true); 
+  s(8, 'WAVE'); 
+  s(12, 'fmt ');
+  view.setUint32(16, 16, true); 
+  view.setUint16(20, 1, true); // Linear PCM
+  view.setUint16(22, 1, true); // Mono
+  view.setUint32(24, rate, true); 
+  view.setUint32(28, rate * 2, true); 
+  view.setUint16(32, 2, true); 
+  view.setUint16(34, 16, true); 
+  s(36, 'data');
   view.setUint32(40, pcm.length * 2, true);
   for (let i = 0, o = 44; i < pcm.length; i++, o += 2) view.setInt16(o, pcm[i], true);
   return buf;
@@ -737,7 +745,7 @@ export default function App() {
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
     const cleanKey = (tempApiKey || "").trim();
 
-    // 1. Direct Gemini Neural TTS (Outputs 24kHz Linear PCM -> Play as WAV Blob)
+    // 1. Direct Gemini Neural Audio (WAV Blob -> new Audio() Playback)
     if (cleanKey && !currentlyTaped) {
       const ttsPayload = {
         contents: [{ parts: [{ text: finalText }] }],
@@ -752,7 +760,8 @@ export default function App() {
       };
 
       const ttsModels = [
-        "gemini-3.1-flash-tts-preview",
+        "gemini-2.5-flash",
+        "gemini-2.0-flash",
         "gemini-2.5-flash-preview-tts"
       ];
 
@@ -771,10 +780,11 @@ export default function App() {
           if (inlineData?.data) {
             const binaryString = atob(inlineData.data);
             const len = binaryString.length;
-            const bytes = new Uint8Array(len);
-            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            const evenLen = len - (len % 2); // Byte alignment to prevent RangeError
+            const bytes = new Uint8Array(evenLen);
+            for (let i = 0; i < evenLen; i++) bytes[i] = binaryString.charCodeAt(i);
             
-            const pcm16 = new Int16Array(bytes.buffer, 0, Math.floor(len / 2));
+            const pcm16 = new Int16Array(bytes.buffer);
             const wavBuffer = pcmToWav(pcm16, 24000);
             const blob = new Blob([wavBuffer], { type: 'audio/wav' });
             const audioUrl = URL.createObjectURL(blob);
@@ -795,7 +805,7 @@ export default function App() {
             return;
           }
         } catch (e) {
-          console.warn(`TTS attempt with ${model} failed, trying next:`, e);
+          console.warn(`TTS attempt with ${model} failed:`, e);
         }
       }
     }
@@ -1449,9 +1459,9 @@ export default function App() {
       case 'computer': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">💻</div>{tapeOverlay}</div></div>;
       case 'phone': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
       case 'lapdock': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
       default: 
         return (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -1787,7 +1797,7 @@ export default function App() {
 
       {/* INTERFACE ZONE */}
       <div className={`w-full max-w-sm px-4 h-[48vh] max-h-[500px] min-h-[260px] flex flex-col gap-3 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
-        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
+        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /></div>}
         
         <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] sm:rounded-[40px] border border-white/5 p-4 sm:p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar">

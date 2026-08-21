@@ -61,8 +61,8 @@ const pcmToWav = (pcmData, sampleRate = 24000) => {
   writeString(8, 'WAVE');
   writeString(12, 'fmt ');
   view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // Linear PCM
-  view.setUint16(22, 1, true); // Mono
+  view.setUint16(20, 1, true);
+  view.setUint16(22, 1, true);
   view.setUint32(24, sampleRate, true);
   view.setUint32(28, sampleRate * 2, true);
   view.setUint16(32, 2, true);
@@ -100,7 +100,7 @@ const playPcmAudio = async (base64Pcm, onEnded) => {
 
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
-    source.playbackRate.value = 1.12; // Eilo pitch and pace calibration
+    source.playbackRate.value = 1.15; // Sassy speed calibration
     
     source.connect(audioCtx.destination);
     currentSource = source;
@@ -385,16 +385,6 @@ export default function App() {
   useEffect(() => { isTapedValueRef.current = isTaped; }, [isTaped]);
   useEffect(() => { visionEnabledValueRef.current = visionEnabled; }, [visionEnabled]);
 
-  // Pre-load Web Speech API voices on mount so iOS WebKit builds the voice list
-  useEffect(() => {
-    if ('speechSynthesis' in window) {
-      window.speechSynthesis.getVoices();
-      window.speechSynthesis.onvoiceschanged = () => {
-        window.speechSynthesis.getVoices();
-      };
-    }
-  }, []);
-
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
   const safeInventory = Array.isArray(inventory) ? inventory : [];
@@ -502,7 +492,7 @@ export default function App() {
     }
   };
 
-  // --- SAFE RESILIENT 20-MINUTE PATIENT BACKGROUND ACTIVITY LOOP ---
+  // --- 20-MINUTE BACKGROUND ACTIVITY LOOP ---
   useEffect(() => {
     if (!user || !notificationsEnabled) {
       if (backgroundLoopRef.current) clearInterval(backgroundLoopRef.current);
@@ -606,7 +596,7 @@ export default function App() {
     localStorage.setItem('eilo_threads_list', JSON.stringify(threads));
   }, [threads]);
 
-  // LOAD SESSION (HYBRID: LOCAL STORAGE FIRST, FIRESTORE DOCUMENT FALLBACK)
+  // LOAD SESSION
   useEffect(() => {
     if (!user?.uid || !activeThreadId) return;
     
@@ -683,7 +673,7 @@ export default function App() {
       }
   };
 
-  // --- INFINITY MIC / WAKEWORD ENGINE WITH MIMO TRIGGER MATRIX ---
+  // --- INFINITY MIC / WAKEWORD ENGINE ---
   useEffect(() => {
       if (!user) return; 
       let recognition = null;
@@ -749,56 +739,69 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- CROSS-PLATFORM HARDLOCKED TTS VOICE ROUTINE WITH UNMUFFLE OVERRIDE ---
-  const speak = (text, isRobotLang = false, forceUnmuffled = false) => {
-    if (isMuted || !user || !('speechSynthesis' in window)) return; 
+  // --- HARDLOCKED SYNTHESIS ENGINE (CLOUD TTS PCM WITH SPEECH-SYNTH FALLBACK) ---
+  const speak = async (text, isRobotLang = false, forceUnmuffled = false) => {
+    if (isMuted || !user) return; 
     setIsSpeaking(true);
-    window.speechSynthesis.cancel();
-    
+
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
-    
-    let finalText = text;
-    if (currentlyTaped) {
-        finalText = "Mmm. Mmm. Hmph."; 
+    let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
+
+    // 1. Direct Cloud TTS Linear PCM Synthesizer
+    if (tempApiKey && !currentlyTaped) {
+      try {
+        const ttsRes = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${tempApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            input: { text: finalText },
+            voice: { languageCode: 'en-US', name: 'en-US-Journey-F' },
+            audioConfig: { audioEncoding: 'LINEAR16', sampleRateHertz: 24000, speakingRate: 1.12, pitch: 4.0 }
+          })
+        });
+        const ttsData = await ttsRes.json();
+        if (ttsData.audioContent) {
+          const played = await playPcmAudio(ttsData.audioContent, () => setIsSpeaking(false));
+          if (played) return;
+        }
+      } catch (err) {
+        console.warn("Direct Cloud TTS failed, falling back to Web Speech:", err);
+      }
     }
-    
-    const utterance = new SpeechSynthesisUtterance(finalText);
-    const voices = window.speechSynthesis.getVoices();
 
-    if (voices.length > 0) {
-      const googleVoice = voices.find(v => 
-        v.name.includes("Google US English") || 
-        v.name.includes("en-us-x-sfg") ||
-        v.name.includes("Google English")
-      );
+    // 2. Cross-Platform Web Speech API Fallback
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.cancel();
+      const utterance = new SpeechSynthesisUtterance(finalText);
+      const voices = window.speechSynthesis.getVoices();
 
-      const iosVoice = voices.find(v => 
-        v.name.includes("Samantha") || 
-        v.name.includes("Karen") ||
-        (v.lang === "en-US" && v.name.toLowerCase().includes("female"))
-      );
+      if (voices.length > 0) {
+        const googleVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("en-us-x-sfg") || v.name.includes("Google English"));
+        const iosVoice = voices.find(v => v.name.includes("Samantha") || v.name.includes("Karen") || (v.lang === "en-US" && v.name.toLowerCase().includes("female")));
 
-      if (googleVoice) {
-        utterance.voice = googleVoice;
-        utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
-        utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
-      } else if (iosVoice) {
-        utterance.voice = iosVoice;
-        utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.8 : 1.4);
-        utterance.rate = currentlyTaped ? 0.8 : 1.1;
+        if (googleVoice) {
+          utterance.voice = googleVoice;
+          utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+          utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
+        } else if (iosVoice) {
+          utterance.voice = iosVoice;
+          utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.8 : 1.4);
+          utterance.rate = currentlyTaped ? 0.8 : 1.1;
+        } else {
+          utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+          utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
+        }
       } else {
         utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
         utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
       }
+      
+      if (currentlyTaped) utterance.volume = 0.6;
+      utterance.onend = () => setIsSpeaking(false);
+      window.speechSynthesis.speak(utterance);
     } else {
-      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
-      utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
+      setIsSpeaking(false);
     }
-    
-    if (currentlyTaped) utterance.volume = 0.6;
-
-    utterance.onend = () => setIsSpeaking(false);
-    window.speechSynthesis.speak(utterance);
   };
 
   const getLocalResponse = (text) => {
@@ -1161,7 +1164,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- SAFE MULTI-TURN GEMINI 3.7 FLASH CHAT ROUTINE (WITH DIRECT PCM AUDIO SUPPORT) ---
+  // --- SAFE MULTI-TURN GEMINI 3.7 FLASH CHAT ROUTINE ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
@@ -1213,7 +1216,6 @@ export default function App() {
     setMessages(nextMessages);
 
     let reply = "";
-    let pcmBase64 = null;
     const safeInv = Array.isArray(inventory) ? inventory : [];
     
     const currentYear = new Date().getFullYear();
@@ -1272,26 +1274,16 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            const requestBody = {
-              contents: requestContents,
-              systemInstruction: { parts: [{ text: system }] }
-            };
-
-            // GEMINI 3.7 FLASH REQUEST
             const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify(requestBody)
+              body: JSON.stringify({
+                contents: requestContents,
+                systemInstruction: { parts: [{ text: system }] }
+              })
             });
             
-            const candidateParts = data.candidates?.[0]?.content?.parts || [];
-            const textPart = candidateParts.find(p => p.text);
-            const audioPart = candidateParts.find(p => p.inlineData && p.inlineData.mimeType?.includes('audio'));
-            
-            reply = textPart?.text || getLocalResponse(msgText);
-            if (audioPart && audioPart.inlineData?.data) {
-              pcmBase64 = audioPart.inlineData.data;
-            }
+            reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
         } catch (apiErr) {
             console.warn("API Error, falling back to local brain.", apiErr);
             reply = getLocalResponse(msgText);
@@ -1311,15 +1303,7 @@ export default function App() {
     setMessages(finalMessages);
     setMood('happy'); 
 
-    if (pcmBase64 && !isTaped && !isMuted) {
-      setIsSpeaking(true);
-      await playPcmAudio(pcmBase64, () => {
-        setIsSpeaking(false);
-        setMood('neutral');
-      });
-    } else {
-      speak(reply);
-    }
+    speak(reply);
 
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     setIsThinking(false);
@@ -1761,7 +1745,7 @@ export default function App() {
 
       {/* INTERFACE ZONE */}
       <div className={`w-full max-w-sm px-4 h-[48vh] max-h-[500px] min-h-[260px] flex flex-col gap-3 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
-        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /></div>}
+        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
         <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] sm:rounded-[40px] border border-white/5 p-4 sm:p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar">

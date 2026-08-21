@@ -100,7 +100,7 @@ const playPcmAudio = async (base64Pcm, onEnded) => {
 
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
-    source.playbackRate.value = 1.15; // Sassy speed calibration
+    source.playbackRate.value = 1.15;
     
     source.connect(audioCtx.destination);
     currentSource = source;
@@ -403,7 +403,7 @@ export default function App() {
     };
   }, []);
 
-  // --- AUTONOMOUS EYE WANDERING / PUPIL DRIFTING ---
+  // --- AUTONOMOUS EYE WANDERING ---
   useEffect(() => {
     if (!user || isChaosMode) return;
     const wanderInterval = setInterval(() => {
@@ -566,7 +566,7 @@ export default function App() {
     return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [user]);
 
-  // --- SCREEN ROTATION LISTENER (WITH MIMO ROTATION RAGE) ---
+  // --- SCREEN ROTATION LISTENER ---
   useEffect(() => {
     if (!user) return; 
     const handleResize = () => {
@@ -739,7 +739,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- HARDLOCKED SYNTHESIS ENGINE (CLOUD TTS PCM WITH SPEECH-SYNTH FALLBACK) ---
+  // --- HARDLOCKED DIRECT GEMINI 3.7 FLASH SYNTHESIS ENGINE ---
   const speak = async (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -747,56 +747,52 @@ export default function App() {
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
 
-    // 1. Direct Cloud TTS Linear PCM Synthesizer
+    // 1. Direct Gemini 3.7 Flash Audio
     if (tempApiKey && !currentlyTaped) {
       try {
-        const ttsRes = await fetch(`https://texttospeech.googleapis.com/v1/text:synthesize?key=${tempApiKey}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            input: { text: finalText },
-            voice: { languageCode: 'en-US', name: 'en-US-Journey-F' },
-            audioConfig: { audioEncoding: 'LINEAR16', sampleRateHertz: 24000, speakingRate: 1.12, pitch: 4.0 }
+            contents: [{ parts: [{ text: finalText }] }],
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: "Puck" }
+                }
+              }
+            }
           })
         });
-        const ttsData = await ttsRes.json();
-        if (ttsData.audioContent) {
-          const played = await playPcmAudio(ttsData.audioContent, () => setIsSpeaking(false));
-          if (played) return;
+        const data = await res.json();
+        const pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (pcmData) {
+          const success = await playPcmAudio(pcmData, () => setIsSpeaking(false));
+          if (success) return;
         }
       } catch (err) {
-        console.warn("Direct Cloud TTS failed, falling back to Web Speech:", err);
+        console.warn("Direct Gemini PCM failed, fallback triggered:", err);
       }
     }
 
-    // 2. Cross-Platform Web Speech API Fallback
+    // 2. Fallback: Force Google TTS Voice explicitly on Android/Samsung devices
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(finalText);
       const voices = window.speechSynthesis.getVoices();
 
-      if (voices.length > 0) {
-        const googleVoice = voices.find(v => v.name.includes("Google US English") || v.name.includes("en-us-x-sfg") || v.name.includes("Google English"));
-        const iosVoice = voices.find(v => v.name.includes("Samantha") || v.name.includes("Karen") || (v.lang === "en-US" && v.name.toLowerCase().includes("female")));
+      const googleVoice = voices.find(v => 
+        v.name.includes("Google") || 
+        v.name.includes("en-us-x-sfg") || 
+        v.name.includes("Natural")
+      ) || voices.find(v => v.lang === "en-US" && !v.name.includes("Samsung"));
 
-        if (googleVoice) {
-          utterance.voice = googleVoice;
-          utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
-          utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
-        } else if (iosVoice) {
-          utterance.voice = iosVoice;
-          utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.8 : 1.4);
-          utterance.rate = currentlyTaped ? 0.8 : 1.1;
-        } else {
-          utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
-          utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
-        }
-      } else {
-        utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
-        utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.1);
-      }
-      
+      if (googleVoice) utterance.voice = googleVoice;
+      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+      utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.15);
       if (currentlyTaped) utterance.volume = 0.6;
+      
       utterance.onend = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
     } else {
@@ -948,7 +944,6 @@ export default function App() {
       }
   };
 
-  // --- OPEN SETTINGS WITH MIMO ANGER SCREAM ---
   const handleOpenSettings = (e) => {
     if (e) e.stopPropagation();
     setShowSettings(true);

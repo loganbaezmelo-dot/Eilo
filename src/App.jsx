@@ -76,17 +76,35 @@ const pcmToWav = (pcmData, sampleRate = 24000) => {
   return buffer;
 };
 
-// --- UNIVERSAL WEB AUDIO PCM PLAYER ---
-let audioCtx = null;
-let currentSource = null;
+// --- GLOBAL AUDIO CONTEXT & UNLOCK ENGINE ---
+let globalAudioCtx = null;
+let currentAudioElement = null;
+
+const unlockAudioContext = () => {
+  try {
+    if (!globalAudioCtx) {
+      globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    if (globalAudioCtx.state === 'suspended') {
+      globalAudioCtx.resume();
+    }
+    // Play a silent 1-sample buffer to satisfy mobile gesture locks
+    const buffer = globalAudioCtx.createBuffer(1, 1, 22050);
+    const source = globalAudioCtx.createBufferSource();
+    source.buffer = buffer;
+    source.connect(globalAudioCtx.destination);
+    source.start(0);
+  } catch (e) {
+    console.warn("Audio unlock attempted:", e);
+  }
+};
 
 const playPcmAudio = async (base64Pcm, onEnded) => {
   try {
-    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-    if (audioCtx.state === 'suspended') await audioCtx.resume();
-
-    if (currentSource) {
-      try { currentSource.stop(); } catch (e) {}
+    unlockAudioContext();
+    if (currentAudioElement) {
+      currentAudioElement.pause();
+      currentAudioElement = null;
     }
 
     const binaryString = atob(base64Pcm);
@@ -96,24 +114,29 @@ const playPcmAudio = async (base64Pcm, onEnded) => {
 
     const int16Array = new Int16Array(bytes.buffer);
     const wavBuffer = pcmToWav(int16Array, 24000);
-    const audioBuffer = await audioCtx.decodeAudioData(wavBuffer);
+    const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+    const audioUrl = URL.createObjectURL(blob);
 
-    const source = audioCtx.createBufferSource();
-    source.buffer = audioBuffer;
-    source.playbackRate.value = 1.12; // Sassy Eilo pace
-    
-    source.connect(audioCtx.destination);
-    currentSource = source;
+    const audio = new Audio(audioUrl);
+    audio.playbackRate = 1.15;
+    currentAudioElement = audio;
 
-    source.onended = () => {
-      currentSource = null;
+    audio.onended = () => {
+      URL.revokeObjectURL(audioUrl);
+      currentAudioElement = null;
       if (onEnded) onEnded();
     };
 
-    source.start(0);
+    audio.onerror = () => {
+      URL.revokeObjectURL(audioUrl);
+      currentAudioElement = null;
+      if (onEnded) onEnded();
+    };
+
+    await audio.play();
     return true;
   } catch (err) {
-    console.warn("PCM audio playback failed, fallback triggered:", err);
+    console.warn("PCM playback error, using fallback:", err);
     if (onEnded) onEnded();
     return false;
   }
@@ -330,8 +353,6 @@ export default function App() {
   const [showStore, setShowStore] = useState(false);
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
-  
-  const [hasInteracted, setHasInteracted] = useState(false);
 
   const [bucks, setBucks] = useState(() => {
     const local = localStorage.getItem('eilo_bucks');
@@ -385,6 +406,17 @@ export default function App() {
   useEffect(() => { isTapedValueRef.current = isTaped; }, [isTaped]);
   useEffect(() => { visionEnabledValueRef.current = visionEnabled; }, [visionEnabled]);
 
+  // Unlock audio on initial user touch / click gesture anywhere
+  useEffect(() => {
+    const handleGesture = () => unlockAudioContext();
+    window.addEventListener('click', handleGesture, { once: true });
+    window.addEventListener('touchstart', handleGesture, { once: true });
+    return () => {
+      window.removeEventListener('click', handleGesture);
+      window.removeEventListener('touchstart', handleGesture);
+    };
+  }, []);
+
   const getCurrentName = () => user?.displayName?.split(' ')[0] || "Owner";
   
   const safeInventory = Array.isArray(inventory) ? inventory : [];
@@ -392,16 +424,6 @@ export default function App() {
   const ownsDuctTape = safeInventory.includes('duct_tape');
   const ownsRibbon = safeInventory.includes('ribbon');
   const hasRogueLegs = ownsRogueLegs && rogueLegsActive;
-
-  useEffect(() => {
-    const registerInteraction = () => setHasInteracted(true);
-    window.addEventListener('click', registerInteraction);
-    window.addEventListener('touchstart', registerInteraction);
-    return () => {
-      window.removeEventListener('click', registerInteraction);
-      window.removeEventListener('touchstart', registerInteraction);
-    };
-  }, []);
 
   // --- AUTONOMOUS EYE WANDERING ---
   useEffect(() => {
@@ -631,12 +653,14 @@ export default function App() {
   }, [user, activeThreadId]);
 
   const handleSelectThreadAndSave = (id) => {
+    unlockAudioContext();
     setActiveThreadId(id);
     localStorage.setItem('eilo_active_thread', id);
   };
 
   const handleCreateNewThread = () => {
     if (!user) return;
+    unlockAudioContext();
     const nextId = "thread_" + Date.now();
     const newSession = { id: nextId, title: "New Soul Sync...", updatedAt: Date.now() };
     
@@ -658,6 +682,7 @@ export default function App() {
   };
 
   const toggleMicInputDevice = () => {
+      unlockAudioContext();
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
           speak("My ears are broken! Your browser doesn't support mic input.");
@@ -743,11 +768,12 @@ export default function App() {
   const speak = async (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
+    unlockAudioContext();
 
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
 
-    // 1. Direct Gemini Neural TTS (Outputs 24kHz Linear PCM -> Decodes in Web Audio)
+    // 1. Direct Gemini Neural TTS (Outputs 24kHz Linear PCM -> Web Audio Decoding)
     if (tempApiKey && !currentlyTaped) {
       try {
         const payload = {
@@ -762,7 +788,6 @@ export default function App() {
           }
         };
 
-        // Try primary TTS model, fallback to preview TTS
         let pcmData = null;
         try {
           const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${tempApiKey}`, {
@@ -787,7 +812,7 @@ export default function App() {
           if (success) return;
         }
       } catch (err) {
-        console.warn("Direct Gemini Neural TTS failed, fallback triggered:", err);
+        console.warn("Direct Gemini Neural TTS error, fallback triggered:", err);
       }
     }
 
@@ -877,6 +902,7 @@ export default function App() {
 
   const buyItem = async (cost, itemId) => {
     if (!user) return;
+    unlockAudioContext();
     const currentInv = Array.isArray(inventory) ? inventory : [];
     
     if (itemId === 'lapdock' && !currentInv.includes('phone')) {
@@ -907,6 +933,7 @@ export default function App() {
 
   const handleFaceClick = (e) => {
     if (!user) return;
+    unlockAudioContext();
     e.stopPropagation();
     if (!isChaosMode && (ownsDuctTape || ownsRogueLegs || ownsRibbon)) {
         setShowFacePopup(true);
@@ -915,23 +942,22 @@ export default function App() {
 
   const applyDuctTape = () => {
       if (!user) return;
+      unlockAudioContext();
       const newState = !isTaped;
       setIsTaped(newState);
       isTapedValueRef.current = newState;
       setShowFacePopup(false);
       
-      if ('speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        if (newState) {
-            speak("Mmm. Mmm. Hmph.");
-        } else {
-            speak("I'm free! Never do that again! 🎀", false, true);
-        }
+      if (newState) {
+          speak("Mmm. Mmm. Hmph.");
+      } else {
+          speak("I'm free! Never do that again! 🎀", false, true);
       }
   };
 
   const toggleRibbonDecoration = () => {
       if (!user) return;
+      unlockAudioContext();
       const newState = !ribbonApplied;
       setRibbonApplied(newState);
       localStorage.setItem('eilo_ribbon_applied', newState.toString());
@@ -946,6 +972,7 @@ export default function App() {
 
   const toggleRogueLegs = () => {
       if (!user) return;
+      unlockAudioContext();
       const newState = !rogueLegsActive;
       setRogueLegsActive(newState);
       localStorage.setItem('eilo_rogue_active', newState.toString());
@@ -961,6 +988,7 @@ export default function App() {
 
   const handleOpenSettings = (e) => {
     if (e) e.stopPropagation();
+    unlockAudioContext();
     setShowSettings(true);
     if (!isTaped) {
       setMood('mad');
@@ -1032,11 +1060,13 @@ export default function App() {
 
   const handleBlockedClick = (e) => { 
       if (!user) return;
+      unlockAudioContext();
       e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); 
   };
 
   const handlePet = () => {
     if (!user) return;
+    unlockAudioContext();
 
     if (mood === 'sleeping') {
       setMood('mad');
@@ -1179,6 +1209,7 @@ export default function App() {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
     
+    unlockAudioContext();
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
     if (mood === 'sleeping') {
@@ -1363,6 +1394,7 @@ export default function App() {
   };
 
   const toggleCameraScanner = async () => {
+    unlockAudioContext();
     if (visionEnabled) {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());

@@ -54,7 +54,7 @@ const pcmToWav = (pcm, rate = 24000) => {
   const view = new DataView(buf);
   const s = (o, str) => { for (let i = 0; i < str.length; i++) view.setUint8(o + i, str.charCodeAt(i)); };
   s(0, 'RIFF'); 
-  view.setUint32(4, 36 + pcm.length * 2, true); 
+  view.setUint32(4, 32 + pcm.length * 2, true); 
   s(8, 'WAVE'); 
   s(12, 'fmt ');
   view.setUint32(16, 16, true); 
@@ -395,27 +395,22 @@ export default function App() {
     const loaded = {};
     for (const item of phrases) {
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             contents: [{ parts: [{ text: item.text }] }],
             generationConfig: {
               responseModalities: ["AUDIO"],
-              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } }
+              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } }
             }
           })
         });
         const data = await res.json();
         const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
         if (inlineData) {
-          const binaryString = atob(inlineData);
-          const evenLen = binaryString.length - (binaryString.length % 2);
-          const bytes = new Uint8Array(evenLen);
-          for (let i = 0; i < evenLen; i++) bytes[i] = binaryString.charCodeAt(i);
-          const pcm16 = new Int16Array(bytes.buffer);
-          const wav = pcmToWav(pcm16, 24000);
-          loaded[item.id] = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+          const rawBuffer = pcmToWav(new Int16Array(Uint8Array.from(atob(inlineData), c => c.charCodeAt(0)).buffer), 24000);
+          loaded[item.id] = URL.createObjectURL(new Blob([rawBuffer], { type: 'audio/wav' }));
         }
       } catch (e) {}
     }
@@ -784,7 +779,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- MIMO TRUE NEURAL TTS STREAMING AUDIO ENGINE (AOEDE FEMALE VOICE) ---
+  // --- MIMO TRUE NEURAL TTS STREAMING AUDIO ENGINE (MIMO'S DIRECT PIPELINE) ---
   const speak = async (text, isRobotLang = false, forceUnmuffled = false, preloadId = null) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -804,44 +799,28 @@ export default function App() {
       return;
     }
 
-    // 1. Direct Gemini Neural Audio (Aoede Female Voice -> WAV Blob)
+    // 1. Direct Mimo Preview TTS
     if (cleanKey && !currentlyTaped) {
-      const ttsPayload = {
-        contents: [{ parts: [{ text: finalText }] }],
-        generationConfig: {
-          responseModalities: ["AUDIO"],
-          speechConfig: {
-            voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: "Aoede" } // High-pitched feminine voice
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${cleanKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: finalText }] }],
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } }
             }
-          }
-        }
-      };
+          })
+        });
 
-      const ttsModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
-
-      for (const model of ttsModels) {
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(ttsPayload)
-          });
-
-          if (!res.ok) continue;
+        if (res.ok) {
           const data = await res.json();
-          const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+          const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
-          if (inlineData?.data) {
-            const binaryString = atob(inlineData.data);
-            const len = binaryString.length;
-            const evenLen = len - (len % 2);
-            const bytes = new Uint8Array(evenLen);
-            for (let i = 0; i < evenLen; i++) bytes[i] = binaryString.charCodeAt(i);
-            
-            const pcm16 = new Int16Array(bytes.buffer);
-            const wavBuffer = pcmToWav(pcm16, 24000);
-            const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+          if (inlineData) {
+            const rawBuffer = pcmToWav(new Int16Array(Uint8Array.from(atob(inlineData), c => c.charCodeAt(0)).buffer), 24000);
+            const blob = new Blob([rawBuffer], { type: 'audio/wav' });
             const audioUrl = URL.createObjectURL(blob);
             
             const audio = new Audio(audioUrl);
@@ -859,8 +838,8 @@ export default function App() {
             await audio.play();
             return;
           }
-        } catch (e) {}
-      }
+        }
+      } catch (e) {}
     }
 
     // 2. Strict Female Cross-Platform Fallback: Web Speech API
@@ -878,7 +857,7 @@ export default function App() {
       ) || voices.find(v => v.lang === "en-US");
 
       if (femaleVoice) utterance.voice = femaleVoice;
-      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.75); // High pitched sass
+      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.75);
       utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.15);
       if (currentlyTaped) utterance.volume = 0.6;
       
@@ -1917,7 +1896,7 @@ export default function App() {
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
             onSaveKey={(k) => preloadPhrases(k)}
           />}
-      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
+        <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
 }

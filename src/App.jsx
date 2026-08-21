@@ -768,11 +768,11 @@ export default function App() {
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
 
-    // 1. Direct Gemini Multimodal Neural Audio (Gemini 2.5 Flash Audio Model)
+    // 1. Direct Multimodal PCM Audio Call via Gemini Flash Audio
     if (tempApiKey && !currentlyTaped) {
       try {
         const payload = {
-          contents: [{ parts: [{ text: finalText }] }],
+          contents: [{ parts: [{ text: `Say in a sassy, high-pitched lively tone: "${finalText}"` }] }],
           generationConfig: {
             responseModalities: ["AUDIO"],
             speechConfig: {
@@ -1188,7 +1188,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- SAFE MULTI-TURN GEMINI 3.7 FLASH CHAT ROUTINE ---
+  // --- SAFE MULTI-TURN CHAT & ONE-SHOT MULTIMODAL AUDIO ENGINE ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
@@ -1241,6 +1241,7 @@ export default function App() {
     setMessages(nextMessages);
 
     let reply = "";
+    let directPcmAudio = null;
     const safeInv = Array.isArray(inventory) ? inventory : [];
     
     const currentYear = new Date().getFullYear();
@@ -1299,18 +1300,34 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
+            // REQUEST BOTH AUDIO AND TEXT IN ONE ROUNDTRIP
+            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 contents: requestContents,
-                systemInstruction: { parts: [{ text: system }] }
+                systemInstruction: { parts: [{ text: system }] },
+                generationConfig: {
+                  responseModalities: ["AUDIO", "TEXT"],
+                  speechConfig: {
+                    voiceConfig: {
+                      prebuiltVoiceConfig: { voiceName: "Puck" }
+                    }
+                  }
+                }
               })
             });
             
-            reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
+            const parts = data.candidates?.[0]?.content?.parts || [];
+            const textPart = parts.find(p => p.text);
+            const audioPart = parts.find(p => p.inlineData && p.inlineData.mimeType?.includes('audio'));
+
+            reply = textPart?.text || getLocalResponse(msgText);
+            if (audioPart && audioPart.inlineData?.data) {
+              directPcmAudio = audioPart.inlineData.data;
+            }
         } catch (apiErr) {
-            console.warn("API Error, falling back to local brain.", apiErr);
+            console.warn("One-shot API error, fallback to local brain:", apiErr);
             reply = getLocalResponse(msgText);
         }
     } else {
@@ -1328,7 +1345,15 @@ export default function App() {
     setMessages(finalMessages);
     setMood('happy'); 
 
-    speak(reply);
+    if (directPcmAudio && !isTaped && !isMuted) {
+      setIsSpeaking(true);
+      await playPcmAudio(directPcmAudio, () => {
+        setIsSpeaking(false);
+        setMood('neutral');
+      });
+    } else {
+      speak(reply);
+    }
 
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     setIsThinking(false);

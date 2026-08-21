@@ -1054,6 +1054,49 @@ export default function App() {
     }
   };
 
+  // --- PETTING HANDLER ---
+  const handlePet = () => {
+    if (!user) return;
+    initAudio();
+
+    if (mood === 'sleeping') {
+      setMood('mad');
+      playSynth('angry');
+      speak("HEY! Stop touching me! I was having a perfect digital dream! 🎈", false, false, 'busyWarn');
+      setTimeout(() => setMood('neutral'), 4000);
+      return;
+    }
+
+    const now = Date.now();
+    if (now - lastPetTime.current < 2000) return;
+    lastPetTime.current = now;
+
+    playSynth('pet');
+    awardBucks(5, 'pet', true, true); 
+    
+    if (isTaped) { speak("Mmm. Mmm. Hmph."); return; } 
+    if (isChaosMode) { speak("Can't stop, running! 🎈"); return; }
+
+    if (['scared', 'dizzy', 'mad'].includes(mood)) {
+      setMood('mad');
+      playSynth('angry');
+      speak("HEY! Busy! 🎈");
+      setTimeout(() => setMood('neutral'), 4000);
+      return;
+    }
+    setMood('happy');
+
+    const petLines = [
+      { id: 'pet_1', text: "Bestie! ✨" },
+      { id: 'pet_2', text: "Yay! 🎀" },
+      { id: 'pet_3', text: "Hehe, thanks! ✨" },
+      { id: 'pet_4', text: "Ooh, nice! 🎀" }
+    ];
+    const pick = petLines[Math.floor(Math.random() * petLines.length)];
+    speak(pick.text, false, false, pick.id);
+    setTimeout(() => setMood('neutral'), 3000);
+  };
+
   useEffect(() => {
     if (!user) return; 
     const shouldMove = (isChaosMode || (ownsRogueLegs && rogueLegsActive)) && !showFacePopup;
@@ -1874,7 +1917,7 @@ export default function App() {
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
             onSaveKey={(k) => preloadPhrases(k)}
           />}
-        <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
 }

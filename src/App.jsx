@@ -48,12 +48,12 @@ const syncSessionToFirestore = async (uid, threadId, chatHistory) => {
   }
 };
 
-// --- MIMO LEGACY PCM-TO-WAV CONVERTER ---
+// --- MIMO PCM-TO-WAV CONVERTER ---
 const pcmToWav = (pcm, rate = 24000) => {
   const buf = new ArrayBuffer(44 + pcm.length * 2);
   const view = new DataView(buf);
   const s = (o, str) => { for (let i = 0; i < str.length; i++) view.setUint8(o + i, str.charCodeAt(i)); };
-  s(0, 'RIFF'); view.setUint32(4, 32 + pcm.length * 2, true); s(8, 'WAVE'); s(12, 'fmt ');
+  s(0, 'RIFF'); view.setUint32(4, 36 + pcm.length * 2, true); s(8, 'WAVE'); s(12, 'fmt ');
   view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
   view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true);
   view.setUint16(32, 2, true); view.setUint16(34, 16, true); s(36, 'data');
@@ -62,7 +62,7 @@ const pcmToWav = (pcm, rate = 24000) => {
   return buf;
 };
 
-// --- MIMO HARDWARE CHIP-SYNTH SOUND GENERATOR ---
+// --- MIMO HARDWARE CHIP-SYNTH SOUND ENGINE ---
 let audioCtx = null;
 const initAudio = () => { 
   if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
@@ -251,7 +251,7 @@ const SettingsOverlay = ({
 
         </div>
         <div className="pt-3 border-t border-white/5 space-y-2">
-            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey); localStorage.setItem('eilo_heights', fearOfHeights.toString()); onClose(); }} className="w-full bg-cyan-600 py-3.5 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-xs">Save & Close</button>
+            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey.trim()); localStorage.setItem('eilo_heights', fearOfHeights.toString()); onClose(); }} className="w-full bg-cyan-600 py-3.5 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-xs">Save & Close</button>
             <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 text-[10px] text-red-500 font-bold uppercase opacity-60 hover:opacity-100 py-1 transition-opacity"><LogOut size={12}/> Disconnect Core</button>
         </div>
       </div>
@@ -727,7 +727,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- MIMO DIRECT WAV BLOB NEURAL SYNTHESIS ENGINE ---
+  // --- MIMO TRUE NEURAL TTS STREAMING AUDIO ENGINE ---
   const speak = async (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -735,48 +735,68 @@ export default function App() {
 
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
+    const cleanKey = (tempApiKey || "").trim();
 
-    // 1. Direct Mimo Neural TTS (Blob -> new Audio() Playback)
-    if (tempApiKey && !currentlyTaped) {
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${tempApiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: finalText }] }],
-            generationConfig: {
-              responseModalities: ["AUDIO"],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: "Puck" }
-                }
-              }
+    // 1. Direct Gemini Neural TTS (Outputs 24kHz Linear PCM -> Play as WAV Blob)
+    if (cleanKey && !currentlyTaped) {
+      const ttsPayload = {
+        contents: [{ parts: [{ text: finalText }] }],
+        generationConfig: {
+          responseModalities: ["AUDIO"],
+          speechConfig: {
+            voiceConfig: {
+              prebuiltVoiceConfig: { voiceName: "Puck" }
             }
-          })
-        });
-        const data = await res.json();
-        const inlineAudio = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
-
-        if (inlineAudio?.data) {
-          const rawBuffer = pcmToWav(new Int16Array(Uint8Array.from(atob(inlineAudio.data), c => c.charCodeAt(0)).buffer), 24000);
-          const blob = new Blob([rawBuffer], { type: 'audio/wav' });
-          const audioUrl = URL.createObjectURL(blob);
-          const audio = new Audio(audioUrl);
-          
-          audio.onended = () => {
-            URL.revokeObjectURL(audioUrl);
-            setIsSpeaking(false);
-          };
-          audio.onerror = () => {
-            URL.revokeObjectURL(audioUrl);
-            setIsSpeaking(false);
-          };
-
-          await audio.play();
-          return;
+          }
         }
-      } catch (err) {
-        console.warn("Direct Mimo TTS error, fallback triggered:", err);
+      };
+
+      const ttsModels = [
+        "gemini-3.1-flash-tts-preview",
+        "gemini-2.5-flash-preview-tts"
+      ];
+
+      for (const model of ttsModels) {
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${cleanKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(ttsPayload)
+          });
+
+          if (!res.ok) continue;
+          const data = await res.json();
+          const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
+
+          if (inlineData?.data) {
+            const binaryString = atob(inlineData.data);
+            const len = binaryString.length;
+            const bytes = new Uint8Array(len);
+            for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+            
+            const pcm16 = new Int16Array(bytes.buffer, 0, Math.floor(len / 2));
+            const wavBuffer = pcmToWav(pcm16, 24000);
+            const blob = new Blob([wavBuffer], { type: 'audio/wav' });
+            const audioUrl = URL.createObjectURL(blob);
+            
+            const audio = new Audio(audioUrl);
+            audio.playbackRate = 1.15;
+            
+            audio.onended = () => {
+              URL.revokeObjectURL(audioUrl);
+              setIsSpeaking(false);
+            };
+            audio.onerror = () => {
+              URL.revokeObjectURL(audioUrl);
+              setIsSpeaking(false);
+            };
+
+            await audio.play();
+            return;
+          }
+        } catch (e) {
+          console.warn(`TTS attempt with ${model} failed, trying next:`, e);
+        }
       }
     }
 
@@ -1237,6 +1257,7 @@ export default function App() {
 
     let reply = "";
     const safeInv = Array.isArray(inventory) ? inventory : [];
+    const cleanKey = (tempApiKey || "").trim();
     
     const currentYear = new Date().getFullYear();
     const activeAccountName = user?.displayName || "Logan Baez";
@@ -1249,7 +1270,7 @@ export default function App() {
       system += " CRITICAL: Your Selfie Scanner eyes are wide open right now! React naturally to the attached camera frame. Keep your response to a single, short, snappy sentence.";
     }
 
-    if (tempApiKey) {
+    if (cleanKey) {
         try {
             let base64Data = "";
             let frameCaptured = false;
@@ -1294,7 +1315,7 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
+            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${cleanKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({

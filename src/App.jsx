@@ -191,7 +191,7 @@ const SettingsOverlay = ({
   isChaosMode, setIsChaosMode, toggleCamera, visionEnabled, 
   fearOfHeights, setFearOfHeights, toggleMic, isInfinityMic, speak, 
   notificationsEnabled, toggleNotifications,
-  inventory, faceOffset, setFaceOffset, handleSignOut 
+  inventory, faceOffset, setFaceOffset, handleSignOut, onSaveKey
 }) => {
   const safeInv = Array.isArray(inventory) ? inventory : [];
 
@@ -259,7 +259,7 @@ const SettingsOverlay = ({
 
         </div>
         <div className="pt-3 border-t border-white/5 space-y-2">
-            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey.trim()); localStorage.setItem('eilo_heights', fearOfHeights.toString()); onClose(); }} className="w-full bg-cyan-600 py-3.5 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-xs">Save & Close</button>
+            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey.trim()); localStorage.setItem('eilo_heights', fearOfHeights.toString()); onSaveKey(tempApiKey.trim()); onClose(); }} className="w-full bg-cyan-600 py-3.5 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-xs">Save & Close</button>
             <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 text-[10px] text-red-500 font-bold uppercase opacity-60 hover:opacity-100 py-1 transition-opacity"><LogOut size={12}/> Disconnect Core</button>
         </div>
       </div>
@@ -325,6 +325,8 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
 
+  const [preloadedAudio, setPreloadedAudio] = useState({});
+
   const [bucks, setBucks] = useState(() => {
     const local = localStorage.getItem('eilo_bucks');
     const val = parseInt(local);
@@ -376,6 +378,53 @@ export default function App() {
 
   useEffect(() => { isTapedValueRef.current = isTaped; }, [isTaped]);
   useEffect(() => { visionEnabledValueRef.current = visionEnabled; }, [visionEnabled]);
+
+  // --- MIMO INSTANT AUDIO PRELOAD ENGINE ---
+  const preloadPhrases = async (key) => {
+    if (!key) return;
+    const phrases = [
+      { id: 'pet_1', text: "Bestie! ✨" },
+      { id: 'pet_2', text: "Yay! 🎀" },
+      { id: 'pet_3', text: "Hehe, thanks! ✨" },
+      { id: 'pet_4', text: "Ooh, nice! 🎀" },
+      { id: 'rotateWarn', text: "Rotate me back! I was busy! 🎈" },
+      { id: 'settingsWarn', text: "Hey! What are you doing with me?! 🎈" },
+      { id: 'busyWarn', text: "HEY! Stop touching me! I was having a perfect digital dream! 🎈" }
+    ];
+
+    const loaded = {};
+    for (const item of phrases) {
+      try {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${key}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: item.text }] }],
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Aoede" } } }
+            }
+          })
+        });
+        const data = await res.json();
+        const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        if (inlineData) {
+          const binaryString = atob(inlineData);
+          const evenLen = binaryString.length - (binaryString.length % 2);
+          const bytes = new Uint8Array(evenLen);
+          for (let i = 0; i < evenLen; i++) bytes[i] = binaryString.charCodeAt(i);
+          const pcm16 = new Int16Array(bytes.buffer);
+          const wav = pcmToWav(pcm16, 24000);
+          loaded[item.id] = URL.createObjectURL(new Blob([wav], { type: 'audio/wav' }));
+        }
+      } catch (e) {}
+    }
+    setPreloadedAudio(prev => ({ ...prev, ...loaded }));
+  };
+
+  useEffect(() => {
+    if (tempApiKey) preloadPhrases(tempApiKey);
+  }, []);
 
   // Audio Context Unlock on gesture
   useEffect(() => {
@@ -567,7 +616,7 @@ export default function App() {
             if (!landscape && isLandscape && !isChaosMode && mood !== 'sleeping') {
               setMood('mad');
               playSynth('angry');
-              speak("Rotate me back! I was busy! 🎈");
+              speak("Rotate me back! I was busy! 🎈", false, false, 'rotateWarn');
               setTimeout(() => setMood('neutral'), 3500);
             }
 
@@ -735,8 +784,8 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- MIMO TRUE NEURAL TTS STREAMING AUDIO ENGINE ---
-  const speak = async (text, isRobotLang = false, forceUnmuffled = false) => {
+  // --- MIMO TRUE NEURAL TTS STREAMING AUDIO ENGINE (AOEDE FEMALE VOICE) ---
+  const speak = async (text, isRobotLang = false, forceUnmuffled = false, preloadId = null) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
     initAudio();
@@ -745,7 +794,17 @@ export default function App() {
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
     const cleanKey = (tempApiKey || "").trim();
 
-    // 1. Direct Gemini Neural Audio (WAV Blob -> new Audio() Playback)
+    // 0. Play preloaded cache instantly (0ms lag)
+    if (preloadId && preloadedAudio[preloadId] && !currentlyTaped) {
+      const audio = new Audio(preloadedAudio[preloadId]);
+      audio.playbackRate = 1.15;
+      audio.onended = () => setIsSpeaking(false);
+      audio.onerror = () => setIsSpeaking(false);
+      await audio.play();
+      return;
+    }
+
+    // 1. Direct Gemini Neural Audio (Aoede Female Voice -> WAV Blob)
     if (cleanKey && !currentlyTaped) {
       const ttsPayload = {
         contents: [{ parts: [{ text: finalText }] }],
@@ -753,17 +812,13 @@ export default function App() {
           responseModalities: ["AUDIO"],
           speechConfig: {
             voiceConfig: {
-              prebuiltVoiceConfig: { voiceName: "Puck" }
+              prebuiltVoiceConfig: { voiceName: "Aoede" } // High-pitched feminine voice
             }
           }
         }
       };
 
-      const ttsModels = [
-        "gemini-2.5-flash",
-        "gemini-2.0-flash",
-        "gemini-2.5-flash-preview-tts"
-      ];
+      const ttsModels = ["gemini-2.5-flash", "gemini-2.0-flash"];
 
       for (const model of ttsModels) {
         try {
@@ -779,8 +834,7 @@ export default function App() {
 
           if (inlineData?.data) {
             const binaryString = atob(inlineData.data);
-            const len = binaryString.length;
-            const evenLen = len - (len % 2); // Byte alignment to prevent RangeError
+            const evenLen = binaryString.length - (binaryString.length % 2);
             const bytes = new Uint8Array(evenLen);
             for (let i = 0; i < evenLen; i++) bytes[i] = binaryString.charCodeAt(i);
             
@@ -804,26 +858,26 @@ export default function App() {
             await audio.play();
             return;
           }
-        } catch (e) {
-          console.warn(`TTS attempt with ${model} failed:`, e);
-        }
+        } catch (e) {}
       }
     }
 
-    // 2. Cross-Platform Fallback: Web Speech API
+    // 2. Strict Female Cross-Platform Fallback: Web Speech API
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(finalText);
       const voices = window.speechSynthesis.getVoices();
 
-      const googleVoice = voices.find(v => 
-        v.name.includes("Google") || 
-        v.name.includes("en-us-x-sfg") || 
-        v.name.includes("Natural")
-      ) || voices.find(v => v.lang === "en-US" && !v.name.includes("Samsung"));
+      const femaleVoice = voices.find(v => 
+        (v.name.includes("Google") && v.name.includes("en-US")) || 
+        v.name.includes("Samantha") || 
+        v.name.includes("Karen") ||
+        v.name.includes("Zira") ||
+        v.name.toLowerCase().includes("female")
+      ) || voices.find(v => v.lang === "en-US");
 
-      if (googleVoice) utterance.voice = googleVoice;
-      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+      if (femaleVoice) utterance.voice = femaleVoice;
+      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.75); // High pitched sass
       utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.15);
       if (currentlyTaped) utterance.volume = 0.6;
       
@@ -994,7 +1048,7 @@ export default function App() {
     if (!isTaped) {
       setMood('mad');
       playSynth('angry');
-      speak("Hey! What are you doing with me?! 🎈");
+      speak("Hey! What are you doing with me?! 🎈", false, false, 'settingsWarn');
       setTimeout(() => setMood('neutral'), 3000);
     }
   };
@@ -1073,7 +1127,7 @@ export default function App() {
     if (mood === 'sleeping') {
       setMood('mad');
       playSynth('angry');
-      speak("HEY! Stop touching me! I was having a perfect digital dream! 🎈");
+      speak("HEY! Stop touching me! I was having a perfect digital dream! 🎈", false, false, 'busyWarn');
       setTimeout(() => setMood('neutral'), 4000);
       return;
     }
@@ -1096,8 +1150,15 @@ export default function App() {
       return;
     }
     setMood('happy');
-    const lines = ["Bestie! ✨", "Yay! 🎀", "Hehe, thanks! ✨", "Ooh, nice! 🎀"];
-    speak(lines[Math.floor(Math.random() * lines.length)]);
+
+    const petLines = [
+      { id: 'pet_1', text: "Bestie! ✨" },
+      { id: 'pet_2', text: "Yay! 🎀" },
+      { id: 'pet_3', text: "Hehe, thanks! ✨" },
+      { id: 'pet_4', text: "Ooh, nice! 🎀" }
+    ];
+    const pick = petLines[Math.floor(Math.random() * petLines.length)];
+    speak(pick.text, false, false, pick.id);
     setTimeout(() => setMood('neutral'), 3000);
   };
 
@@ -1459,7 +1520,7 @@ export default function App() {
       case 'computer': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">💻</div>{tapeOverlay}</div></div>;
       case 'phone': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
       case 'lapdock': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div>;
       default: 
@@ -1666,6 +1727,7 @@ export default function App() {
               notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
               inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
               speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
+              onSaveKey={(k) => preloadPhrases(k)}
           />}
         <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }" }} />
       </div>
@@ -1851,8 +1913,9 @@ export default function App() {
             notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
             inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
-        />}
-      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
+            onSaveKey={(k) => preloadPhrases(k)}
+          />}
+        <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
 }

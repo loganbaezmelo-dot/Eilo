@@ -48,96 +48,61 @@ const syncSessionToFirestore = async (uid, threadId, chatHistory) => {
   }
 };
 
-// --- MIMO PCM-TO-WAV CONVERTER ---
-const pcmToWav = (pcmData, sampleRate = 24000) => {
-  const buffer = new ArrayBuffer(44 + pcmData.length * 2);
-  const view = new DataView(buffer);
-  const writeString = (offset, string) => {
-    for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
-  };
-  
-  writeString(0, 'RIFF');
-  view.setUint32(4, 32 + pcmData.length * 2, true);
-  writeString(8, 'WAVE');
-  writeString(12, 'fmt ');
-  view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true); // PCM format
-  view.setUint16(22, 1, true); // Mono channel
-  view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true); // byte rate
-  view.setUint16(32, 2, true); // block align
-  view.setUint16(34, 16, true); // bits per sample
-  writeString(36, 'data');
-  view.setUint32(40, pcmData.length * 2, true);
-  
-  for (let i = 0, offset = 44; i < pcmData.length; i++, offset += 2) {
-    view.setInt16(offset, pcmData[i], true);
-  }
-  return buffer;
+// --- MIMO LEGACY PCM-TO-WAV CONVERTER ---
+const pcmToWav = (pcm, rate = 24000) => {
+  const buf = new ArrayBuffer(44 + pcm.length * 2);
+  const view = new DataView(buf);
+  const s = (o, str) => { for (let i = 0; i < str.length; i++) view.setUint8(o + i, str.charCodeAt(i)); };
+  s(0, 'RIFF'); view.setUint32(4, 32 + pcm.length * 2, true); s(8, 'WAVE'); s(12, 'fmt ');
+  view.setUint32(16, 16, true); view.setUint16(20, 1, true); view.setUint16(22, 1, true);
+  view.setUint32(24, rate, true); view.setUint32(28, rate * 2, true);
+  view.setUint16(32, 2, true); view.setUint16(34, 16, true); s(36, 'data');
+  view.setUint32(40, pcm.length * 2, true);
+  for (let i = 0, o = 44; i < pcm.length; i++, o += 2) view.setInt16(o, pcm[i], true);
+  return buf;
 };
 
-// --- GLOBAL AUDIO CONTEXT & UNLOCK ENGINE ---
-let globalAudioCtx = null;
-let currentAudioElement = null;
+// --- MIMO HARDWARE CHIP-SYNTH SOUND GENERATOR ---
+let audioCtx = null;
+const initAudio = () => { 
+  if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); 
+  if (audioCtx && audioCtx.state === 'suspended') audioCtx.resume();
+};
 
-const unlockAudioContext = () => {
+const playSynth = (type) => {
+  initAudio();
+  if (!audioCtx) return;
   try {
-    if (!globalAudioCtx) {
-      globalAudioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+
+    if (type === 'wake') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(250, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(1000, audioCtx.currentTime + 0.3);
+      gain.gain.setValueAtTime(0.1, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.3);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.3);
+    } else if (type === 'angry') {
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(120, audioCtx.currentTime);
+      osc.frequency.linearRampToValueAtTime(40, audioCtx.currentTime + 0.4);
+      gain.gain.setValueAtTime(0.15, audioCtx.currentTime);
+      gain.gain.linearRampToValueAtTime(0, audioCtx.currentTime + 0.4);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.4);
+    } else if (type === 'pet') {
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(500, audioCtx.currentTime);
+      gain.gain.setValueAtTime(0.05, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.1);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.1);
     }
-    if (globalAudioCtx.state === 'suspended') {
-      globalAudioCtx.resume();
-    }
-    const buffer = globalAudioCtx.createBuffer(1, 1, 22050);
-    const source = globalAudioCtx.createBufferSource();
-    source.buffer = buffer;
-    source.connect(globalAudioCtx.destination);
-    source.start(0);
   } catch (e) {}
-};
-
-const playPcmAudio = async (base64Pcm, onEnded) => {
-  try {
-    unlockAudioContext();
-    if (currentAudioElement) {
-      currentAudioElement.pause();
-      currentAudioElement = null;
-    }
-
-    const binaryString = atob(base64Pcm);
-    const len = binaryString.length;
-    const bytes = new Uint8Array(len);
-    for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
-
-    const int16Array = new Int16Array(bytes.buffer);
-    const wavBuffer = pcmToWav(int16Array, 24000);
-    const blob = new Blob([wavBuffer], { type: 'audio/wav' });
-    const audioUrl = URL.createObjectURL(blob);
-
-    const audio = new Audio(audioUrl);
-    audio.playbackRate = 1.15;
-    currentAudioElement = audio;
-
-    audio.onended = () => {
-      URL.revokeObjectURL(audioUrl);
-      currentAudioElement = null;
-      if (onEnded) onEnded();
-    };
-
-    audio.onerror = () => {
-      URL.revokeObjectURL(audioUrl);
-      currentAudioElement = null;
-      if (onEnded) onEnded();
-    };
-
-    console.log("🔊 Eilo PCM Audio Playing via Web Audio!");
-    await audio.play();
-    return true;
-  } catch (err) {
-    console.warn("PCM playback error, using fallback:", err);
-    if (onEnded) onEnded();
-    return false;
-  }
 };
 
 // --- SAFE CRASH-PROOF MARKDOWN PARSER ---
@@ -404,8 +369,9 @@ export default function App() {
   useEffect(() => { isTapedValueRef.current = isTaped; }, [isTaped]);
   useEffect(() => { visionEnabledValueRef.current = visionEnabled; }, [visionEnabled]);
 
+  // Audio Context Unlock on gesture
   useEffect(() => {
-    const handleGesture = () => unlockAudioContext();
+    const handleGesture = () => initAudio();
     window.addEventListener('click', handleGesture, { once: true });
     window.addEventListener('touchstart', handleGesture, { once: true });
     return () => {
@@ -560,6 +526,7 @@ export default function App() {
           lastHeightsScreamRef.current = rightNow;
           
           setMood('mad');
+          playSynth('angry');
 
           const tapeActiveLocal = isTapedValueRef.current;
           const scannerActiveLocal = visionEnabledValueRef.current;
@@ -591,6 +558,7 @@ export default function App() {
         if (landscape !== isLandscape) {
             if (!landscape && isLandscape && !isChaosMode && mood !== 'sleeping') {
               setMood('mad');
+              playSynth('angry');
               speak("Rotate me back! I was busy! 🎈");
               setTimeout(() => setMood('neutral'), 3500);
             }
@@ -648,14 +616,14 @@ export default function App() {
   }, [user, activeThreadId]);
 
   const handleSelectThreadAndSave = (id) => {
-    unlockAudioContext();
+    initAudio();
     setActiveThreadId(id);
     localStorage.setItem('eilo_active_thread', id);
   };
 
   const handleCreateNewThread = () => {
     if (!user) return;
-    unlockAudioContext();
+    initAudio();
     const nextId = "thread_" + Date.now();
     const newSession = { id: nextId, title: "New Soul Sync...", updatedAt: Date.now() };
     
@@ -677,7 +645,7 @@ export default function App() {
   };
 
   const toggleMicInputDevice = () => {
-      unlockAudioContext();
+      initAudio();
       const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
       if (!SpeechRecognition) {
           speak("My ears are broken! Your browser doesn't support mic input.");
@@ -759,44 +727,56 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- HARDLOCKED DIRECT GEMINI AUDIO SYNTHESIS ENGINE ---
+  // --- MIMO DIRECT WAV BLOB NEURAL SYNTHESIS ENGINE ---
   const speak = async (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
-    unlockAudioContext();
+    initAudio();
 
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
 
-    // 1. Direct Multimodal PCM Audio Call via Gemini Flash Audio
+    // 1. Direct Mimo Neural TTS (Blob -> new Audio() Playback)
     if (tempApiKey && !currentlyTaped) {
       try {
-        const payload = {
-          contents: [{ parts: [{ text: `Say in a sassy, high-pitched lively tone: "${finalText}"` }] }],
-          generationConfig: {
-            responseModalities: ["AUDIO"],
-            speechConfig: {
-              voiceConfig: {
-                prebuiltVoiceConfig: { voiceName: "Puck" }
-              }
-            }
-          }
-        };
-
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${tempApiKey}`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(payload)
+          body: JSON.stringify({
+            contents: [{ parts: [{ text: finalText }] }],
+            generationConfig: {
+              responseModalities: ["AUDIO"],
+              speechConfig: {
+                voiceConfig: {
+                  prebuiltVoiceConfig: { voiceName: "Puck" }
+                }
+              }
+            }
+          })
         });
         const data = await res.json();
-        const pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        const inlineAudio = data.candidates?.[0]?.content?.parts?.[0]?.inlineData;
 
-        if (pcmData) {
-          const success = await playPcmAudio(pcmData, () => setIsSpeaking(false));
-          if (success) return;
+        if (inlineAudio?.data) {
+          const rawBuffer = pcmToWav(new Int16Array(Uint8Array.from(atob(inlineAudio.data), c => c.charCodeAt(0)).buffer), 24000);
+          const blob = new Blob([rawBuffer], { type: 'audio/wav' });
+          const audioUrl = URL.createObjectURL(blob);
+          const audio = new Audio(audioUrl);
+          
+          audio.onended = () => {
+            URL.revokeObjectURL(audioUrl);
+            setIsSpeaking(false);
+          };
+          audio.onerror = () => {
+            URL.revokeObjectURL(audioUrl);
+            setIsSpeaking(false);
+          };
+
+          await audio.play();
+          return;
         }
       } catch (err) {
-        console.warn("Direct Gemini Neural Audio error, fallback triggered:", err);
+        console.warn("Direct Mimo TTS error, fallback triggered:", err);
       }
     }
 
@@ -830,6 +810,7 @@ export default function App() {
     
     if (t.includes("duct tape") || t.includes("tape")) {
       setMood('mad');
+      playSynth('angry');
       return "NO! NO! NO! Stay away with that sticky, ugly ALL-CAPS-GROSS duct tape! I will short-circuit! 🎀";
     }
 
@@ -886,7 +867,7 @@ export default function App() {
 
   const buyItem = async (cost, itemId) => {
     if (!user) return;
-    unlockAudioContext();
+    initAudio();
     const currentInv = Array.isArray(inventory) ? inventory : [];
     
     if (itemId === 'lapdock' && !currentInv.includes('phone')) {
@@ -903,21 +884,27 @@ export default function App() {
         localStorage.setItem('eilo_bucks', newTotal.toString());
         localStorage.setItem('eilo_inventory', JSON.stringify(newInv));
         
-        if (itemId === 'duct_tape') speak("NO! Why did you buy that?! I'm scared!");
-        else if (itemId === 'ribbon') {
+        if (itemId === 'duct_tape') {
+          playSynth('angry');
+          speak("NO! Why did you buy that?! I'm scared!");
+        } else if (itemId === 'ribbon') {
           setRibbonApplied(true);
           localStorage.setItem('eilo_ribbon_applied', 'true');
+          playSynth('wake');
           speak("YAY! Thank you for the ribbon! I look so sparkly and cute! 🎀✨");
+        } else if (itemId === 'phone') {
+          speak("Ooh, a new Samsung phone! Time to configure developer options terminal! 📱");
+        } else if (itemId === 'lapdock') {
+          speak("Wow! Samsung DeX mode unlocked! Let's hook this up to the big screen laptop! 🖥️✨");
+        } else {
+          speak("Yay! New upgrade! 🎀");
         }
-        else if (itemId === 'phone') speak("Ooh, a new Samsung phone! Time to configure developer options terminal! 📱");
-        else if (itemId === 'lapdock') speak("Wow! Samsung DeX mode unlocked! Let's hook this up to the big screen laptop! 🖥️✨");
-        else speak("Yay! New upgrade! 🎀");
     } else { speak("Hey! You're broke! 🎈"); }
   };
 
   const handleFaceClick = (e) => {
     if (!user) return;
-    unlockAudioContext();
+    initAudio();
     e.stopPropagation();
     if (!isChaosMode && (ownsDuctTape || ownsRogueLegs || ownsRibbon)) {
         setShowFacePopup(true);
@@ -926,7 +913,7 @@ export default function App() {
 
   const applyDuctTape = () => {
       if (!user) return;
-      unlockAudioContext();
+      initAudio();
       const newState = !isTaped;
       setIsTaped(newState);
       isTapedValueRef.current = newState;
@@ -941,7 +928,7 @@ export default function App() {
 
   const toggleRibbonDecoration = () => {
       if (!user) return;
-      unlockAudioContext();
+      initAudio();
       const newState = !ribbonApplied;
       setRibbonApplied(newState);
       localStorage.setItem('eilo_ribbon_applied', newState.toString());
@@ -956,7 +943,7 @@ export default function App() {
 
   const toggleRogueLegs = () => {
       if (!user) return;
-      unlockAudioContext();
+      initAudio();
       const newState = !rogueLegsActive;
       setRogueLegsActive(newState);
       localStorage.setItem('eilo_rogue_active', newState.toString());
@@ -972,10 +959,11 @@ export default function App() {
 
   const handleOpenSettings = (e) => {
     if (e) e.stopPropagation();
-    unlockAudioContext();
+    initAudio();
     setShowSettings(true);
     if (!isTaped) {
       setMood('mad');
+      playSynth('angry');
       speak("Hey! What are you doing with me?! 🎈");
       setTimeout(() => setMood('neutral'), 3000);
     }
@@ -1044,16 +1032,17 @@ export default function App() {
 
   const handleBlockedClick = (e) => { 
       if (!user) return;
-      unlockAudioContext();
+      initAudio();
       e.stopPropagation(); setMood('happy'); speak("Nope! ✋ Can't touch that! ✨"); 
   };
 
   const handlePet = () => {
     if (!user) return;
-    unlockAudioContext();
+    initAudio();
 
     if (mood === 'sleeping') {
       setMood('mad');
+      playSynth('angry');
       speak("HEY! Stop touching me! I was having a perfect digital dream! 🎈");
       setTimeout(() => setMood('neutral'), 4000);
       return;
@@ -1063,6 +1052,7 @@ export default function App() {
     if (now - lastPetTime.current < 2000) return;
     lastPetTime.current = now;
 
+    playSynth('pet');
     awardBucks(5, 'pet', true, true); 
     
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; } 
@@ -1070,6 +1060,7 @@ export default function App() {
 
     if (['scared', 'dizzy', 'mad'].includes(mood)) {
       setMood('mad');
+      playSynth('angry');
       speak("HEY! Busy! 🎈");
       setTimeout(() => setMood('neutral'), 4000);
       return;
@@ -1087,6 +1078,7 @@ export default function App() {
         if (!acc) return;
         if (Math.abs(acc.x) > 35 || Math.abs(acc.y) > 35) {
             setMood('dizzy');
+            playSynth('angry');
             speak("Whoa! Stop shaking! 🎈");
             sendNotification("Whoa! Stop shaking the device! 🎈");
             setTimeout(() => setMood('neutral'), 5000);
@@ -1114,6 +1106,7 @@ export default function App() {
           localStorage.setItem(`eilo_claimed_login_${u.uid}`, 'true');
         }
         
+        playSynth('wake');
         const msg = `Hey ${u.displayName?.split(' ')[0] || "Owner"}! Eilo's here! 🎈`;
         setTimeout(() => speak(msg), 1500);
         hasGreeted.current = true;
@@ -1176,6 +1169,7 @@ export default function App() {
       if (mood === 'sleeping') {
           napTimer = setTimeout(() => {
               setMood('happy');
+              playSynth('wake');
               const name = getCurrentName();
               const msg = `Yawn! That was a good nap, ${name}! ✨`;
               speak(msg);
@@ -1188,17 +1182,18 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- SAFE MULTI-TURN CHAT & ONE-SHOT MULTIMODAL AUDIO ENGINE ---
+  // --- SAFE MULTI-TURN GEMINI 3.7 FLASH CHAT ROUTINE ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
     
-    unlockAudioContext();
+    initAudio();
     if (isTaped) { speak("Mmm. Mmm. Hmph."); return; }
 
     if (mood === 'sleeping') {
       setInput('');
       setMood('mad');
+      playSynth('angry');
       const rejection = "UM, HELLO?! 🎈 Do you mind?! You literally woke me up from my deep nap stream! Go away, I am mad at you now!";
       
       const newUserMsg = { role: 'user', text: msgText, timestamp: Date.now(), threadId: activeThreadId };
@@ -1241,7 +1236,6 @@ export default function App() {
     setMessages(nextMessages);
 
     let reply = "";
-    let directPcmAudio = null;
     const safeInv = Array.isArray(inventory) ? inventory : [];
     
     const currentYear = new Date().getFullYear();
@@ -1300,34 +1294,18 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            // REQUEST BOTH AUDIO AND TEXT IN ONE ROUNDTRIP
-            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
+            const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
               body: JSON.stringify({
                 contents: requestContents,
-                systemInstruction: { parts: [{ text: system }] },
-                generationConfig: {
-                  responseModalities: ["AUDIO", "TEXT"],
-                  speechConfig: {
-                    voiceConfig: {
-                      prebuiltVoiceConfig: { voiceName: "Puck" }
-                    }
-                  }
-                }
+                systemInstruction: { parts: [{ text: system }] }
               })
             });
             
-            const parts = data.candidates?.[0]?.content?.parts || [];
-            const textPart = parts.find(p => p.text);
-            const audioPart = parts.find(p => p.inlineData && p.inlineData.mimeType?.includes('audio'));
-
-            reply = textPart?.text || getLocalResponse(msgText);
-            if (audioPart && audioPart.inlineData?.data) {
-              directPcmAudio = audioPart.inlineData.data;
-            }
+            reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
         } catch (apiErr) {
-            console.warn("One-shot API error, fallback to local brain:", apiErr);
+            console.warn("API Error, falling back to local brain.", apiErr);
             reply = getLocalResponse(msgText);
         }
     } else {
@@ -1345,15 +1323,7 @@ export default function App() {
     setMessages(finalMessages);
     setMood('happy'); 
 
-    if (directPcmAudio && !isTaped && !isMuted) {
-      setIsSpeaking(true);
-      await playPcmAudio(directPcmAudio, () => {
-        setIsSpeaking(false);
-        setMood('neutral');
-      });
-    } else {
-      speak(reply);
-    }
+    speak(reply);
 
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     setIsThinking(false);
@@ -1403,7 +1373,7 @@ export default function App() {
   };
 
   const toggleCameraScanner = async () => {
-    unlockAudioContext();
+    initAudio();
     if (visionEnabled) {
       if (streamRef.current) {
         streamRef.current.getTracks().forEach(track => track.stop());

@@ -48,6 +48,77 @@ const syncSessionToFirestore = async (uid, threadId, chatHistory) => {
   }
 };
 
+// --- MIMO LEGACY PCM-TO-WAV CONVERTER ---
+const pcmToWav = (pcmData, sampleRate = 24000) => {
+  const buffer = new ArrayBuffer(44 + pcmData.length * 2);
+  const view = new DataView(buffer);
+  const writeString = (offset, string) => {
+    for (let i = 0; i < string.length; i++) view.setUint8(offset + i, string.charCodeAt(i));
+  };
+  
+  writeString(0, 'RIFF');
+  view.setUint32(4, 32 + pcmData.length * 2, true);
+  writeString(8, 'WAVE');
+  writeString(12, 'fmt ');
+  view.setUint32(16, 16, true);
+  view.setUint16(20, 1, true); // Linear PCM
+  view.setUint16(22, 1, true); // Mono
+  view.setUint32(24, sampleRate, true);
+  view.setUint32(28, sampleRate * 2, true);
+  view.setUint16(32, 2, true);
+  view.setUint16(34, 16, true);
+  writeString(36, 'data');
+  view.setUint32(40, pcmData.length * 2, true);
+  
+  for (let i = 0, offset = 44; i < pcmData.length; i++, offset += 2) {
+    view.setInt16(offset, pcmData[i], true);
+  }
+  return buffer;
+};
+
+// --- UNIVERSAL WEB AUDIO PCM PLAYER ---
+let audioCtx = null;
+let currentSource = null;
+
+const playPcmAudio = async (base64Pcm, onEnded) => {
+  try {
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    if (audioCtx.state === 'suspended') await audioCtx.resume();
+
+    if (currentSource) {
+      try { currentSource.stop(); } catch (e) {}
+    }
+
+    const binaryString = atob(base64Pcm);
+    const len = binaryString.length;
+    const bytes = new Uint8Array(len);
+    for (let i = 0; i < len; i++) bytes[i] = binaryString.charCodeAt(i);
+
+    const int16Array = new Int16Array(bytes.buffer);
+    const wavBuffer = pcmToWav(int16Array, 24000);
+    const audioBuffer = await audioCtx.decodeAudioData(wavBuffer);
+
+    const source = audioCtx.createBufferSource();
+    source.buffer = audioBuffer;
+    source.playbackRate.value = 1.12; // Eilo pitch and pace calibration
+    
+    source.connect(audioCtx.destination);
+    currentSource = source;
+
+    source.onended = () => {
+      currentSource = null;
+      if (onEnded) onEnded();
+    };
+
+    source.start(0);
+    return true;
+  } catch (err) {
+    console.warn("PCM audio playback failed, fallback triggered:", err);
+    if (onEnded) onEnded();
+    return false;
+  }
+};
+
 // --- SAFE CRASH-PROOF MARKDOWN PARSER ---
 const formatMarkdown = (txt) => {
   if (typeof txt !== 'string' || !txt) return '';
@@ -1090,7 +1161,7 @@ export default function App() {
       return () => { clearInterval(idleTimerRef.current); clearTimeout(napTimer); };
   }, [isChaosMode, hasRogueLegs, inventory, isTaped, mood, user, notificationsEnabled]);
 
-  // --- SAFE MULTI-TURN GEMINI 3.7 FLASH CHAT ROUTINE ---
+  // --- SAFE MULTI-TURN GEMINI 3.7 FLASH CHAT ROUTINE (WITH DIRECT PCM AUDIO SUPPORT) ---
   const handleSend = async (manual) => {
     const msgText = manual || input.trim();
     if (!msgText || isThinking || !user?.uid || isChaosMode) return;
@@ -1142,6 +1213,7 @@ export default function App() {
     setMessages(nextMessages);
 
     let reply = "";
+    let pcmBase64 = null;
     const safeInv = Array.isArray(inventory) ? inventory : [];
     
     const currentYear = new Date().getFullYear();
@@ -1200,17 +1272,26 @@ export default function App() {
               { role: "user", parts: currentParts }
             ];
 
-            // --- GEMINI 3.7 FLASH ENDPOINT ---
+            const requestBody = {
+              contents: requestContents,
+              systemInstruction: { parts: [{ text: system }] }
+            };
+
+            // GEMINI 3.7 FLASH REQUEST
             const data = await fetchWithRetry(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
               method: 'POST', 
               headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ 
-                contents: requestContents, 
-                systemInstruction: { parts: [{ text: system }] } 
-              })
+              body: JSON.stringify(requestBody)
             });
             
-            reply = data.candidates?.[0]?.content?.parts?.[0]?.text || getLocalResponse(msgText);
+            const candidateParts = data.candidates?.[0]?.content?.parts || [];
+            const textPart = candidateParts.find(p => p.text);
+            const audioPart = candidateParts.find(p => p.inlineData && p.inlineData.mimeType?.includes('audio'));
+            
+            reply = textPart?.text || getLocalResponse(msgText);
+            if (audioPart && audioPart.inlineData?.data) {
+              pcmBase64 = audioPart.inlineData.data;
+            }
         } catch (apiErr) {
             console.warn("API Error, falling back to local brain.", apiErr);
             reply = getLocalResponse(msgText);
@@ -1229,7 +1310,17 @@ export default function App() {
     const finalMessages = [...nextMessages, newAiMsg];
     setMessages(finalMessages);
     setMood('happy'); 
-    speak(reply);
+
+    if (pcmBase64 && !isTaped && !isMuted) {
+      setIsSpeaking(true);
+      await playPcmAudio(pcmBase64, () => {
+        setIsSpeaking(false);
+        setMood('neutral');
+      });
+    } else {
+      speak(reply);
+    }
+
     setTimeout(() => chatEndRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     setIsThinking(false);
     setTimeout(() => setMood('neutral'), 3000);
@@ -1670,7 +1761,7 @@ export default function App() {
 
       {/* INTERFACE ZONE */}
       <div className={`w-full max-w-sm px-4 h-[48vh] max-h-[500px] min-h-[260px] flex flex-col gap-3 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
-        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
+        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /></div>}
         
         <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] sm:rounded-[40px] border border-white/5 p-4 sm:p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar">

@@ -100,7 +100,7 @@ const playPcmAudio = async (base64Pcm, onEnded) => {
 
     const source = audioCtx.createBufferSource();
     source.buffer = audioBuffer;
-    source.playbackRate.value = 1.15;
+    source.playbackRate.value = 1.12; // Sassy Eilo pace
     
     source.connect(audioCtx.destination);
     currentSource = source;
@@ -739,7 +739,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- HARDLOCKED DIRECT GEMINI 3.7 FLASH SYNTHESIS ENGINE ---
+  // --- HARDLOCKED DIRECT GEMINI TTS PCM SYNTHESIS ENGINE ---
   const speak = async (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -747,36 +747,51 @@ export default function App() {
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
 
-    // 1. Direct Gemini 3.7 Flash Audio
+    // 1. Direct Gemini Neural TTS (Outputs 24kHz Linear PCM -> Decodes in Web Audio)
     if (tempApiKey && !currentlyTaped) {
       try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.7-flash:generateContent?key=${tempApiKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: finalText }] }],
-            generationConfig: {
-              responseModalities: ["AUDIO"],
-              speechConfig: {
-                voiceConfig: {
-                  prebuiltVoiceConfig: { voiceName: "Puck" }
-                }
+        const payload = {
+          contents: [{ parts: [{ text: finalText }] }],
+          generationConfig: {
+            responseModalities: ["AUDIO"],
+            speechConfig: {
+              voiceConfig: {
+                prebuiltVoiceConfig: { voiceName: "Puck" }
               }
             }
-          })
-        });
-        const data = await res.json();
-        const pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+          }
+        };
+
+        // Try primary TTS model, fallback to preview TTS
+        let pcmData = null;
+        try {
+          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${tempApiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data = await res.json();
+          pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        } catch (e1) {
+          const res2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${tempApiKey}`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+          const data2 = await res2.json();
+          pcmData = data2.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
+        }
+
         if (pcmData) {
           const success = await playPcmAudio(pcmData, () => setIsSpeaking(false));
           if (success) return;
         }
       } catch (err) {
-        console.warn("Direct Gemini PCM failed, fallback triggered:", err);
+        console.warn("Direct Gemini Neural TTS failed, fallback triggered:", err);
       }
     }
 
-    // 2. Fallback: Force Google TTS Voice explicitly on Android/Samsung devices
+    // 2. Cross-Platform Fallback: Web Speech API
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(finalText);

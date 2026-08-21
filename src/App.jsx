@@ -48,7 +48,7 @@ const syncSessionToFirestore = async (uid, threadId, chatHistory) => {
   }
 };
 
-// --- MIMO LEGACY PCM-TO-WAV CONVERTER ---
+// --- MIMO PCM-TO-WAV CONVERTER ---
 const pcmToWav = (pcmData, sampleRate = 24000) => {
   const buffer = new ArrayBuffer(44 + pcmData.length * 2);
   const view = new DataView(buffer);
@@ -61,12 +61,12 @@ const pcmToWav = (pcmData, sampleRate = 24000) => {
   writeString(8, 'WAVE');
   writeString(12, 'fmt ');
   view.setUint32(16, 16, true);
-  view.setUint16(20, 1, true);
-  view.setUint16(22, 1, true);
+  view.setUint16(20, 1, true); // PCM format
+  view.setUint16(22, 1, true); // Mono channel
   view.setUint32(24, sampleRate, true);
-  view.setUint32(28, sampleRate * 2, true);
-  view.setUint16(32, 2, true);
-  view.setUint16(34, 16, true);
+  view.setUint32(28, sampleRate * 2, true); // byte rate
+  view.setUint16(32, 2, true); // block align
+  view.setUint16(34, 16, true); // bits per sample
   writeString(36, 'data');
   view.setUint32(40, pcmData.length * 2, true);
   
@@ -88,15 +88,12 @@ const unlockAudioContext = () => {
     if (globalAudioCtx.state === 'suspended') {
       globalAudioCtx.resume();
     }
-    // Play a silent 1-sample buffer to satisfy mobile gesture locks
     const buffer = globalAudioCtx.createBuffer(1, 1, 22050);
     const source = globalAudioCtx.createBufferSource();
     source.buffer = buffer;
     source.connect(globalAudioCtx.destination);
     source.start(0);
-  } catch (e) {
-    console.warn("Audio unlock attempted:", e);
-  }
+  } catch (e) {}
 };
 
 const playPcmAudio = async (base64Pcm, onEnded) => {
@@ -133,6 +130,7 @@ const playPcmAudio = async (base64Pcm, onEnded) => {
       if (onEnded) onEnded();
     };
 
+    console.log("🔊 Eilo PCM Audio Playing via Web Audio!");
     await audio.play();
     return true;
   } catch (err) {
@@ -406,7 +404,6 @@ export default function App() {
   useEffect(() => { isTapedValueRef.current = isTaped; }, [isTaped]);
   useEffect(() => { visionEnabledValueRef.current = visionEnabled; }, [visionEnabled]);
 
-  // Unlock audio on initial user touch / click gesture anywhere
   useEffect(() => {
     const handleGesture = () => unlockAudioContext();
     window.addEventListener('click', handleGesture, { once: true });
@@ -459,9 +456,7 @@ export default function App() {
       } else {
         new Notification("Eilo OS", { body: bodyText, icon: '/icon-192.png' });
       }
-    } catch (e) {
-      console.warn("Direct execution context fallback fired.");
-    }
+    } catch (e) {}
   };
 
   const toggleNotifications = async () => {
@@ -764,7 +759,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- HARDLOCKED DIRECT GEMINI TTS PCM SYNTHESIS ENGINE ---
+  // --- HARDLOCKED DIRECT GEMINI AUDIO SYNTHESIS ENGINE ---
   const speak = async (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -773,7 +768,7 @@ export default function App() {
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
 
-    // 1. Direct Gemini Neural TTS (Outputs 24kHz Linear PCM -> Web Audio Decoding)
+    // 1. Direct Gemini Multimodal Neural Audio (Gemini 2.5 Flash Audio Model)
     if (tempApiKey && !currentlyTaped) {
       try {
         const payload = {
@@ -788,31 +783,20 @@ export default function App() {
           }
         };
 
-        let pcmData = null;
-        try {
-          const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-3.1-flash-tts-preview:generateContent?key=${tempApiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data = await res.json();
-          pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        } catch (e1) {
-          const res2 = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${tempApiKey}`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(payload)
-          });
-          const data2 = await res2.json();
-          pcmData = data2.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        }
+        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${tempApiKey}`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload)
+        });
+        const data = await res.json();
+        const pcmData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
 
         if (pcmData) {
           const success = await playPcmAudio(pcmData, () => setIsSpeaking(false));
           if (success) return;
         }
       } catch (err) {
-        console.warn("Direct Gemini Neural TTS error, fallback triggered:", err);
+        console.warn("Direct Gemini Neural Audio error, fallback triggered:", err);
       }
     }
 

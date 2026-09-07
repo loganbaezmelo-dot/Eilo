@@ -734,7 +734,6 @@ export default function App() {
       const utterance = new SpeechSynthesisUtterance(finalText);
       const voices = window.speechSynthesis.getVoices();
 
-      // Look for natural, expressive female voices first
       const chosenVoice = voices.find(v => 
         (v.name.includes("Google") && v.name.includes("en-US")) || 
         v.name.includes("Samantha") || 
@@ -746,7 +745,6 @@ export default function App() {
 
       if (chosenVoice) utterance.voice = chosenVoice;
       
-      // Calibrated to 1.65 pitch: expressive & peppy, perfectly dialed
       utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.85 : 1.65);
       utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.35 : 1.2);
       if (currentlyTaped) utterance.volume = 0.6;
@@ -1387,9 +1385,9 @@ export default function App() {
       case 'computer': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">💻</div>{tapeOverlay}</div></div>;
       case 'phone': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
       case 'lapdock': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
       default: 
         return (
           <div className="absolute inset-0 flex items-center justify-center">

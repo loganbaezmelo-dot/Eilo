@@ -556,9 +556,11 @@ export default function App() {
     };
   }, [notificationsEnabled, user, isThinking, isSpeaking]);
 
-  // --- CLIENT SAFE 3D ORIENTATION HEIGHTS RADAR HOOK ---
+  // --- CALIBRATED 3D ORIENTATION HEIGHTS RADAR HOOK (LESS SENSITIVE) ---
   useEffect(() => {
     if (!user) return;
+
+    let holdTimer = null;
 
     const handleOrientation = (event) => {
       const heightsActive = localStorage.getItem('eilo_heights') !== 'false';
@@ -570,36 +572,51 @@ export default function App() {
       const gamma = event.gamma;
       if (beta === null || gamma === null) return;
 
-      const looksDownVertical = Math.abs(beta) > 165 || Math.abs(gamma) > 82;
+      // Calibrated: Must be tilted steeply face-down (pitch past -45° to -120°) 
+      // with little roll, meaning you are genuinely holding her over an edge facing down
+      const genuinelyLookingDown = beta < -45 && beta > -120 && Math.abs(gamma) < 40;
 
-      if (looksDownVertical) {
-        const rightNow = Date.now();
-        if (rightNow - lastHeightsScreamRef.current > 7000) {
-          lastHeightsScreamRef.current = rightNow;
-          
-          setMood('mad');
-          playSynth('angry');
+      if (genuinelyLookingDown) {
+        if (!holdTimer) {
+          // Require holding the angle for 800ms so casual hand tilts don't trip it
+          holdTimer = setTimeout(() => {
+            const rightNow = Date.now();
+            if (rightNow - lastHeightsScreamRef.current > 15000) {
+              lastHeightsScreamRef.current = rightNow;
+              
+              setMood('mad');
+              playSynth('angry');
 
-          const tapeActiveLocal = isTapedValueRef.current;
-          const scannerActiveLocal = visionEnabledValueRef.current;
+              const tapeActiveLocal = isTapedValueRef.current;
+              const scannerActiveLocal = visionEnabledValueRef.current;
 
-          const panicChirp = tapeActiveLocal 
-            ? "Mmm! Mmm! Hmph!" 
-            : (scannerActiveLocal 
-                ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
-                : "WHOA! Too high! We are looking straight down at the abyss! Put me back down! 🎈"
-              );
+              const panicChirp = tapeActiveLocal 
+                ? "Mmm! Mmm! Hmph!" 
+                : (scannerActiveLocal 
+                    ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
+                    : "WHOA! Too high! Put me back down! 🎈"
+                  );
 
-          speak(panicChirp);
-          sendNotification(tapeActiveLocal ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (scannerActiveLocal ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
-          
-          setTimeout(() => setMood('neutral'), 4000);
+              speak(panicChirp);
+              sendNotification(tapeActiveLocal ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (scannerActiveLocal ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
+              
+              setTimeout(() => setMood('neutral'), 4000);
+            }
+          }, 800);
+        }
+      } else {
+        if (holdTimer) {
+          clearTimeout(holdTimer);
+          holdTimer = null;
         }
       }
     };
 
     window.addEventListener('deviceorientation', handleOrientation);
-    return () => window.removeEventListener('deviceorientation', handleOrientation);
+    return () => {
+      window.removeEventListener('deviceorientation', handleOrientation);
+      if (holdTimer) clearTimeout(holdTimer);
+    };
   }, [user]);
 
   // --- SCREEN ROTATION LISTENER ---
@@ -779,7 +796,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- MIMO TRUE NEURAL TTS STREAMING AUDIO ENGINE (MIMO'S DIRECT PIPELINE) ---
+  // --- MIMO TRUE NEURAL TTS PREVIEW ENDPOINT ENGINE ---
   const speak = async (text, isRobotLang = false, forceUnmuffled = false, preloadId = null) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -792,14 +809,13 @@ export default function App() {
     // 0. Play preloaded cache instantly (0ms lag)
     if (preloadId && preloadedAudio[preloadId] && !currentlyTaped) {
       const audio = new Audio(preloadedAudio[preloadId]);
-      audio.playbackRate = 1.15;
       audio.onended = () => setIsSpeaking(false);
       audio.onerror = () => setIsSpeaking(false);
       await audio.play();
       return;
     }
 
-    // 1. Direct Mimo Preview TTS
+    // 1. Direct Mimo Preview TTS Endpoint
     if (cleanKey && !currentlyTaped) {
       try {
         const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${cleanKey}`, {
@@ -824,8 +840,6 @@ export default function App() {
             const audioUrl = URL.createObjectURL(blob);
             
             const audio = new Audio(audioUrl);
-            audio.playbackRate = 1.15;
-            
             audio.onended = () => {
               URL.revokeObjectURL(audioUrl);
               setIsSpeaking(false);
@@ -842,22 +856,20 @@ export default function App() {
       } catch (e) {}
     }
 
-    // 2. Strict Female Cross-Platform Fallback: Web Speech API
+    // 2. Cross-Platform Fallback: Web Speech API
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(finalText);
       const voices = window.speechSynthesis.getVoices();
 
-      const femaleVoice = voices.find(v => 
-        (v.name.includes("Google") && v.name.includes("en-US")) || 
-        v.name.includes("Samantha") || 
-        v.name.includes("Karen") ||
-        v.name.includes("Zira") ||
-        v.name.toLowerCase().includes("female")
-      ) || voices.find(v => v.lang === "en-US");
+      const googleVoice = voices.find(v => 
+        v.name.includes("Google") || 
+        v.name.includes("en-us-x-sfg") || 
+        v.name.includes("Natural")
+      ) || voices.find(v => v.lang === "en-US" && !v.name.includes("Samsung"));
 
-      if (femaleVoice) utterance.voice = femaleVoice;
-      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.75);
+      if (googleVoice) utterance.voice = googleVoice;
+      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
       utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.15);
       if (currentlyTaped) utterance.volume = 0.6;
       
@@ -1896,7 +1908,7 @@ export default function App() {
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
             onSaveKey={(k) => preloadPhrases(k)}
           />}
-        <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
 }

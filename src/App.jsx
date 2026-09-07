@@ -720,7 +720,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE (SNAPPY FAST-PACED 1.4 RATE) ---
+  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE (BALANCED NATURAL RATE) ---
   const speak = (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -746,9 +746,9 @@ export default function App() {
 
       if (chosenVoice) utterance.voice = chosenVoice;
       
-      // Calibrated to 1.65 pitch and 1.4 rate for fast, sassy tempo
+      // Calibrated to 1.65 pitch with a natural 1.28 speech rate
       utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.85 : 1.65);
-      utterance.rate = currentlyTaped ? 0.85 : (isRobotLang ? 1.5 : 1.4);
+      utterance.rate = currentlyTaped ? 0.85 : (isRobotLang ? 1.4 : 1.28);
       if (currentlyTaped) utterance.volume = 0.6;
       
       utterance.onend = () => setIsSpeaking(false);
@@ -1725,7 +1725,7 @@ export default function App() {
 
       {/* INTERFACE ZONE */}
       <div className={`w-full max-w-sm px-4 h-[48vh] max-h-[500px] min-h-[260px] flex flex-col gap-3 transition-all duration-1000 relative z-10 flex-shrink-0 ${isChaosMode ? 'skew-x-6 rotate-2 blur-[1.5px] scale-95 opacity-80 brightness-75' : ''}`}>
-        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /></div>}
+        {isChaosMode && <div className="absolute inset-0 z-50 pointer-events-none opacity-40 mix-blend-screen overflow-hidden"><div className="absolute top-10 left-0 w-full h-1 bg-white/20 rotate-[30deg] scale-x-150" /><div className="absolute bottom-20 left-10 w-full h-1 bg-white/20 rotate-[80deg] scale-x-150" /></div>}
         
         <div className="w-full flex-1 min-h-0 bg-[#161622] rounded-[36px] sm:rounded-[40px] border border-white/5 p-4 sm:p-5 flex flex-col overflow-hidden shadow-2xl relative">
           <div className="flex-1 overflow-y-auto space-y-3.5 pr-1 custom-scrollbar">

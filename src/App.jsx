@@ -48,28 +48,6 @@ const syncSessionToFirestore = async (uid, threadId, chatHistory) => {
   }
 };
 
-// --- MIMO PCM-TO-WAV CONVERTER ---
-const pcmToWav = (pcm, rate = 24000) => {
-  const buf = new ArrayBuffer(44 + pcm.length * 2);
-  const view = new DataView(buf);
-  const s = (o, str) => { for (let i = 0; i < str.length; i++) view.setUint8(o + i, str.charCodeAt(i)); };
-  s(0, 'RIFF'); 
-  view.setUint32(4, 32 + pcm.length * 2, true); 
-  s(8, 'WAVE'); 
-  s(12, 'fmt ');
-  view.setUint32(16, 16, true); 
-  view.setUint16(20, 1, true); // Linear PCM
-  view.setUint16(22, 1, true); // Mono
-  view.setUint32(24, rate, true); 
-  view.setUint32(28, rate * 2, true); 
-  view.setUint16(32, 2, true); 
-  view.setUint16(34, 16, true); 
-  s(36, 'data');
-  view.setUint32(40, pcm.length * 2, true);
-  for (let i = 0, o = 44; i < pcm.length; i++, o += 2) view.setInt16(o, pcm[i], true);
-  return buf;
-};
-
 // --- MIMO HARDWARE CHIP-SYNTH SOUND ENGINE ---
 let audioCtx = null;
 const initAudio = () => { 
@@ -191,7 +169,7 @@ const SettingsOverlay = ({
   isChaosMode, setIsChaosMode, toggleCamera, visionEnabled, 
   fearOfHeights, setFearOfHeights, toggleMic, isInfinityMic, speak, 
   notificationsEnabled, toggleNotifications,
-  inventory, faceOffset, setFaceOffset, handleSignOut, onSaveKey
+  inventory, faceOffset, setFaceOffset, handleSignOut
 }) => {
   const safeInv = Array.isArray(inventory) ? inventory : [];
 
@@ -259,7 +237,7 @@ const SettingsOverlay = ({
 
         </div>
         <div className="pt-3 border-t border-white/5 space-y-2">
-            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey.trim()); localStorage.setItem('eilo_heights', fearOfHeights.toString()); onSaveKey(tempApiKey.trim()); onClose(); }} className="w-full bg-cyan-600 py-3.5 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-xs">Save & Close</button>
+            <button onClick={() => { localStorage.setItem('eilo_key', tempApiKey.trim()); localStorage.setItem('eilo_heights', fearOfHeights.toString()); onClose(); }} className="w-full bg-cyan-600 py-3.5 rounded-2xl font-bold uppercase text-white shadow-lg active:scale-95 transition-all text-xs">Save & Close</button>
             <button onClick={handleSignOut} className="w-full flex items-center justify-center gap-2 text-[10px] text-red-500 font-bold uppercase opacity-60 hover:opacity-100 py-1 transition-opacity"><LogOut size={12}/> Disconnect Core</button>
         </div>
       </div>
@@ -325,8 +303,6 @@ export default function App() {
   const [tempApiKey, setTempApiKey] = useState(localStorage.getItem('eilo_key') || '');
   const [isLandscape, setIsLandscape] = useState(window.innerWidth > window.innerHeight);
 
-  const [preloadedAudio, setPreloadedAudio] = useState({});
-
   const [bucks, setBucks] = useState(() => {
     const local = localStorage.getItem('eilo_bucks');
     const val = parseInt(local);
@@ -378,48 +354,6 @@ export default function App() {
 
   useEffect(() => { isTapedValueRef.current = isTaped; }, [isTaped]);
   useEffect(() => { visionEnabledValueRef.current = visionEnabled; }, [visionEnabled]);
-
-  // --- MIMO INSTANT AUDIO PRELOAD ENGINE ---
-  const preloadPhrases = async (key) => {
-    if (!key) return;
-    const phrases = [
-      { id: 'pet_1', text: "Bestie! ✨" },
-      { id: 'pet_2', text: "Yay! 🎀" },
-      { id: 'pet_3', text: "Hehe, thanks! ✨" },
-      { id: 'pet_4', text: "Ooh, nice! 🎀" },
-      { id: 'rotateWarn', text: "Rotate me back! I was busy! 🎈" },
-      { id: 'settingsWarn', text: "Hey! What are you doing with me?! 🎈" },
-      { id: 'busyWarn', text: "HEY! Stop touching me! I was having a perfect digital dream! 🎈" }
-    ];
-
-    const loaded = {};
-    for (const item of phrases) {
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${key}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: item.text }] }],
-            generationConfig: {
-              responseModalities: ["AUDIO"],
-              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } }
-            }
-          })
-        });
-        const data = await res.json();
-        const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-        if (inlineData) {
-          const rawBuffer = pcmToWav(new Int16Array(Uint8Array.from(atob(inlineData), c => c.charCodeAt(0)).buffer), 24000);
-          loaded[item.id] = URL.createObjectURL(new Blob([rawBuffer], { type: 'audio/wav' }));
-        }
-      } catch (e) {}
-    }
-    setPreloadedAudio(prev => ({ ...prev, ...loaded }));
-  };
-
-  useEffect(() => {
-    if (tempApiKey) preloadPhrases(tempApiKey);
-  }, []);
 
   // Audio Context Unlock on gesture
   useEffect(() => {
@@ -572,14 +506,10 @@ export default function App() {
       const gamma = event.gamma;
       if (beta === null || gamma === null) return;
 
-      // When phone is turned face-down toward the floor:
-      // In portrait: beta is typically near +/-180 (upside-down pitch) or <-120 / >120
-      // In landscape: gamma rolls past +/-70
       const isFacingDownwards = Math.abs(beta) > 135 || Math.abs(gamma) > 75;
 
       if (isFacingDownwards) {
         downCount++;
-        // Needs 3 consecutive sensor frames (~150ms) to ignore momentary hand flicks
         if (downCount >= 3) {
           const rightNow = Date.now();
           if (rightNow - lastHeightsScreamRef.current > 10000) {
@@ -622,7 +552,7 @@ export default function App() {
             if (!landscape && isLandscape && !isChaosMode && mood !== 'sleeping') {
               setMood('mad');
               playSynth('angry');
-              speak("Rotate me back! I was busy! 🎈", false, false, 'rotateWarn');
+              speak("Rotate me back! I was busy! 🎈");
               setTimeout(() => setMood('neutral'), 3500);
             }
 
@@ -790,84 +720,37 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- MIMO TRUE NEURAL TTS PREVIEW ENDPOINT ENGINE ---
-  const speak = async (text, isRobotLang = false, forceUnmuffled = false, preloadId = null) => {
+  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE ---
+  const speak = (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
     initAudio();
 
     const currentlyTaped = forceUnmuffled ? false : isTapedValueRef.current;
     let finalText = currentlyTaped ? "Mmm. Mmm. Hmph." : text;
-    const cleanKey = (tempApiKey || "").trim();
 
-    // 0. Play preloaded cache instantly (0ms lag)
-    if (preloadId && preloadedAudio[preloadId] && !currentlyTaped) {
-      const audio = new Audio(preloadedAudio[preloadId]);
-      audio.onended = () => setIsSpeaking(false);
-      audio.onerror = () => setIsSpeaking(false);
-      await audio.play();
-      return;
-    }
-
-    // 1. Direct Mimo Preview TTS Endpoint
-    if (cleanKey && !currentlyTaped) {
-      try {
-        const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-tts:generateContent?key=${cleanKey}`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            contents: [{ parts: [{ text: finalText }] }],
-            generationConfig: {
-              responseModalities: ["AUDIO"],
-              speechConfig: { voiceConfig: { prebuiltVoiceConfig: { voiceName: "Puck" } } }
-            }
-          })
-        });
-
-        if (res.ok) {
-          const data = await res.json();
-          const inlineData = data.candidates?.[0]?.content?.parts?.[0]?.inlineData?.data;
-
-          if (inlineData) {
-            const rawBuffer = pcmToWav(new Int16Array(Uint8Array.from(atob(inlineData), c => c.charCodeAt(0)).buffer), 24000);
-            const blob = new Blob([rawBuffer], { type: 'audio/wav' });
-            const audioUrl = URL.createObjectURL(blob);
-            
-            const audio = new Audio(audioUrl);
-            audio.onended = () => {
-              URL.revokeObjectURL(audioUrl);
-              setIsSpeaking(false);
-            };
-            audio.onerror = () => {
-              URL.revokeObjectURL(audioUrl);
-              setIsSpeaking(false);
-            };
-
-            await audio.play();
-            return;
-          }
-        }
-      } catch (e) {}
-    }
-
-    // 2. Cross-Platform Fallback: Web Speech API
     if ('speechSynthesis' in window) {
       window.speechSynthesis.cancel();
       const utterance = new SpeechSynthesisUtterance(finalText);
       const voices = window.speechSynthesis.getVoices();
 
-      const googleVoice = voices.find(v => 
-        v.name.includes("Google") || 
-        v.name.includes("en-us-x-sfg") || 
-        v.name.includes("Natural")
-      ) || voices.find(v => v.lang === "en-US" && !v.name.includes("Samsung"));
+      // Prioritize cute, expressive, high-pitched female voices
+      const chosenVoice = voices.find(v => 
+        (v.name.includes("Google") && v.name.includes("en-US")) || 
+        v.name.includes("Samantha") || 
+        v.name.includes("Karen") ||
+        v.name.includes("Victoria") ||
+        v.name.includes("Zira") ||
+        v.name.toLowerCase().includes("female")
+      ) || voices.find(v => v.lang.startsWith("en"));
 
-      if (googleVoice) utterance.voice = googleVoice;
-      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.7);
+      if (chosenVoice) utterance.voice = chosenVoice;
+      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.85); // High pitched bratty tone
       utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.15);
       if (currentlyTaped) utterance.volume = 0.6;
       
       utterance.onend = () => setIsSpeaking(false);
+      utterance.onerror = () => setIsSpeaking(false);
       window.speechSynthesis.speak(utterance);
     } else {
       setIsSpeaking(false);
@@ -1034,7 +917,7 @@ export default function App() {
     if (!isTaped) {
       setMood('mad');
       playSynth('angry');
-      speak("Hey! What are you doing with me?! 🎈", false, false, 'settingsWarn');
+      speak("Hey! What are you doing with me?! 🎈");
       setTimeout(() => setMood('neutral'), 3000);
     }
   };
@@ -1047,7 +930,7 @@ export default function App() {
     if (mood === 'sleeping') {
       setMood('mad');
       playSynth('angry');
-      speak("HEY! Stop touching me! I was having a perfect digital dream! 🎈", false, false, 'busyWarn');
+      speak("HEY! Stop touching me! I was having a perfect digital dream! 🎈");
       setTimeout(() => setMood('neutral'), 4000);
       return;
     }
@@ -1071,14 +954,9 @@ export default function App() {
     }
     setMood('happy');
 
-    const petLines = [
-      { id: 'pet_1', text: "Bestie! ✨" },
-      { id: 'pet_2', text: "Yay! 🎀" },
-      { id: 'pet_3', text: "Hehe, thanks! ✨" },
-      { id: 'pet_4', text: "Ooh, nice! 🎀" }
-    ];
+    const petLines = ["Bestie! ✨", "Yay! 🎀", "Hehe, thanks! ✨", "Ooh, nice! 🎀"];
     const pick = petLines[Math.floor(Math.random() * petLines.length)];
-    speak(pick.text, false, false, pick.id);
+    speak(pick);
     setTimeout(() => setMood('neutral'), 3000);
   };
 
@@ -1714,7 +1592,6 @@ export default function App() {
               notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
               inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
               speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
-              onSaveKey={(k) => preloadPhrases(k)}
           />}
         <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; }" }} />
       </div>
@@ -1900,7 +1777,6 @@ export default function App() {
             notificationsEnabled={notificationsEnabled} toggleNotifications={toggleNotifications}
             inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
-            onSaveKey={(k) => preloadPhrases(k)}
           />}
       <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>

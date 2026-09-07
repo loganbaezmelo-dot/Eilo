@@ -720,7 +720,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE ---
+  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE (EILO NATURAL CALIBRATION) ---
   const speak = (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -734,7 +734,7 @@ export default function App() {
       const utterance = new SpeechSynthesisUtterance(finalText);
       const voices = window.speechSynthesis.getVoices();
 
-      // Prioritize cute, expressive, high-pitched female voices
+      // Look for natural, expressive female voices first
       const chosenVoice = voices.find(v => 
         (v.name.includes("Google") && v.name.includes("en-US")) || 
         v.name.includes("Samantha") || 
@@ -745,8 +745,10 @@ export default function App() {
       ) || voices.find(v => v.lang.startsWith("en"));
 
       if (chosenVoice) utterance.voice = chosenVoice;
-      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 2.1 : 1.85); // High pitched bratty tone
-      utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.4 : 1.15);
+      
+      // Calibrated to Eilo's natural sweet/bratty frequency
+      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.8 : 1.45);
+      utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.3 : 1.15);
       if (currentlyTaped) utterance.volume = 0.6;
       
       utterance.onend = () => setIsSpeaking(false);
@@ -1778,7 +1780,7 @@ export default function App() {
             inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
           />}
-      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
+        <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
 }

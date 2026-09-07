@@ -720,7 +720,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE (EILO NATURAL CALIBRATION) ---
+  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE (EILO PERFECT 1.65 PITCH) ---
   const speak = (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -746,9 +746,9 @@ export default function App() {
 
       if (chosenVoice) utterance.voice = chosenVoice;
       
-      // Calibrated to Eilo's natural sweet/bratty frequency
-      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.8 : 1.45);
-      utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.3 : 1.15);
+      // Calibrated to 1.65 pitch: expressive & peppy, perfectly dialed
+      utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.85 : 1.65);
+      utterance.rate = currentlyTaped ? 0.8 : (isRobotLang ? 1.35 : 1.2);
       if (currentlyTaped) utterance.volume = 0.6;
       
       utterance.onend = () => setIsSpeaking(false);
@@ -1387,9 +1387,9 @@ export default function App() {
       case 'computer': 
         return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">💻</div>{tapeOverlay}</div></div>;
       case 'phone': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-5xl animate-bounce">📱</div>{tapeOverlay}</div></div>;
       case 'lapdock': 
-        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex flex-col items-center gap-3 relative">{ribbonOverlay}<div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
+        return <div className="absolute inset-0 flex items-center justify-center"><div className="flex gap-12"><div className={`w-16 h-16 ${cyanBase}`} /><div className={`w-16 h-16 ${cyanBase}`} /></div><div className="text-4xl animate-pulse">🖥️🔌📱</div>{tapeOverlay}</div></div>;
       default: 
         return (
           <div className="absolute inset-0 flex items-center justify-center">
@@ -1780,7 +1780,7 @@ export default function App() {
             inventory={inventory} faceOffset={faceOffset} setFaceOffset={setFaceOffset}
             speak={speak} handleSignOut={() => { signOut(auth); window.location.reload(); }}
           />}
-        <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
+      <style dangerouslySetInnerHTML={{ __html: "@keyframes blink { 0%, 95%, 100% { transform: scaleY(1); } 97% { transform: scaleY(0.1); } } .eye-blink { animation: blink 4s infinite; } .custom-scrollbar::-webkit-scrollbar { width: 5px; } .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(34,211,238,0.2); border-radius: 10px; }" }} />
     </div>
   );
 }

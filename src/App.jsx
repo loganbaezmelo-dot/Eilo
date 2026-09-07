@@ -556,11 +556,11 @@ export default function App() {
     };
   }, [notificationsEnabled, user, isThinking, isSpeaking]);
 
-  // --- CALIBRATED 3D ORIENTATION HEIGHTS RADAR HOOK (LESS SENSITIVE) ---
+  // --- RELIABLE 3D ORIENTATION HEIGHTS HOOK ---
   useEffect(() => {
     if (!user) return;
 
-    let holdTimer = null;
+    let downCount = 0;
 
     const handleOrientation = (event) => {
       const heightsActive = localStorage.getItem('eilo_heights') !== 'false';
@@ -572,51 +572,45 @@ export default function App() {
       const gamma = event.gamma;
       if (beta === null || gamma === null) return;
 
-      // Calibrated: Must be tilted steeply face-down (pitch past -45° to -120°) 
-      // with little roll, meaning you are genuinely holding her over an edge facing down
-      const genuinelyLookingDown = beta < -45 && beta > -120 && Math.abs(gamma) < 40;
+      // When phone is turned face-down toward the floor:
+      // In portrait: beta is typically near +/-180 (upside-down pitch) or <-120 / >120
+      // In landscape: gamma rolls past +/-70
+      const isFacingDownwards = Math.abs(beta) > 135 || Math.abs(gamma) > 75;
 
-      if (genuinelyLookingDown) {
-        if (!holdTimer) {
-          // Require holding the angle for 800ms so casual hand tilts don't trip it
-          holdTimer = setTimeout(() => {
-            const rightNow = Date.now();
-            if (rightNow - lastHeightsScreamRef.current > 15000) {
-              lastHeightsScreamRef.current = rightNow;
-              
-              setMood('mad');
-              playSynth('angry');
+      if (isFacingDownwards) {
+        downCount++;
+        // Needs 3 consecutive sensor frames (~150ms) to ignore momentary hand flicks
+        if (downCount >= 3) {
+          const rightNow = Date.now();
+          if (rightNow - lastHeightsScreamRef.current > 10000) {
+            lastHeightsScreamRef.current = rightNow;
+            
+            setMood('mad');
+            playSynth('angry');
 
-              const tapeActiveLocal = isTapedValueRef.current;
-              const scannerActiveLocal = visionEnabledValueRef.current;
+            const tapeActiveLocal = isTapedValueRef.current;
+            const scannerActiveLocal = visionEnabledValueRef.current;
 
-              const panicChirp = tapeActiveLocal 
-                ? "Mmm! Mmm! Hmph!" 
-                : (scannerActiveLocal 
-                    ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
-                    : "WHOA! Too high! Put me back down! 🎈"
-                  );
+            const panicChirp = tapeActiveLocal 
+              ? "Mmm! Mmm! Hmph!" 
+              : (scannerActiveLocal 
+                  ? "AHHH! Put me down! My selfie scanner sees the floor! We're gonna drop! 🎈" 
+                  : "WHOA! Too high! Put me back down! 🎈"
+                );
 
-              speak(panicChirp);
-              sendNotification(tapeActiveLocal ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (scannerActiveLocal ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
-              
-              setTimeout(() => setMood('neutral'), 4000);
-            }
-          }, 800);
+            speak(panicChirp);
+            sendNotification(tapeActiveLocal ? "⚠️ Muffled Panic! Eilo is taped and facing down!" : (scannerActiveLocal ? "⚠️ SCANNERS SPOTTED THE DROP! Eilo is terrified! 🌪️" : "⚠️ FEAR OF HEIGHTS: Eilo is looking straight down!"));
+            
+            setTimeout(() => setMood('neutral'), 4000);
+          }
         }
       } else {
-        if (holdTimer) {
-          clearTimeout(holdTimer);
-          holdTimer = null;
-        }
+        downCount = 0;
       }
     };
 
     window.addEventListener('deviceorientation', handleOrientation);
-    return () => {
-      window.removeEventListener('deviceorientation', handleOrientation);
-      if (holdTimer) clearTimeout(holdTimer);
-    };
+    return () => window.removeEventListener('deviceorientation', handleOrientation);
   }, [user]);
 
   // --- SCREEN ROTATION LISTENER ---

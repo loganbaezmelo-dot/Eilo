@@ -720,7 +720,7 @@ export default function App() {
      return () => clearInterval(beaconInterval);
   }, [aiAgentMode, user]);
 
-  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE (BALANCED NATURAL RATE) ---
+  // --- NATIVE BROWSER SPEECH SYNTHESIS ENGINE (BALANCED NATURAL 1.38 RATE) ---
   const speak = (text, isRobotLang = false, forceUnmuffled = false) => {
     if (isMuted || !user) return; 
     setIsSpeaking(true);
@@ -746,9 +746,9 @@ export default function App() {
 
       if (chosenVoice) utterance.voice = chosenVoice;
       
-      // Calibrated to 1.65 pitch with a natural 1.28 speech rate
+      // Calibrated to 1.65 pitch with the exact 1.38 middle-ground rate
       utterance.pitch = currentlyTaped ? 0.5 : (isRobotLang ? 1.85 : 1.65);
-      utterance.rate = currentlyTaped ? 0.85 : (isRobotLang ? 1.4 : 1.28);
+      utterance.rate = currentlyTaped ? 0.85 : (isRobotLang ? 1.4 : 1.38);
       if (currentlyTaped) utterance.volume = 0.6;
       
       utterance.onend = () => setIsSpeaking(false);
